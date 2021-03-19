@@ -16,6 +16,7 @@
 #include "grid.h"
 #include "shader.h"
 #include "camera.h"
+#include "fluid_system.h"
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
@@ -26,7 +27,7 @@ GLint h = SCREEN_HEIGHT;
 float deltaTime = 0;
 float lastFrame = 0;
 
-Camera camera(glm::vec3(100.0, 100.0, 103.0));
+Camera camera(glm::vec3(0.0, 0.0, 3.0));
 float lastX = SCREEN_WIDTH / 2.0f;
 float lastY = SCREEN_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -109,6 +110,11 @@ void processInput(GLFWwindow* window)
             disabled = true;
         }
     }
+
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         
     /*std::cout << "Position: "
         << camera.GetPosition().x << ' ' << camera.GetPosition().y << ' ' << camera.GetPosition().z
@@ -116,6 +122,41 @@ void processInput(GLFWwindow* window)
         << "Front: "
         << camera.GetFront().x << ' ' << camera.GetFront().y << ' ' << camera.GetFront().z << std::endl;*/
 }
+
+
+void checkGLError(const char* where, int line)
+{
+    GLenum err = glGetError();
+    if (err == GL_NONE)
+        return;
+
+    std::string errString = "<unknown>";
+    switch (err) {
+    case GL_INVALID_ENUM:
+        errString = "GL_INVALID_ENUM";
+        break;
+    case GL_INVALID_VALUE:
+        errString = "GL_INVALID_VALUE";
+        break;
+    case GL_INVALID_OPERATION:
+        errString = "GL_INVALID_OPERATION";
+        break;
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        errString = "GL_INVALID_FRAMEBUFFER_OPERATION";
+        break;
+    case GL_OUT_OF_MEMORY:
+        errString = "GL_OUT_OF_MEMORY";
+        break;
+    default:;
+    }
+    if (where == 0 || *where == 0)
+        std::cerr << "GL error occurred: " << errString << std::endl;
+    else
+        std::cerr << "GL error occurred in " << where << ":" << line << ":" << errString << std::endl;
+}
+
+#define CHECK_GL_ERROR() do { checkGLError(__FUNCTION__, __LINE__); } while (0)
+
 
 int main()
 {
@@ -149,6 +190,7 @@ int main()
     }
 
     Shader shader("vertex.glsl", "fragment.glsl");
+    Shader surface_shader("vertex.glsl", "fragment_surface.glsl");
   
     char picture_path[100];
     strcpy_s(picture_path, "lena_gray.png");
@@ -162,24 +204,39 @@ int main()
     }
     printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
     
-    float dimensions[3] = { 1, 1, 1 };
-    Grid grid;
+    float dimensions[3] = { 12, 255, 12 };
+    Grid grid(dimensions[0], dimensions[1], dimensions[2]);
+    //FluidSystem fluid(glm::vec3(0, 200, 0), glm::vec3(10, 10, 10));
     grid.LoadHeightfield(img);
+    //grid.LoadFluid(fluid);
     stbi_image_free(img);
 
     grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
     
-    float* verts = grid.GetCoords();
-    size_t size = grid.GetCoordsSize();
+    float* surface_verts = grid.GetSurfaceParts();
+    size_t surface_size = grid.GetSurfacePartsSize();
+    unsigned int* indices = grid.GetIndices();
+    size_t indices_size = grid.GetIndicesSize();
 
 
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glBindVertexArray(VAO);
+    float vertices[] = {
+        1, 0, 1,
+        1, 0, 2,
+        -1, 0, 1,
+        -1, 0, 2
+    };
 
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), verts, GL_STATIC_DRAW);
+    unsigned int surfaceVAO, surfaceVBO, surfaceEBO;
+
+    glGenVertexArrays(1, &surfaceVAO);
+    glGenBuffers(1, &surfaceVBO);
+    glGenBuffers(1, &surfaceEBO);
+    glBindVertexArray(surfaceVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
+    glBufferData(GL_ARRAY_BUFFER, surface_size * sizeof(float), surface_verts, GL_STATIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(float), indices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glEnableVertexAttribArray(0);
 
@@ -202,6 +259,8 @@ int main()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(1.0f, 0.0f, 0.0f, 1.00f);
 
+
+    //render loop
     while (!glfwWindowShouldClose(window))
     {
         float currentFrame = glfwGetTime();
@@ -209,7 +268,7 @@ int main()
         lastFrame = currentFrame;
 
         processInput(window);
-        glClearColor(0.2, 0.3, 0.4, 1.0);
+        glClearColor(0.0, 0.0, 0.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -217,36 +276,30 @@ int main()
         ImGui::NewFrame();
         
 
-        //imguiSetUp();
-
-        shader.use();
-
-        shader.setVec3("myColor", glm::vec3(clear_color.x, clear_color.y, clear_color.z));
-
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 1000.0f);
-        shader.setMat4("projection", projection);
-        glm::mat4 view = camera.GetViewMatrix();
-        shader.setMat4("view", view);
-
-        glm::mat4 model = glm::mat4(1.0f);
-        shader.setMat4("model", model);
-
-        glBindVertexArray(VAO);
-
-       // ImGui::ShowDemoWindow(&show_demo_window);
-
-
         if (!disabled)
         {
-            ImGui::Begin("New window");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("New window");
 
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+            ImGui::ColorEdit3("clear color", (float*)&clear_color);
             ImGui::InputFloat3("dimensions", dimensions);
             if (ImGui::Button("Update grid"))
             {
                 grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-                verts = grid.GetCoords();
-                size = grid.GetCoordsSize();
+                surface_verts = grid.GetSurfaceParts();
+                surface_size = grid.GetSurfacePartsSize();
+
+                glDeleteBuffers(1, &surfaceVBO);
+                glDeleteBuffers(1, &surfaceEBO);
+
+                glBindVertexArray(surfaceVAO);
+                glGenBuffers(1, &surfaceVBO);
+                glGenBuffers(1, &surfaceEBO);
+                glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
+                glBufferData(GL_ARRAY_BUFFER, surface_size * sizeof(float), surface_verts, GL_STATIC_DRAW);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(float), indices, GL_STATIC_DRAW);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+                glEnableVertexAttribArray(0);
             }
             ImGui::InputText("picture path", picture_path, 100);
             if (ImGui::Button("Load picture"))
@@ -263,17 +316,40 @@ int main()
                 stbi_image_free(img);
 
                 grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-                verts = grid.GetCoords();
-                size = grid.GetCoordsSize();
+                surface_verts = grid.GetSurfaceParts();
+                surface_size = grid.GetSurfacePartsSize();
+
+                glDeleteBuffers(1, &surfaceVBO);
+                glDeleteBuffers(1, &surfaceEBO);
+
+                glBindVertexArray(surfaceVAO);
+                glGenBuffers(1, &surfaceVBO);
+                glGenBuffers(1, &surfaceEBO);
+                glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
+                glBufferData(GL_ARRAY_BUFFER, surface_size * sizeof(float), surface_verts, GL_STATIC_DRAW);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(float), indices, GL_STATIC_DRAW);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+                glEnableVertexAttribArray(0);
             }
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
-
         }
 
-        glBufferData(GL_ARRAY_BUFFER, size * sizeof(float), verts, GL_STATIC_DRAW);
-        glDrawArrays(GL_POINTS, 0, size);
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 model = glm::mat4(1.0f);
+        
+        surface_shader.use();
+        surface_shader.setMat4("projection", projection);
+        surface_shader.setMat4("view", view);
+        surface_shader.setMat4("model", model);
+        surface_shader.setVec3("myColor", glm::vec3(clear_color.x, clear_color.y, clear_color.z));
+
+        glBindVertexArray(surfaceVAO);
+        glDrawElements(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, 0);
+        //glDrawArrays(GL_TRIANGLES, 0, 4);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -282,8 +358,8 @@ int main()
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &surfaceVAO);
+    glDeleteBuffers(1, &surfaceVBO);
     
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
