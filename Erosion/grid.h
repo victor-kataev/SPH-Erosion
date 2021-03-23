@@ -3,6 +3,7 @@
 #include <vector>
 #include <list>
 #include <omp.h>
+#include <cstring>
 
 #include "fluid_system.h"
 
@@ -65,12 +66,13 @@ private:
 	FluidSystem m_Fluid;
 
 	std::vector<float> surfaceParts;
+	std::vector<float> fluidParts;
 	std::vector<unsigned int> indices;
 
 	struct Heightfield
 	{
-		int dimX = 0;
-		int dimY = 0;
+		size_t dimX = 0;
+		size_t dimY = 0;
 
 		unsigned char* map = nullptr;
 	};
@@ -101,12 +103,10 @@ public:
 		m_Dim = glm::vec3(dimX, dimY, dimZ);
 		m_Grid = new Voxel[dimX * dimY * dimZ];
 
-		m_heightfield.dimX = dimX;
-		m_heightfield.dimY = dimY;
-		m_heightfield.map = new unsigned char[dimX * dimZ];
-		memset(m_heightfield.map, 0, dimX * dimZ);
-		
-
+		m_heightfield.dimX = 512;
+		m_heightfield.dimY = 512;
+		m_heightfield.map = new unsigned char[512 * 512]; //hard coded
+		memset(m_heightfield.map, 0, 512 * 512);
 	}
 
 	Voxel GetVoxel(int x, int y, int z) const
@@ -116,18 +116,16 @@ public:
 
 	void SetVoxel(int x, int y, int z, VoxelType type)
 	{
+		//m_Grid[x + m_DimX * (y + m_DimY * z)] = val;
 		m_Grid[x + m_DimX * (y + m_DimY * z)].type = type;
 		m_Grid[x + m_DimX * (y + m_DimY * z)].position = glm::vec3(x, y, z);
 
-		if (type == VOXEL_AIR)
-		{
-
-		}
+		//todo
 	}
 
-	void LoadHeightfield(const unsigned char* img)
+	void LoadHeightfield(unsigned char* img)
 	{
-		memcpy(m_heightfield.map, img, m_heightfield.dimX * m_heightfield.dimY);
+		memcpy(m_heightfield.map, img, (size_t)m_heightfield.dimX * m_heightfield.dimY);
 		HeightFieldMax();
 	}
 
@@ -166,11 +164,11 @@ public:
 	void genIndices()
 	{
 		for(int z = 0, j = m_Dim.z-1; z < m_Dim.z && j >= 0; z++, j--)
-			for (int x = 0, i = m_Dim.x; x < m_Dim.x && i >= 0; x++, i--)
+			for (int x = 0, i = m_Dim.x-1; x < m_Dim.x && i >= 0; x++, i--)
 			{
 				if (x + 1 < m_Dim.x && z + 1 < m_Dim.z)
 				{
-					indices.push_back(z * m_Dim.x + x);
+					indices.push_back(z * m_Dim.x + x); //position in vertex buffer
 					indices.push_back(z * m_Dim.x + (x+1));
 					indices.push_back((z+1) * m_Dim.x + x);
 				}
@@ -224,7 +222,7 @@ public:
 	//	}
 	//}
 
-	void UpdateGrid(int dimx, int dimy, int dimz)
+	void UpdateGridDepricated(int dimx, int dimy, int dimz)
 	{
 		destroyGrid();
 		createGrid(dimx, dimy, dimz);
@@ -234,6 +232,7 @@ public:
 					if (y <= GetHeightfieldAt(x, z))
 					{
 						SetVoxel(x, y, z, VoxelType::VOXEL_MAT);
+						//SetVoxel(x, y, z, 1);
 						m_filled_voxels++;
 
 						if (y == GetHeightfieldAt(x, z) || y == m_Dim.y - 1)
@@ -246,10 +245,45 @@ public:
 					else
 					{
 						SetVoxel(x, y, z, VoxelType::VOXEL_AIR);
+						//SetVoxel(x, y, z, 0);
 						m_empty_voxels++;
 					}
 		genIndices();
 		std::cout << "empty voxels = " << m_empty_voxels << " --- filled voxels = " << m_filled_voxels << std::endl;
+	}
+
+	void UpdateGrid(int dimx, int dimy, int dimz)
+	{
+		destroyGrid();
+		createGrid(dimx, dimy, dimz);
+		for (int z = 0; z < m_Dim.z; z++)
+			for (int x = 0; x < m_Dim.x; x++)
+			{
+				int y = GetHeightfieldAt(x, z);
+				if (dimy <= y)
+				{
+					y = dimy-1;
+				}
+				SetVoxel(x, y, z, VoxelType::VOXEL_MAT);
+				surfaceParts.push_back((float)x / 100.0f);
+				surfaceParts.push_back((float)y / 100.0f);
+				surfaceParts.push_back((float)z / 100.0f);
+			}
+		genIndices();
+		for (int y = 0; y < m_Fluid.m_Dim.y; y++)
+			for(int z = 0; z < m_Fluid.m_Dim.z; z++)
+				for(int x = 0; x < m_Fluid.m_Dim.x; x++)
+				{
+					Voxel fluid_voxel = m_Fluid.m_Volume[x + (int)m_Fluid.m_Dim.x * (y + (int)m_Fluid.m_Dim.y * z)];
+					if (fluid_voxel.position.x >= 0 && fluid_voxel.position.x < m_Dim.x &&
+						fluid_voxel.position.y >= 0 && fluid_voxel.position.y < m_Dim.y &&
+						fluid_voxel.position.z >= 0 && fluid_voxel.position.z < m_Dim.z)
+					{
+						fluidParts.push_back((float)fluid_voxel.position.x / 100.0f);
+						fluidParts.push_back((float)fluid_voxel.position.y / 100.0f);
+						fluidParts.push_back((float)fluid_voxel.position.z / 100.0f);
+					}
+				}
 	}
 
 	unsigned int* GetIndices()
@@ -275,6 +309,16 @@ public:
 	size_t GetSurfacePartsSize() const
 	{
 		return surfaceParts.size();
+	}
+
+	float* GetFluidParts()
+	{
+		return fluidParts.data();
+	}
+
+	size_t GetFluidPartsSize() const
+	{
+		return fluidParts.size();
 	}
 };
 

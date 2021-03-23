@@ -204,11 +204,11 @@ int main()
     }
     printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
     
-    float dimensions[3] = { 12, 255, 12 };
+    float dimensions[3] = { 512, 355, 512 };
     Grid grid(dimensions[0], dimensions[1], dimensions[2]);
-    //FluidSystem fluid(glm::vec3(0, 200, 0), glm::vec3(10, 10, 10));
+    FluidSystem fluid(glm::vec3(0, 255, 0), glm::vec3(100, 10, 100));
     grid.LoadHeightfield(img);
-    //grid.LoadFluid(fluid);
+    grid.LoadFluid(fluid);
     stbi_image_free(img);
 
     grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
@@ -217,6 +217,8 @@ int main()
     size_t surface_size = grid.GetSurfacePartsSize();
     unsigned int* indices = grid.GetIndices();
     size_t indices_size = grid.GetIndicesSize();
+    float* fluid_verts = grid.GetFluidParts();
+    size_t fluid_size = grid.GetFluidPartsSize();
 
 
     float vertices[] = {
@@ -227,6 +229,7 @@ int main()
     };
 
     unsigned int surfaceVAO, surfaceVBO, surfaceEBO;
+    unsigned int fluidVAO, fluidVBO;
 
     glGenVertexArrays(1, &surfaceVAO);
     glGenBuffers(1, &surfaceVBO);
@@ -237,6 +240,14 @@ int main()
     //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(float), indices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glGenVertexArrays(1, &fluidVAO);
+    glGenBuffers(1, &fluidVBO);
+    glBindVertexArray(fluidVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
+    glBufferData(GL_ARRAY_BUFFER, fluid_size * sizeof(float), fluid_verts, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glEnableVertexAttribArray(0);
 
@@ -287,6 +298,8 @@ int main()
                 grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
                 surface_verts = grid.GetSurfaceParts();
                 surface_size = grid.GetSurfacePartsSize();
+                indices = grid.GetIndices();
+                indices_size = grid.GetIndicesSize();
 
                 glDeleteBuffers(1, &surfaceVBO);
                 glDeleteBuffers(1, &surfaceEBO);
@@ -318,6 +331,8 @@ int main()
                 grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
                 surface_verts = grid.GetSurfaceParts();
                 surface_size = grid.GetSurfacePartsSize();
+                indices = grid.GetIndices();
+                indices_size = grid.GetIndicesSize();
 
                 glDeleteBuffers(1, &surfaceVBO);
                 glDeleteBuffers(1, &surfaceEBO);
@@ -341,6 +356,17 @@ int main()
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
         
+        
+        //glDrawArrays(GL_TRIANGLES, 0, 4);
+
+        shader.use();
+        shader.setMat4("projection", projection);
+        shader.setMat4("view", view);
+        shader.setMat4("model", model);
+
+        glBindVertexArray(fluidVAO);
+        glDrawArrays(GL_POINTS, 0, fluid_size / 3);
+
         surface_shader.use();
         surface_shader.setMat4("projection", projection);
         surface_shader.setMat4("view", view);
@@ -349,7 +375,6 @@ int main()
 
         glBindVertexArray(surfaceVAO);
         glDrawElements(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, 0);
-        //glDrawArrays(GL_TRIANGLES, 0, 4);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

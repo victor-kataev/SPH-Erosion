@@ -1,4 +1,4 @@
-enum VoxelType
+enum class VoxelType
 {
 	VOXEL_AIR = 0,
 	VOXEL_WAT,

@@ -1,12 +1,4 @@
-﻿  glad.c
-  imgui.cpp
-  imgui_demo.cpp
-  imgui_draw.cpp
-  imgui_impl_glfw.cpp
-  imgui_impl_opengl3.cpp
-  imgui_tables.cpp
-  imgui_widgets.cpp
-  main.cpp
+﻿  main.cpp
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(14,34): warning C4244: 'initializing': conversion from 'T' to 'unsigned int', possible loss of data
           with
           [
@@ -113,6 +105,5 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(384,19): 
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(385,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(387,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(388,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-  Generating Code...
 LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   Erosion.vcxproj -> C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Debug\Erosion.exe

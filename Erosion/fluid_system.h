@@ -16,9 +16,9 @@ public:
 			for(int z = 0; z < m_Dim.z; z++)
 				for (int x = 0; x < m_Dim.x; x++)
 				{
-					m_Volume->position = glm::vec3(x, y, z);
-					m_Volume->type = VoxelType::VOXEL_WAT;
-					m_Volume->velocity = glm::vec3(1.0);
+					m_Volume[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].position = glm::vec3(x, y, z) + m_Origin;
+					m_Volume[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].type = VoxelType::VOXEL_WAT;
+					m_Volume[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].velocity = glm::vec3(1.0);
 				}
 	}
 
@@ -43,8 +43,6 @@ public:
 	}
 
 	glm::vec3 m_Origin;
-
-private:
 	glm::vec3 m_Dim;
 	Voxel *m_Volume;
 };
