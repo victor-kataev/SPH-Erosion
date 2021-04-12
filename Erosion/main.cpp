@@ -27,7 +27,7 @@ GLint h = SCREEN_HEIGHT;
 float deltaTime = 0;
 float lastFrame = 0;
 
-Camera camera(glm::vec3(0.0, 0.0, 3.0));
+Camera camera(glm::vec3(0.0, 3.0, 2.0));
 float lastX = SCREEN_WIDTH / 2.0f;
 float lastY = SCREEN_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -193,7 +193,7 @@ int main()
     Shader surface_shader("vertex.glsl", "fragment_surface.glsl");
   
     char picture_path[100];
-    strcpy_s(picture_path, "lena_gray.png");
+    strcpy_s(picture_path, "pumba_gray.png");
 
     int width, height, channels;
     unsigned char* img = stbi_load(picture_path, &width, &height, &channels, 1);
@@ -359,13 +359,6 @@ int main()
         
         //glDrawArrays(GL_TRIANGLES, 0, 4);
 
-        shader.use();
-        shader.setMat4("projection", projection);
-        shader.setMat4("view", view);
-        shader.setMat4("model", model);
-
-        glBindVertexArray(fluidVAO);
-        glDrawArrays(GL_POINTS, 0, fluid_size / 3);
 
         surface_shader.use();
         surface_shader.setMat4("projection", projection);
@@ -376,8 +369,29 @@ int main()
         glBindVertexArray(surfaceVAO);
         glDrawElements(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, 0);
 
+
+        shader.use();
+        shader.setMat4("projection", projection);
+        shader.setMat4("view", view);
+        shader.setMat4("model", model);
+
+        glBindVertexArray(fluidVAO);
+        glDrawArrays(GL_POINTS, 0, fluid_size / 3);
+        
+
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        grid.FluidRun();
+        fluid_verts = grid.GetFluidParts();
+        fluid_size = grid.GetFluidPartsSize();
+        glDeleteBuffers(1, &fluidVBO);
+        glGenBuffers(1, &fluidVBO);
+        glBindVertexArray(fluidVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
+        glBufferData(GL_ARRAY_BUFFER, fluid_size * sizeof(float), fluid_verts, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

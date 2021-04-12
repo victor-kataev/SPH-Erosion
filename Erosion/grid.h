@@ -83,6 +83,7 @@ private:
 	{
 		delete[] m_Grid;
 		surfaceParts.clear();
+		fluidParts.clear();
 	}
 
 	void createGrid(int dimx, int dimy, int dimz)
@@ -274,7 +275,203 @@ public:
 			for(int z = 0; z < m_Fluid.m_Dim.z; z++)
 				for(int x = 0; x < m_Fluid.m_Dim.x; x++)
 				{
-					Voxel fluid_voxel = m_Fluid.m_Volume[x + (int)m_Fluid.m_Dim.x * (y + (int)m_Fluid.m_Dim.y * z)];
+					Voxel& fluid_voxel = m_Fluid.m_Volume[x + (int)m_Fluid.m_Dim.x * (y + (int)m_Fluid.m_Dim.y * z)];
+					if (fluid_voxel.position.x >= 0 && fluid_voxel.position.x < m_Dim.x &&
+						fluid_voxel.position.y >= 0 && fluid_voxel.position.y < m_Dim.y &&
+						fluid_voxel.position.z >= 0 && fluid_voxel.position.z < m_Dim.z)
+					{
+						fluidParts.push_back((float)fluid_voxel.position.x / 100.0f);
+						fluidParts.push_back((float)fluid_voxel.position.y / 100.0f);
+						fluidParts.push_back((float)fluid_voxel.position.z / 100.0f);
+					}
+				}
+	}
+
+	bool rayIntersectsTriangle(const Voxel& currParticle, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C, float* t, float* u, float* v, glm::vec3& N)
+	{
+		glm::vec3 E1 = B - A;
+		glm::vec3 E2 = C - A;
+		N = glm::cross(E1, E2);
+		glm::vec3 dir = glm::normalize(currParticle.velocity);
+		float det = -glm::dot(dir, N);
+		float invdet = 1.0 / det;
+		glm::vec3 AO = currParticle.position - A;
+		glm::vec3 DAO = glm::cross(AO, dir); //normalize deleted
+		*u = glm::dot(E2, DAO) * invdet;
+		*v = -glm::dot(E1, DAO) * invdet;
+		*t = glm::dot(AO, N) * invdet;
+		return (abs(det) >= 1e-6 && *t >= 0.0 && *u >= 0.0 && *v >= 0.0 && (*u + *v) <= 1.0);
+	}
+
+	bool testCellForCollision(const glm::ivec2& cellIndex, Voxel& currParticle, const glm::vec3& nextPos)
+	{
+		float t, u, v; //where t is R.Origin + t*R.Dir;  u,v - barycentric coords
+		glm::vec3 N; //normal
+
+		//triangle points in 3D
+		glm::vec3 A(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1]), cellIndex[1]);
+		glm::vec3 B(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1]), cellIndex[1]);
+		glm::vec3 C(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1] + 1), cellIndex[1] + 1);
+		
+		//if RAY intersects the triangle
+		if (rayIntersectsTriangle(currParticle, A, B, C, &t, &u, &v, N))
+		{
+			glm::vec3 intersectionPoint = currParticle.position + t * glm::normalize(currParticle.velocity); //R.Origin + t*R.Dir
+			float currNextDistance = sqrt(pow(currParticle.position.x - nextPos.x, 2) + pow(currParticle.position.y - nextPos.y, 2) + pow(currParticle.position.z - nextPos.z, 2));
+			float currIntersecDistance = sqrt(pow(currParticle.position.x - intersectionPoint.x, 2) + pow(currParticle.position.y - intersectionPoint.y, 2) + pow(currParticle.position.z - intersectionPoint.z, 2));
+			//if distance between current particle and next step intersects the triangle
+			if (currIntersecDistance <= currNextDistance)
+			{
+				float d = sqrt(pow(intersectionPoint.x - nextPos.x, 2) + pow(intersectionPoint.y - nextPos.y, 2) + pow(intersectionPoint.z - nextPos.z, 2));
+
+				currParticle.position = intersectionPoint;
+				currParticle.velocity = currParticle.velocity - (1 + FluidSystem::Cr * (d / glm::length(currParticle.velocity))) * (currParticle.velocity * N) * N;
+				return true;
+			}
+			else
+			{
+				//in order to not check the intersection with another triangle
+				return false;
+			}
+		}
+
+
+		A = { A.x + 1, A.y, A.z + 1 };
+		if (rayIntersectsTriangle(currParticle, A, B, C, &t, &u, &v, N))
+		{
+			glm::vec3 intersectionPoint = currParticle.position + t * glm::normalize(currParticle.velocity); //R.Origin + t*R.Dir
+			float currNextDistance = sqrt(pow(currParticle.position.x - nextPos.x, 2) + pow(currParticle.position.y - nextPos.y, 2) + pow(currParticle.position.z - nextPos.z, 2));
+			float currIntersecDistance = sqrt(pow(currParticle.position.x - intersectionPoint.x, 2) + pow(currParticle.position.y - intersectionPoint.y, 2) + pow(currParticle.position.z - intersectionPoint.z, 2));
+			//if distance between current particle and next step intersects the triangle
+			if (currIntersecDistance <= currNextDistance)
+			{
+				float d = sqrt(pow(intersectionPoint.x - nextPos.x, 2) + pow(intersectionPoint.y - nextPos.y, 2) + pow(intersectionPoint.z - nextPos.z, 2));
+
+				currParticle.position = intersectionPoint;
+				currParticle.velocity = currParticle.velocity - (1 + FluidSystem::Cr * (d / glm::length(currParticle.velocity))) * (currParticle.velocity * N) * N;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	//3D-DDA
+	void processCollision(Voxel & currParticle, const glm::vec3 & nextPos)
+	{
+		glm::ivec2 cellIndex(floor(currParticle.position.x), floor(currParticle.position.z));
+		glm::ivec2 cellIndexOfNext(floor(nextPos.x), floor(nextPos.z));
+		
+		//if in the same cell
+		if (cellIndex == cellIndexOfNext)
+		{
+			bool colided = testCellForCollision(cellIndex, currParticle, nextPos);
+			if (!colided)
+				currParticle.position = nextPos;
+			return;
+		}
+
+		glm::vec2 vel2D(currParticle.velocity.x, currParticle.velocity.z);
+		glm::vec2 rayDirection = glm::normalize(vel2D);
+		glm::vec2 rayOrigin(currParticle.position.x, currParticle.position.z);
+		glm::vec2 cellDim(1, 1);
+		glm::vec2 deltaT;
+		float t_x, t_z;
+
+		if (rayDirection[0] < 0)
+		{
+			deltaT[0] = -cellDim[0] / rayDirection[0];
+			t_x = (floor(rayOrigin[0] / cellDim[0]) * cellDim[0] - rayOrigin[0]) / rayDirection[0];
+		}
+		else if (rayDirection[0] > 0)
+		{
+			deltaT[0] = cellDim[0] / rayDirection[0];
+			t_x = ((floor(rayOrigin[0] / cellDim[0]) + 1) * cellDim[0] - rayOrigin[0]) / rayDirection[0];
+		}
+		else
+		{
+			deltaT[0] = 0;
+			t_x = INFINITY;
+		}
+
+		if (rayDirection[1] < 0)
+		{
+			deltaT[1] = -cellDim[1] / rayDirection[1];
+			t_z = (floor(rayOrigin[1] / cellDim[1]) * cellDim[1] - rayOrigin[1]) / rayDirection[1];
+		}
+		else if (rayDirection[1] > 0)
+		{
+			deltaT[1] = cellDim[1] / rayDirection[1];
+			t_z = ((floor(rayOrigin[1] / cellDim[1]) + 1) * cellDim[1] - rayOrigin[1]) / rayDirection[1];
+		}
+		else
+		{
+			deltaT[1] = 0;
+			t_z = INFINITY;
+		}
+
+		float t = 0;
+		std::vector<glm::ivec2> cellsToTest;
+		cellsToTest.push_back(cellIndex);
+		while (1)
+		{
+			if (t_x < t_z)
+			{
+				t = t_x;
+				t_x += deltaT[0];
+				if (rayDirection[0] < 0)
+					cellIndex[0]--;
+				else
+					cellIndex[0]++;
+				cellsToTest.push_back(cellIndex);
+			}
+			else
+			{
+				t = t_z;
+				t_z += deltaT[1];
+				if (rayDirection[1] < 0)
+					cellIndex[1]--;
+				else
+					cellIndex[1]++;
+				cellsToTest.push_back(cellIndex);
+			}
+
+			if (cellIndex == cellIndexOfNext)
+				break;
+		}
+
+		for (const auto& cell : cellsToTest)
+		{
+			bool colided = testCellForCollision(cell, currParticle, nextPos);
+			if (colided)
+				return;
+		}
+		currParticle.position = nextPos;
+		return;
+	}
+
+	void FluidRun()
+	{
+		fluidParts.clear();
+
+		glm::vec3 gravity(0.0, -1 * GRAVITY, 0.0);
+		glm::vec3 delta;
+		for (int y = 0; y < m_Fluid.m_Dim.y; y++)
+			for (int z = 0; z < m_Fluid.m_Dim.z; z++)
+				for (int x = 0; x < m_Fluid.m_Dim.x; x++)
+				{
+					size_t idx = x + (int)m_Fluid.m_Dim.x * (y + (int)m_Fluid.m_Dim.y * z);
+					Voxel& fluid_voxel = m_Fluid.m_Volume[idx];
+					delta = 0.01f * fluid_voxel.velocity;
+					glm::vec3 nextPos = fluid_voxel.position + delta;
+
+					if (nextPos.x >= 0 && nextPos.x < m_Dim.x &&
+						nextPos.y >= 0 && nextPos.y < m_Dim.y &&
+						nextPos.z >= 0 && nextPos.z < m_Dim.z)
+					{
+						processCollision(fluid_voxel, nextPos);
+					}
+
 					if (fluid_voxel.position.x >= 0 && fluid_voxel.position.x < m_Dim.x &&
 						fluid_voxel.position.y >= 0 && fluid_voxel.position.y < m_Dim.y &&
 						fluid_voxel.position.z >= 0 && fluid_voxel.position.z < m_Dim.z)
@@ -319,6 +516,11 @@ public:
 	size_t GetFluidPartsSize() const
 	{
 		return fluidParts.size();
+	}
+
+	FluidSystem& GetFluid()
+	{
+		return m_Fluid;
 	}
 };
 
