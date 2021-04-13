@@ -296,7 +296,7 @@ public:
 		float det = -glm::dot(dir, N);
 		float invdet = 1.0 / det;
 		glm::vec3 AO = currParticle.position - A;
-		glm::vec3 DAO = glm::cross(AO, dir); //normalize deleted
+		glm::vec3 DAO = glm::cross(AO, dir);
 		*u = glm::dot(E2, DAO) * invdet;
 		*v = -glm::dot(E1, DAO) * invdet;
 		*t = glm::dot(AO, N) * invdet;
@@ -322,7 +322,10 @@ public:
 			//if distance between current particle and next step intersects the triangle
 			if (currIntersecDistance <= currNextDistance)
 			{
+				//depth of penetration
 				float d = sqrt(pow(intersectionPoint.x - nextPos.x, 2) + pow(intersectionPoint.y - nextPos.y, 2) + pow(intersectionPoint.z - nextPos.z, 2));
+				glm::vec3 n = N;
+				n = glm::normalize(n);
 
 				currParticle.position = intersectionPoint;
 				currParticle.velocity = currParticle.velocity - (1 + FluidSystem::Cr * (d / glm::length(currParticle.velocity))) * (currParticle.velocity * N) * N;
@@ -423,7 +426,6 @@ public:
 					cellIndex[0]--;
 				else
 					cellIndex[0]++;
-				cellsToTest.push_back(cellIndex);
 			}
 			else
 			{
@@ -433,11 +435,22 @@ public:
 					cellIndex[1]--;
 				else
 					cellIndex[1]++;
-				cellsToTest.push_back(cellIndex);
 			}
 
 			if (cellIndex == cellIndexOfNext)
+			{
+				cellsToTest.push_back(cellIndex);
 				break;
+			}
+
+			if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ)
+				break;
+
+			cellsToTest.push_back(cellIndex);
+
+			//std::cout << "Size of cellsToTest: " << cellsToTest.size() << std::endl;
+			if (cellsToTest.size() > 1000000)
+				std::cout << cellsToTest.size() << std::endl;
 		}
 
 		for (const auto& cell : cellsToTest)

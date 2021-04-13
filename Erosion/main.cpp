@@ -193,7 +193,7 @@ int main()
     Shader surface_shader("vertex.glsl", "fragment_surface.glsl");
   
     char picture_path[100];
-    strcpy_s(picture_path, "pumba_gray.png");
+    strcpy_s(picture_path, "lena_gray.png");
 
     int width, height, channels;
     unsigned char* img = stbi_load(picture_path, &width, &height, &channels, 1);
@@ -206,7 +206,7 @@ int main()
     
     float dimensions[3] = { 512, 355, 512 };
     Grid grid(dimensions[0], dimensions[1], dimensions[2]);
-    FluidSystem fluid(glm::vec3(0, 255, 0), glm::vec3(100, 10, 100));
+    FluidSystem fluid(glm::vec3(100, 265, 200), glm::vec3(100, 10, 100));
     grid.LoadHeightfield(img);
     grid.LoadFluid(fluid);
     stbi_image_free(img);
