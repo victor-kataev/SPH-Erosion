@@ -79,6 +79,12 @@ struct Sphere
 		SetUpBuffers();
 	}
 
+	~Sphere()
+	{
+		glDeleteVertexArrays(1, &VAO);
+		glDeleteBuffers(1, &VBO);
+	}
+
 	void Draw() const
 	{
 		glBindVertexArray(VAO);

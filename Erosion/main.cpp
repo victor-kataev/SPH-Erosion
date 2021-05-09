@@ -162,7 +162,7 @@ int main()
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
     FluidSystemSPH fluidsph;
-    fluidsph.Initialize(10);
+    fluidsph.Initialize(27);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -249,15 +249,13 @@ int main()
             ImGui::End();
         }
 
-        //fluidsph.Run(Mesh(surface_verts, indices));
+        fluidsph.Run(Mesh(surface_verts, indices));
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
         
         
-        //glDrawArrays(GL_TRIANGLES, 0, 4);
-
 
         shader.use();
         shader.setMat4("projection", projection);
@@ -278,7 +276,8 @@ int main()
 
 
         shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
-        sphere.Draw();
+        //sphere.Draw();
+        fluidsph.Draw();
 
 
         /*shader.use();

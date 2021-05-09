@@ -124,21 +124,30 @@ struct FluidParticle
 class FluidSystemSPH
 {
 public:
-	FluidSystemSPH() = default;
+	FluidSystemSPH()
+	{
+
+	}
 
 	void Initialize(int nParts)
 	{
 		num = nParts;
 
-		for (int i = 0; i < num; i++)
-		{
-			FluidParticle particle;
-			particle.Position = glm::vec3(i, 0, 0);
-			particle.Velocity = glm::vec3(0.0);
-			particle.Acceleration = glm::vec3(0.0);
-			particle.Mass = m;
-			m_Particles.push_back(particle);
-		}
+		for (int i = 0; i < cbrt(num); i++)
+			for (int j = 0; j < cbrt(num); j++)
+				for (int k = 0; k < cbrt(num); k++)
+				{
+					float x = -0.2 + i * 0.025;
+					float y = -0.05 + j * 0.025;
+					float z = -0.15 + k * 0.025;
+
+					FluidParticle particle;
+					particle.Position = glm::vec3(x + 1, y + 256, z + 1);
+					particle.Velocity = glm::vec3(0.0);
+					particle.Acceleration = glm::vec3(0.0);
+					particle.Mass = m;
+					m_Particles.push_back(particle);
+				}
 
 		vol = num * m / p0;
 		smoothRadius = cbrt(3 * vol * x / (4 * PI * num));
@@ -150,6 +159,7 @@ public:
 	{
 
 		//compute density and pressure
+#pragma omp parallel for collapse(2)
 		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
@@ -169,6 +179,7 @@ public:
 
 
 		//compute forces
+#pragma omp parallel for collapse(3)
 		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
@@ -214,18 +225,13 @@ public:
 
 	void Draw()
 	{
-		std::vector<float> verts = getVertices();
-		unsigned int VAO, VBO;
-
-		glGenVertexArrays(1, &VAO);
-		glBindVertexArray(VAO);
-
-		glGenBuffers(1, &VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), &verts[0], GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-
+		for (int i = 0; i < num; i++)
+		{
+			float r = s * cbrt(3 * m_Particles[i].Mass / (4 * PI * m_Particles[i].Density));
+			m_Spheres.emplace_back(30, 30, r, m_Particles[i].Position);
+			m_Spheres[i].Draw();
+		}
+		m_Spheres.clear();
 	}
 
 private:
@@ -250,9 +256,11 @@ private:
 	float vol;
 	float fluidDensity = 1000.0;
 	float smoothRadius;
+	float s = 1;
 
 private:
 	std::vector<FluidParticle> m_Particles;
+	std::vector<Sphere> m_Spheres;
 
 private:
 
@@ -271,6 +279,7 @@ private:
 	//leap-frog + collision handling
 	void advance(Mesh terrain)
 	{
+#pragma omp parallel for
 		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
@@ -359,7 +368,7 @@ private:
 
 	float kernDefault(const glm::vec3& r)
 	{
-		float len = r.length();
+		float len = glm::length(r);
 		if (len >= 0 && len <= h)
 			return (315.0 / (64.0 * PI * pow(h, 9))) * pow((h*h - len*len), 3);
 		else
@@ -368,27 +377,27 @@ private:
 
 	glm::vec3 gradDefault(const glm::vec3& r)
 	{
-		float len = r.length();
+		float len = glm::length(r);
 		return -945.0f / (32.0f * PI * (float)pow(h, 9)) * r * (float)pow((h * h - len * len), 2);
 	}
 
 	float laplDefault(const glm::vec3& r)
 	{
-		float len = r.length();
+		float len = glm::length(r);
 		return (-945.0f / 32.0f * PI * (float)pow(h, 9)) * (h*h - len*len) * (3 * h*h - 7 * len*len);
 	}
 
 	glm::vec3 gradPressure(const glm::vec3& r)
 	{
 
-		float len = r.length();
+		float len = glm::length(r);
 		return (float)(-45.0f / PI * (float)pow(h, 6)) * (r / len) * (float)pow((h - len), 2);
 
 	}
 
 	float laplVisc(const glm::vec3& r)
 	{
-		float len = r.length();
+		float len = glm::length(r);
 		return (45.0f / PI * (float)pow(h, 6)) * (h - len);
 	}
 };
