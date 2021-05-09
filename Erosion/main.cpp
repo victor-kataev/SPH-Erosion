@@ -90,7 +90,7 @@ int main()
     }
     printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
     
-    float dimensions[3] = { 100, 355, 100};
+    float dimensions[3] = { 50, 355, 50};
     Grid grid(dimensions[0], dimensions[1], dimensions[2]);
     FluidSystem fluid(glm::vec3(0, 265, 100), glm::vec3(100, 10, 100));
     grid.LoadHeightfield(img);
@@ -162,7 +162,7 @@ int main()
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
     FluidSystemSPH fluidsph;
-    fluidsph.Initialize(125);
+    fluidsph.Initialize(500);
 
     glEnable(GL_DEPTH_TEST);
 

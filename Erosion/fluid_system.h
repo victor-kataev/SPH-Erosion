@@ -142,7 +142,7 @@ public:
 					float z = -0.15 + k * 0.025;
 
 					FluidParticle particle;
-					particle.Position = glm::vec3(x + 1, y + 255.2, z + 1);
+					particle.Position = glm::vec3(x + 2, y + 255.1, z + 2);
 					particle.Velocity = glm::vec3(0.0);
 					particle.Acceleration = glm::vec3(0.0);
 					particle.Mass = m;
@@ -170,7 +170,7 @@ public:
 				FluidParticle& neighbPart = m_Particles[j];
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
-				if (distance <= smoothRadius) //&& disntance != 0
+				if (distance <= smoothRadius) //&& distance != 0
 					density += neighbPart.Mass * kernDefault(currPart.Position - neighbPart.Position);
 			}
 			currPart.Density = density;
@@ -192,7 +192,7 @@ public:
 				FluidParticle& neighbPart = m_Particles[j];
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
-				if (distance <= smoothRadius && distance != 0)
+				if (distance <= smoothRadius && i != j)
 				{
 					fPress += (currPart.Pressure / (float)pow(currPart.Density, 2) + neighbPart.Pressure / (float)pow(neighbPart.Density, 2)) * neighbPart.Mass * gradPressure(currPart.Position - neighbPart.Position);
 					fVisc += (neighbPart.Velocity - currPart.Velocity) * neighbPart.Mass / neighbPart.Density * laplVisc(currPart.Position - neighbPart.Position);
@@ -210,8 +210,12 @@ public:
 			{
 				FluidParticle& neighbPart = m_Particles[j];
 
-				n += neighbPart.Mass / neighbPart.Density * gradDefault(currPart.Position - neighbPart.Position);
-				colorFieldLapl += neighbPart.Mass / neighbPart.Density * laplDefault(currPart.Position - neighbPart.Position);
+				float distance = glm::length(currPart.Position - neighbPart.Position);
+				if (distance <= smoothRadius)
+				{
+					n += neighbPart.Mass / neighbPart.Density * gradDefault(currPart.Position - neighbPart.Position);
+					colorFieldLapl += neighbPart.Mass / neighbPart.Density * laplDefault(currPart.Position - neighbPart.Position);
+				}
 			}
 
 			currPart.SurfaceForce = glm::vec3(0.0);
@@ -377,17 +381,17 @@ private:
 		//Simulation parameters
 		//float m_Param[MAX_PARAM];
 		//FBufs m_Fluid;
-		glm::vec3 g = glm::vec3(0.0, -9.82, 0.0);
-		const float dt = 0.01;
-		float m_Time = 0.0;
-		const float p0 = 998.29;
-		const float m = 0.02;
-		const float visc = 3.5;
-		const float surf_tens = 0.0728;
+		glm::vec3 g = glm::vec3(0.0, -9.82f, 0.0);
+		const float dt = 0.01f;
+		float m_Time = 0.0f;
+		const float p0 = 998.29f;
+		const float m = 0.02f;
+		const float visc = 3.5f;
+		const float surf_tens = 0.0728f;
 		//const float l = 7.065;
 		float l;
-		const float k = 3.0;
-		const float cR = 0.5;
+		const float k = 3.0f;
+		const float cR = 0.5f;
 		const int x = 20;
 		//const float h = 0.0457;
 		float h;

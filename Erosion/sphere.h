@@ -83,6 +83,10 @@ struct Sphere
 	{
 		glDeleteVertexArrays(1, &VAO);
 		glDeleteBuffers(1, &VBO);
+
+		m_Vertices.clear();
+		m_Indices.clear();
+		m_LineIndices.clear();
 	}
 
 	void Draw() const
