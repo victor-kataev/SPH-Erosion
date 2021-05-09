@@ -149,19 +149,6 @@ public:
 		std::cout << "Heightfield max = " << max << std::endl;
 	}
 
-	//void buildGraph()
-	//{
-	//	
-	//	for(int z = 0; z < m_Dim.z; z++)
-	//		for (int x = 0; x < m_Dim.x; x++)
-	//		{
-	//			m_Graph.AddEdge(x, z, x + 1, z);
-	//			m_Graph.AddEdge(x, z, x, z + 1);
-	//			m_Graph.AddEdge(x, z, x - 1, z);
-	//			m_Graph.AddEdge(x, z, x, z - 1);
-	//		}
-	//}
-
 	void genIndices()
 	{
 		for(int z = 0, j = m_Dim.z-1; z < m_Dim.z && j >= 0; z++, j--)
@@ -182,76 +169,35 @@ public:
 			}
 	}
 
-	//void generateIndices()
+	//void UpdateGridDepricated(int dimx, int dimy, int dimz)
 	//{
-	//	bool **visited = new bool*[m_DimZ];
-	//	for (int i = 0; i < m_DimZ; i++)
-	//	{
-	//		visited[i] = new bool[m_DimX];
-	//		for (int j = 0; j < m_DimX; j++)
-	//			visited[i][j] = false;
-	//	}
+	//	destroyGrid();
+	//	createGrid(dimx, dimy, dimz);
+	//	for (int z = 0; z < m_Dim.z; z++)
+	//		for (int x = 0; x < m_Dim.x; x++)
+	//			for (int y = 0; y < m_Dim.y; y++)
+	//				if (y <= GetHeightfieldAt(x, z))
+	//				{
+	//					SetVoxel(x, y, z, VoxelType::VOXEL_MAT);
+	//					//SetVoxel(x, y, z, 1);
+	//					m_filled_voxels++;
 
-	//	std::list<std::pair<int, int>> queue;
-
-	//	visited[0][0] = true;
-	//	queue.push_back(std::pair<int, int>(0, 0));
-	//	std::list<unsigned int> triangle;
-
-	//	while (!queue.empty())
-	//	{
-	//		std::pair<int, int> current = queue.front();
-	//		queue.pop_front();
-	//		triangle.push_back(current.second * m_DimX + current.first);
-	//		
-	//		if (triangle.size() == 3)
-	//		{
-	//			for (unsigned int index : triangle)
-	//				indices.push_back(index);
-
-	//			triangle.pop_front();
-	//		}
-
-	//		for (const auto& adj : m_Graph.GetAdjacents(current.first, current.second))
-	//		{
-	//			if (!visited[adj.first][adj.second])
-	//			{
-	//				queue.push_back(adj);
-	//				visited[adj.first][adj.second] = true;
-	//			}
-	//		}
-	//	}
+	//					if (y == GetHeightfieldAt(x, z) || y == m_Dim.y - 1)
+	//					{
+	//						surfaceParts.push_back((float)x / 100.0f);
+	//						surfaceParts.push_back((float)y / 100.0f);
+	//						surfaceParts.push_back((float)z / 100.0f);
+	//					}
+	//				}
+	//				else
+	//				{
+	//					SetVoxel(x, y, z, VoxelType::VOXEL_AIR);
+	//					//SetVoxel(x, y, z, 0);
+	//					m_empty_voxels++;
+	//				}
+	//	genIndices();
+	//	std::cout << "empty voxels = " << m_empty_voxels << " --- filled voxels = " << m_filled_voxels << std::endl;
 	//}
-
-	void UpdateGridDepricated(int dimx, int dimy, int dimz)
-	{
-		destroyGrid();
-		createGrid(dimx, dimy, dimz);
-		for (int z = 0; z < m_Dim.z; z++)
-			for (int x = 0; x < m_Dim.x; x++)
-				for (int y = 0; y < m_Dim.y; y++)
-					if (y <= GetHeightfieldAt(x, z))
-					{
-						SetVoxel(x, y, z, VoxelType::VOXEL_MAT);
-						//SetVoxel(x, y, z, 1);
-						m_filled_voxels++;
-
-						if (y == GetHeightfieldAt(x, z) || y == m_Dim.y - 1)
-						{
-							surfaceParts.push_back((float)x / 100.0f);
-							surfaceParts.push_back((float)y / 100.0f);
-							surfaceParts.push_back((float)z / 100.0f);
-						}
-					}
-					else
-					{
-						SetVoxel(x, y, z, VoxelType::VOXEL_AIR);
-						//SetVoxel(x, y, z, 0);
-						m_empty_voxels++;
-					}
-		genIndices();
-		std::cout << "empty voxels = " << m_empty_voxels << " --- filled voxels = " << m_filled_voxels << std::endl;
-	}
 
 	void UpdateGrid(int dimx, int dimy, int dimz)
 	{
@@ -266,9 +212,29 @@ public:
 					y = dimy-1;
 				}
 				SetVoxel(x, y, z, VoxelType::VOXEL_MAT);
-				surfaceParts.push_back((float)x / 100.0f);
-				surfaceParts.push_back((float)y / 100.0f);
-				surfaceParts.push_back((float)z / 100.0f);
+				surfaceParts.push_back(x);
+				surfaceParts.push_back(y);
+				surfaceParts.push_back(z);
+
+				//normals
+				glm::vec3 u(0.0);
+				glm::vec3 d(0.0);
+				glm::vec3 r(0.0);
+				glm::vec3 l(0.0);
+
+				if (x - 1 >= 0)
+					l = glm::vec3(x - (x - 1), y - GetHeightfieldAt(x - 1, z), z - z);
+				if (x + 1 < m_Dim.x)
+					r = glm::vec3((x + 1) - x, GetHeightfieldAt(x + 1, z) - y, z - z);
+				if (z - 1 >= 0)
+					u = glm::vec3(x - x, y - GetHeightfieldAt(x, z - 1), z - (z - 1));
+				if (z + 1 < m_Dim.y)
+					d = glm::vec3(x - x, GetHeightfieldAt(x, z + 1) - y, (z + 1) - z);
+
+				glm::vec3 normal = glm::normalize(glm::cross(u, l) + glm::cross(u, r) + glm::cross(d, l) + glm::cross(d, r));
+				surfaceParts.push_back(normal.x);
+				surfaceParts.push_back(normal.y);
+				surfaceParts.push_back(normal.z);
 			}
 		genIndices();
 		for (int y = 0; y < m_Fluid.m_Dim.y; y++)
@@ -447,10 +413,6 @@ public:
 				break;
 
 			cellsToTest.push_back(cellIndex);
-
-			//std::cout << "Size of cellsToTest: " << cellsToTest.size() << std::endl;
-			if (cellsToTest.size() > 1000000)
-				std::cout << cellsToTest.size() << std::endl;
 		}
 
 		for (const auto& cell : cellsToTest)
@@ -496,9 +458,9 @@ public:
 				}
 	}
 
-	unsigned int* GetIndices()
+	std::vector<unsigned int> GetIndices()
 	{
-		return indices.data();
+		return indices;
 	}
 
 	size_t GetIndicesSize() const
@@ -511,9 +473,9 @@ public:
 		return m_Dim;
 	}
 
-	float* GetSurfaceParts()
+	std::vector<float> GetSurfaceParts()
 	{
-		return surfaceParts.data();
+		return surfaceParts;
 	}
 
 	size_t GetSurfacePartsSize() const
@@ -521,9 +483,9 @@ public:
 		return surfaceParts.size();
 	}
 
-	float* GetFluidParts()
+	std::vector<float> GetFluidParts()
 	{
-		return fluidParts.data();
+		return fluidParts;
 	}
 
 	size_t GetFluidPartsSize() const

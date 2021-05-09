@@ -17,6 +17,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "fluid_system.h"
+#include "mesh.h"
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 768
@@ -27,7 +28,7 @@ GLint h = SCREEN_HEIGHT;
 float deltaTime = 0;
 float lastFrame = 0;
 
-Camera camera(glm::vec3(0.0, 3.0, 2.0));
+Camera camera(glm::vec3(0.0, 256.0, 3.0));
 float lastX = SCREEN_WIDTH / 2.0f;
 float lastY = SCREEN_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -37,123 +38,8 @@ bool pressed_before = false;
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime * 10);
-        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime * 0.1);
-        else        
-            camera.ProcessKeyboard(FORWARD, deltaTime);
-    
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(BACKWARD, deltaTime * 10);
-        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(BACKWARD, deltaTime * 0.1);
-        else
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
-    
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(LEFT, deltaTime * 10);
-        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(LEFT, deltaTime * 0.1);
-        else
-            camera.ProcessKeyboard(LEFT, deltaTime);
-    
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(RIGHT, deltaTime * 10);
-        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(RIGHT, deltaTime * 0.1);
-        else
-            camera.ProcessKeyboard(RIGHT, deltaTime);
-    
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(UP, deltaTime * 10);
-        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(UP, deltaTime * 0.1);
-        else
-            camera.ProcessKeyboard(UP, deltaTime);
-    
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(DOWN, deltaTime * 10);
-        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(DOWN, deltaTime * 0.1);
-        else
-            camera.ProcessKeyboard(DOWN, deltaTime);
-    
-    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-        pressed_before = true;
-    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && pressed_before)
-    {
-        pressed_before = false;
-        if (disabled)
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            glfwSetCursorPosCallback(window, NULL);
-            disabled = false;
-            firstMouse = true;
-        }
-        else
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            glfwSetCursorPosCallback(window, mouse_callback);
-            disabled = true;
-        }
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        
-    /*std::cout << "Position: "
-        << camera.GetPosition().x << ' ' << camera.GetPosition().y << ' ' << camera.GetPosition().z
-        << std::endl
-        << "Front: "
-        << camera.GetFront().x << ' ' << camera.GetFront().y << ' ' << camera.GetFront().z << std::endl;*/
-}
-
-
-void checkGLError(const char* where, int line)
-{
-    GLenum err = glGetError();
-    if (err == GL_NONE)
-        return;
-
-    std::string errString = "<unknown>";
-    switch (err) {
-    case GL_INVALID_ENUM:
-        errString = "GL_INVALID_ENUM";
-        break;
-    case GL_INVALID_VALUE:
-        errString = "GL_INVALID_VALUE";
-        break;
-    case GL_INVALID_OPERATION:
-        errString = "GL_INVALID_OPERATION";
-        break;
-    case GL_INVALID_FRAMEBUFFER_OPERATION:
-        errString = "GL_INVALID_FRAMEBUFFER_OPERATION";
-        break;
-    case GL_OUT_OF_MEMORY:
-        errString = "GL_OUT_OF_MEMORY";
-        break;
-    default:;
-    }
-    if (where == 0 || *where == 0)
-        std::cerr << "GL error occurred: " << errString << std::endl;
-    else
-        std::cerr << "GL error occurred in " << where << ":" << line << ":" << errString << std::endl;
-}
+void processInput(GLFWwindow* window);
+void checkGLError(const char* where, int line);
 
 #define CHECK_GL_ERROR() do { checkGLError(__FUNCTION__, __LINE__); } while (0)
 
@@ -190,10 +76,10 @@ int main()
     }
 
     Shader shader("vertex.glsl", "fragment.glsl");
-    Shader surface_shader("vertex.glsl", "fragment_surface.glsl");
+    //Shader surface_shader("vertex.glsl", "fragment_surface.glsl");
   
     char picture_path[100];
-    strcpy_s(picture_path, "lena_gray.png");
+    strcpy_s(picture_path, "pumba_gray.png");
 
     int width, height, channels;
     unsigned char* img = stbi_load(picture_path, &width, &height, &channels, 1);
@@ -206,20 +92,22 @@ int main()
     
     float dimensions[3] = { 512, 355, 512 };
     Grid grid(dimensions[0], dimensions[1], dimensions[2]);
-    FluidSystem fluid(glm::vec3(100, 265, 200), glm::vec3(100, 10, 100));
+    FluidSystem fluid(glm::vec3(0, 265, 100), glm::vec3(100, 10, 100));
     grid.LoadHeightfield(img);
-    grid.LoadFluid(fluid);
+    //grid.LoadFluid(fluid);
     stbi_image_free(img);
 
     grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-    
-    float* surface_verts = grid.GetSurfaceParts();
-    size_t surface_size = grid.GetSurfacePartsSize();
-    unsigned int* indices = grid.GetIndices();
-    size_t indices_size = grid.GetIndicesSize();
-    float* fluid_verts = grid.GetFluidParts();
-    size_t fluid_size = grid.GetFluidPartsSize();
+    Sphere sphere(30, 30, 10.0f, glm::vec3(100.0, 100.0, -100.0));
 
+    
+    std::vector<float> surface_verts = grid.GetSurfaceParts();
+    //size_t surface_size = grid.GetSurfacePartsSize();
+    std::vector<unsigned int> indices = grid.GetIndices();
+    //size_t indices_size = grid.GetIndicesSize();
+    //std::vector<float> fluid_verts = grid.GetFluidParts();
+    //size_t fluid_size = grid.GetFluidPartsSize();
+    
 
     float vertices[] = {
         1, 0, 1,
@@ -236,21 +124,24 @@ int main()
     glGenBuffers(1, &surfaceEBO);
     glBindVertexArray(surfaceVAO);
     glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-    glBufferData(GL_ARRAY_BUFFER, surface_size * sizeof(float), surface_verts, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
     //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(float), indices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
 
-    glGenVertexArrays(1, &fluidVAO);
+    
+   /* glGenVertexArrays(1, &fluidVAO);
     glGenBuffers(1, &fluidVBO);
     glBindVertexArray(fluidVAO);
     glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
-    glBufferData(GL_ARRAY_BUFFER, fluid_size * sizeof(float), fluid_verts, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, fluid_verts.size() * sizeof(float), &fluid_verts[0], GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(0);
-
+    glEnableVertexAttribArray(0);*/
+    
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -268,8 +159,12 @@ int main()
    
     bool show_demo_window = true;
     bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(1.0f, 0.0f, 0.0f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
+    FluidSystemSPH fluidsph;
+    fluidsph.Initialize(10);
+
+    glEnable(GL_DEPTH_TEST);
 
     //render loop
     while (!glfwWindowShouldClose(window))
@@ -279,14 +174,14 @@ int main()
         lastFrame = currentFrame;
 
         processInput(window);
-        glClearColor(0.0, 0.0, 0.0, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.2, 0.3, 0.4, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         
-
+        
         if (!disabled)
         {
             ImGui::Begin("New window");
@@ -297,9 +192,9 @@ int main()
             {
                 grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
                 surface_verts = grid.GetSurfaceParts();
-                surface_size = grid.GetSurfacePartsSize();
+                //surface_size = grid.GetSurfacePartsSize();
                 indices = grid.GetIndices();
-                indices_size = grid.GetIndicesSize();
+                //indices_size = grid.GetIndicesSize();
 
                 glDeleteBuffers(1, &surfaceVBO);
                 glDeleteBuffers(1, &surfaceEBO);
@@ -308,10 +203,11 @@ int main()
                 glGenBuffers(1, &surfaceVBO);
                 glGenBuffers(1, &surfaceEBO);
                 glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-                glBufferData(GL_ARRAY_BUFFER, surface_size * sizeof(float), surface_verts, GL_STATIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(float), indices, GL_STATIC_DRAW);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
                 glEnableVertexAttribArray(0);
             }
             ImGui::InputText("picture path", picture_path, 100);
@@ -330,9 +226,9 @@ int main()
 
                 grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
                 surface_verts = grid.GetSurfaceParts();
-                surface_size = grid.GetSurfacePartsSize();
+                //surface_size = grid.GetSurfacePartsSize();
                 indices = grid.GetIndices();
-                indices_size = grid.GetIndicesSize();
+                //indices_size = grid.GetIndicesSize();
 
                 glDeleteBuffers(1, &surfaceVBO);
                 glDeleteBuffers(1, &surfaceEBO);
@@ -341,10 +237,11 @@ int main()
                 glGenBuffers(1, &surfaceVBO);
                 glGenBuffers(1, &surfaceEBO);
                 glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-                glBufferData(GL_ARRAY_BUFFER, surface_size * sizeof(float), surface_verts, GL_STATIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size * sizeof(float), indices, GL_STATIC_DRAW);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
                 glEnableVertexAttribArray(0);
             }
 
@@ -352,7 +249,9 @@ int main()
             ImGui::End();
         }
 
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 100.0f);
+        //fluidsph.Run(Mesh(surface_verts, indices));
+
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
         
@@ -360,45 +259,57 @@ int main()
         //glDrawArrays(GL_TRIANGLES, 0, 4);
 
 
-        surface_shader.use();
-        surface_shader.setMat4("projection", projection);
-        surface_shader.setMat4("view", view);
-        surface_shader.setMat4("model", model);
-        surface_shader.setVec3("myColor", glm::vec3(clear_color.x, clear_color.y, clear_color.z));
-
-        glBindVertexArray(surfaceVAO);
-        glDrawElements(GL_TRIANGLES, indices_size, GL_UNSIGNED_INT, 0);
-
-
         shader.use();
+        shader.setMat4("projection", projection);
+        shader.setMat4("view", view);
+        shader.setMat4("model", model);
+        shader.setVec3("dirLight.dir", glm::vec3(-0.1, -1.0, -0.1));
+        shader.setVec3("dirLight.color", glm::vec3(1.0));
+        shader.setVec3("viewerPos", camera.Position);
+        shader.setVec3("material.ka", glm::vec3(0.2f));
+        shader.setVec3("material.kd", glm::vec3(0.7f));
+        shader.setVec3("material.ks", glm::vec3(1.0));
+        shader.setFloat("material.ksh", 4.0f);
+
+
+        shader.setVec3("myColor", glm::vec3(clear_color.x, clear_color.y, clear_color.z));
+        glBindVertexArray(surfaceVAO);
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+
+        shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
+        sphere.Draw();
+
+
+        /*shader.use();
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         shader.setMat4("model", model);
 
         glBindVertexArray(fluidVAO);
-        glDrawArrays(GL_POINTS, 0, fluid_size / 3);
+        glDrawArrays(GL_POINTS, 0, fluid_size / 3);*/
         
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        grid.FluidRun();
+        /*grid.FluidRun();
         fluid_verts = grid.GetFluidParts();
         fluid_size = grid.GetFluidPartsSize();
         glDeleteBuffers(1, &fluidVBO);
         glGenBuffers(1, &fluidVBO);
         glBindVertexArray(fluidVAO);
         glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
-        glBufferData(GL_ARRAY_BUFFER, fluid_size * sizeof(float), fluid_verts, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, fluid_verts.size() * sizeof(float), &fluid_verts[0], GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(0);*/
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &surfaceVAO);
-    glDeleteBuffers(1, &surfaceVBO);
+    //glDeleteVertexArrays(1, &surfaceVAO);
+    //glDeleteBuffers(1, &surfaceVBO);
     
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
@@ -432,4 +343,120 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+}
+
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            camera.ProcessKeyboard(FORWARD, deltaTime * 10);
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera.ProcessKeyboard(FORWARD, deltaTime * 0.1);
+        else
+            camera.ProcessKeyboard(FORWARD, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            camera.ProcessKeyboard(BACKWARD, deltaTime * 10);
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera.ProcessKeyboard(BACKWARD, deltaTime * 0.1);
+        else
+            camera.ProcessKeyboard(BACKWARD, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            camera.ProcessKeyboard(LEFT, deltaTime * 10);
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera.ProcessKeyboard(LEFT, deltaTime * 0.1);
+        else
+            camera.ProcessKeyboard(LEFT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            camera.ProcessKeyboard(RIGHT, deltaTime * 10);
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera.ProcessKeyboard(RIGHT, deltaTime * 0.1);
+        else
+            camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            camera.ProcessKeyboard(UP, deltaTime * 10);
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera.ProcessKeyboard(UP, deltaTime * 0.1);
+        else
+            camera.ProcessKeyboard(UP, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            camera.ProcessKeyboard(DOWN, deltaTime * 10);
+        else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+            camera.ProcessKeyboard(DOWN, deltaTime * 0.1);
+        else
+            camera.ProcessKeyboard(DOWN, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        pressed_before = true;
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE && pressed_before)
+    {
+        pressed_before = false;
+        if (disabled)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetCursorPosCallback(window, NULL);
+            disabled = false;
+            firstMouse = true;
+        }
+        else
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetCursorPosCallback(window, mouse_callback);
+            disabled = true;
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    /*std::cout << "Position: "
+        << camera.GetPosition().x << ' ' << camera.GetPosition().y << ' ' << camera.GetPosition().z
+        << std::endl
+        << "Front: "
+        << camera.GetFront().x << ' ' << camera.GetFront().y << ' ' << camera.GetFront().z << std::endl;*/
+}
+
+void checkGLError(const char* where, int line)
+{
+    GLenum err = glGetError();
+    if (err == GL_NONE)
+        return;
+
+    std::string errString = "<unknown>";
+    switch (err) {
+    case GL_INVALID_ENUM:
+        errString = "GL_INVALID_ENUM";
+        break;
+    case GL_INVALID_VALUE:
+        errString = "GL_INVALID_VALUE";
+        break;
+    case GL_INVALID_OPERATION:
+        errString = "GL_INVALID_OPERATION";
+        break;
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        errString = "GL_INVALID_FRAMEBUFFER_OPERATION";
+        break;
+    case GL_OUT_OF_MEMORY:
+        errString = "GL_OUT_OF_MEMORY";
+        break;
+    default:;
+    }
+    if (where == 0 || *where == 0)
+        std::cerr << "GL error occurred: " << errString << std::endl;
+    else
+        std::cerr << "GL error occurred in " << where << ":" << line << ":" << errString << std::endl;
 }
