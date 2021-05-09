@@ -142,7 +142,7 @@ public:
 					float z = -0.15 + k * 0.025;
 
 					FluidParticle particle;
-					particle.Position = glm::vec3(x + 1, y + 257, z + 1);
+					particle.Position = glm::vec3(x + 1, y + 255.2, z + 1);
 					particle.Velocity = glm::vec3(0.0);
 					particle.Acceleration = glm::vec3(0.0);
 					particle.Mass = m;
@@ -170,7 +170,7 @@ public:
 				FluidParticle& neighbPart = m_Particles[j];
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
-				if (distance <= smoothRadius && distance != 0)
+				if (distance <= smoothRadius) //&& disntance != 0
 					density += neighbPart.Mass * kernDefault(currPart.Position - neighbPart.Position);
 			}
 			currPart.Density = density;
@@ -199,7 +199,7 @@ public:
 				}
 
 			}
-			currPart.PressureForce = -currPart.Density * fPress;
+			currPart.PressureForce = (-1)*currPart.Density * fPress;
 			currPart.ViscosityForce = visc * fVisc;
 
 			//external forces
@@ -233,34 +233,6 @@ public:
 		}
 		m_Spheres.clear();
 	}
-
-private:
-	//Simulation parameters
-	//float m_Param[MAX_PARAM];
-	//FBufs m_Fluid;
-	glm::vec3 g = glm::vec3(0.0, -9.82, 0.0);
-	const float dt = 0.01;
-	float m_Time = 0.0;
-	const float p0 = 998.29;
-	const float m = 0.02;
-	const float visc = 3.5;
-	const float surf_tens = 0.0728;
-	//const float l = 7.065;
-	float l;
-	const float k = 3.0;
-	const float cR = 0.5;
-	const int x = 20;
-	//const float h = 0.0457;
-	float h;
-	int num = 10;
-	float vol;
-	float fluidDensity = 1000.0;
-	float smoothRadius;
-	float s = 1;
-
-private:
-	std::vector<FluidParticle> m_Particles;
-	std::vector<Sphere> m_Spheres;
 
 private:
 
@@ -384,20 +356,47 @@ private:
 	float laplDefault(const glm::vec3& r)
 	{
 		float len = glm::length(r);
-		return (-945.0f / 32.0f * PI * (float)pow(h, 9)) * (h*h - len*len) * (3 * h*h - 7 * len*len);
+		return (-945.0f / (32.0f * PI * (float)pow(h, 9))) * (h*h - len*len) * (3 * h*h - 7 * len*len);
 	}
 
 	glm::vec3 gradPressure(const glm::vec3& r)
 	{
 
 		float len = glm::length(r);
-		return (float)(-45.0f / PI * (float)pow(h, 6)) * (r / len) * (float)pow((h - len), 2);
+		return (float)(-45.0f / (PI * (float)pow(h, 6))) * (r / len) * (float)pow((h - len), 2);
 
 	}
 
 	float laplVisc(const glm::vec3& r)
 	{
 		float len = glm::length(r);
-		return (45.0f / PI * (float)pow(h, 6)) * (h - len);
+		return (45.0f / (PI * (float)pow(h, 6))) * (h - len);
 	}
+
+private:
+		//Simulation parameters
+		//float m_Param[MAX_PARAM];
+		//FBufs m_Fluid;
+		glm::vec3 g = glm::vec3(0.0, -9.82, 0.0);
+		const float dt = 0.01;
+		float m_Time = 0.0;
+		const float p0 = 998.29;
+		const float m = 0.02;
+		const float visc = 3.5;
+		const float surf_tens = 0.0728;
+		//const float l = 7.065;
+		float l;
+		const float k = 3.0;
+		const float cR = 0.5;
+		const int x = 20;
+		//const float h = 0.0457;
+		float h;
+		int num = 10;
+		float vol;
+		float smoothRadius;
+		float s = 1;
+
+private:
+	std::vector<FluidParticle> m_Particles;
+	std::vector<Sphere> m_Spheres;
 };
