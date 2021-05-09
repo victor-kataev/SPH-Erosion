@@ -145,7 +145,7 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(380,53): 
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(388,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(396,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   Generating code
-  22 of 1984 functions ( 1.1%) were compiled, the rest were copied from previous compilation.
+  23 of 1984 functions ( 1.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     39 functions had inline decision re-evaluated but remain unchanged
   Finished generating code

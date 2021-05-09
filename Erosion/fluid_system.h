@@ -142,7 +142,7 @@ public:
 					float z = -0.15 + k * 0.025;
 
 					FluidParticle particle;
-					particle.Position = glm::vec3(x + 1, y + 256, z + 1);
+					particle.Position = glm::vec3(x + 1, y + 257, z + 1);
 					particle.Velocity = glm::vec3(0.0);
 					particle.Acceleration = glm::vec3(0.0);
 					particle.Mass = m;
@@ -248,7 +248,7 @@ private:
 	//const float l = 7.065;
 	float l;
 	const float k = 3.0;
-	const float cR = 0;
+	const float cR = 0.5;
 	const int x = 20;
 	//const float h = 0.0457;
 	float h;
@@ -310,7 +310,7 @@ private:
 	}
 
 	
-	void handleCollision(glm::vec3 & posCurr,  const glm::vec3& posNext, glm::vec3 & velNext, const Mesh terrain)
+	void handleCollision(const glm::vec3 & posCurr,  glm::vec3& posNext, glm::vec3 & velNext, const Mesh terrain)
 	{
 		float t, u, v; //where t is R.Origin + t*R.Dir;  u,v - barycentric coords
 		glm::vec3 N; //normal
@@ -319,15 +319,15 @@ private:
 		//check collision with each triangle
 		for (int i = 0; i < terrain.Indices.size(); i += 3)
 		{
-			float a1 = terrain.Vertices[terrain.Indices[i] * 3]; //times 3, bc 1 vertex is composed out of 3 floats
-			float a2 = terrain.Vertices[terrain.Indices[i] * 3 + 1];
-			float a3 = terrain.Vertices[terrain.Indices[i] * 3 + 2];
-			float b1 = terrain.Vertices[terrain.Indices[i+1] * 3];
-			float b2 = terrain.Vertices[terrain.Indices[i+1] * 3 + 1];
-			float b3 = terrain.Vertices[terrain.Indices[i+1] * 3 + 2];
-			float c1 = terrain.Vertices[terrain.Indices[i+2] * 3];
-			float c2 = terrain.Vertices[terrain.Indices[i+2] * 3 + 1];
-			float c3 = terrain.Vertices[terrain.Indices[i+2] * 3 + 2];
+			float a1 = terrain.Vertices[terrain.Indices[i] * 6]; //times 3, bc 1 vertex is composed out of 3 floats
+			float a2 = terrain.Vertices[terrain.Indices[i] * 6 + 1];
+			float a3 = terrain.Vertices[terrain.Indices[i] * 6 + 2];
+			float b1 = terrain.Vertices[terrain.Indices[i+1] * 6];
+			float b2 = terrain.Vertices[terrain.Indices[i+1] * 6 + 1];
+			float b3 = terrain.Vertices[terrain.Indices[i+1] * 6 + 2];
+			float c1 = terrain.Vertices[terrain.Indices[i+2] * 6];
+			float c2 = terrain.Vertices[terrain.Indices[i+2] * 6 + 1];
+			float c3 = terrain.Vertices[terrain.Indices[i+2] * 6 + 2];
 
 			//triangle
 			glm::vec3 A(a1, a2, a3);
@@ -338,12 +338,12 @@ private:
 			{
 				glm::vec3 contactP = posCurr + t * dir;
 				float distanceToTravel = glm::length(posNext - posCurr);
-				float distanceToIntersect = glm::length(contactP - posCurr);
-				if (distanceToTravel > distanceToIntersect)
+				float distanceToContact = glm::length(contactP - posCurr);
+				if (distanceToTravel > distanceToContact && velNext.y < 0)
 				{
 					float d = glm::length(posNext - contactP); //penetration depth 
-					posCurr = contactP;
-					velNext = velNext - (1 + cR * (d / (dt * glm::length(velNext)))) * (velNext * N) * N;
+					velNext = velNext - (1 + cR * (d / (dt * glm::length(velNext)))) * glm::dot(velNext, N) * N;
+					posNext = contactP;
 					return;
 				}
 			}
