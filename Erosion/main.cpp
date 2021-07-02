@@ -18,9 +18,10 @@
 #include "camera.h"
 #include "fluid_system.h"
 #include "mesh.h"
+#include "shapes.h"
 
-#define SCREEN_WIDTH 1024
-#define SCREEN_HEIGHT 768
+#define SCREEN_WIDTH 1440
+#define SCREEN_HEIGHT 900
 #define GL_PI 3.1415f
 
 GLint w = SCREEN_WIDTH;
@@ -28,7 +29,7 @@ GLint h = SCREEN_HEIGHT;
 float deltaTime = 0;
 float lastFrame = 0;
 
-Camera camera(glm::vec3(0.0, 256.0, 3.0));
+Camera camera(glm::vec3(7.0, 256.0, 10.0));
 float lastX = SCREEN_WIDTH / 2.0f;
 float lastY = SCREEN_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -42,6 +43,8 @@ void processInput(GLFWwindow* window);
 void checkGLError(const char* where, int line);
 
 #define CHECK_GL_ERROR() do { checkGLError(__FUNCTION__, __LINE__); } while (0)
+
+FluidSystemSPH fluidsph;
 
 
 int main()
@@ -79,7 +82,7 @@ int main()
     //Shader surface_shader("vertex.glsl", "fragment_surface.glsl");
   
     char picture_path[100];
-    strcpy_s(picture_path, "pumba_gray.png");
+    strcpy_s(picture_path, "lena_gray.png");
 
     int width, height, channels;
     unsigned char* img = stbi_load(picture_path, &width, &height, &channels, 1);
@@ -92,13 +95,12 @@ int main()
     
     float dimensions[3] = { 50, 355, 50};
     Grid grid(dimensions[0], dimensions[1], dimensions[2]);
-    FluidSystem fluid(glm::vec3(0, 265, 100), glm::vec3(100, 10, 100));
+    //FluidSystem fluid(glm::vec3(0, 265, 100), glm::vec3(100, 10, 100));
     grid.LoadHeightfield(img);
     //grid.LoadFluid(fluid);
     stbi_image_free(img);
 
     grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-    Sphere sphere(30, 30, 10.0f, glm::vec3(100.0, 100.0, -100.0));
 
     
     std::vector<float> surface_verts = grid.GetSurfaceParts();
@@ -161,8 +163,15 @@ int main()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
-    FluidSystemSPH fluidsph;
-    fluidsph.Initialize(500);
+    fluidsph.SetOrigin(glm::vec3(0.4, -0.9, 0.1));
+    //camera.PlaceTo(glm::vec3(fluidsph.GetOrigin().x, fluidsph.GetOrigin().y, 3.0));
+    camera.PlaceTo(glm::vec3(0.0, 0.1, 3.0));
+    fluidsph.Initialize(1);
+    Shape shape;
+    shape.CreateCube();
+    shape.CreateBowl();
+
+    Hemisphere hsphere(30, 30, 1, glm::vec3(0.0, 0.0, 0.0));
 
     glEnable(GL_DEPTH_TEST);
 
@@ -174,7 +183,7 @@ int main()
         lastFrame = currentFrame;
 
         processInput(window);
-        glClearColor(0.2, 0.3, 0.4, 1.0);
+        glClearColor(0.3, 0.3, 0.3, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -249,19 +258,24 @@ int main()
             ImGui::End();
         }
 
-        fluidsph.Run(Mesh(surface_verts, indices));
+        Mesh terrain(surface_verts, indices);
+        Mesh mHsphere(hsphere.GetVertices(), hsphere.GetIndices());
+        
+        
+        
+        
+        fluidsph.Run(mHsphere);//<------------------------
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
-        
         
 
         shader.use();
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         shader.setMat4("model", model);
-        shader.setVec3("dirLight.dir", glm::vec3(-0.1, -1.0, -0.1));
+        shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.2, -0.1));
         shader.setVec3("dirLight.color", glm::vec3(1.0));
         shader.setVec3("viewerPos", camera.Position);
         shader.setVec3("material.ka", glm::vec3(0.2f));
@@ -275,9 +289,18 @@ int main()
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
 
+        //shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
+        //shape.DrawCube();
+
+        shader.setVec3("myColor", glm::vec3(1.0, 0.0, 0.0));
+        shape.DrawBowl();
+
+        shader.setVec3("myColor", glm::vec3(0.0, 1.0, 1.0));
+        hsphere.Draw();
+
+
         shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
-        //sphere.Draw();
-        fluidsph.Draw();
+        fluidsph.Draw(shader);
 
 
         /*shader.use();
@@ -344,6 +367,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+
+bool pause = false;
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -421,6 +446,21 @@ void processInput(GLFWwindow* window)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+        pause = true;
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE && pause)
+    {
+        if (fluidsph.GetDeltaTime() == 0)
+            fluidsph.SetDeltaTime(0.0001f);
+        else
+            fluidsph.SetDeltaTime(0.0f);
+        pause = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
+        fluidsph.PrintCoords();
+
 
     /*std::cout << "Position: "
         << camera.GetPosition().x << ' ' << camera.GetPosition().y << ' ' << camera.GetPosition().z

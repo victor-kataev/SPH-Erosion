@@ -4,6 +4,8 @@
 
 struct Mesh
 {
+	Mesh() = default;
+
 	Mesh(const std::vector<float>& verts, const std::vector<unsigned int>& indices)
 		: Vertices(verts), Indices(indices)
 	{}

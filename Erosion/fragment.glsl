@@ -20,7 +20,6 @@ struct Light
 };
 
 uniform vec3 myColor;
-
 uniform vec3 viewerPos;
 uniform Material material;
 uniform Light dirLight;

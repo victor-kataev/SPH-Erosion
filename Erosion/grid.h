@@ -63,7 +63,7 @@ private:
 	int m_filled_voxels;
 
 	Voxel* m_Grid;
-	FluidSystem m_Fluid;
+	//FluidSystem m_Fluid;
 
 	std::vector<float> surfaceParts;
 	std::vector<float> fluidParts;
@@ -132,7 +132,7 @@ public:
 
 	void LoadFluid(const FluidSystem& fs)
 	{
-		m_Fluid = fs;
+		//m_Fluid = fs;
 	}
 
 	unsigned char GetHeightfieldAt(int x, int y)
@@ -237,7 +237,7 @@ public:
 				surfaceParts.push_back(normal.z);
 			}
 		genIndices();
-		for (int y = 0; y < m_Fluid.m_Dim.y; y++)
+		/*for (int y = 0; y < m_Fluid.m_Dim.y; y++)
 			for(int z = 0; z < m_Fluid.m_Dim.z; z++)
 				for(int x = 0; x < m_Fluid.m_Dim.x; x++)
 				{
@@ -250,7 +250,7 @@ public:
 						fluidParts.push_back((float)fluid_voxel.position.y / 100.0f);
 						fluidParts.push_back((float)fluid_voxel.position.z / 100.0f);
 					}
-				}
+				}*/
 	}
 
 	bool rayIntersectsTriangle(const Voxel& currParticle, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C, float* t, float* u, float* v, glm::vec3& N)
@@ -425,38 +425,38 @@ public:
 		return;
 	}
 
-	void FluidRun()
-	{
-		fluidParts.clear();
+	//void FluidRun()
+	//{
+	//	fluidParts.clear();
 
-		glm::vec3 gravity(0.0, -1 * GRAVITY, 0.0);
-		glm::vec3 delta;
-		for (int y = 0; y < m_Fluid.m_Dim.y; y++)
-			for (int z = 0; z < m_Fluid.m_Dim.z; z++)
-				for (int x = 0; x < m_Fluid.m_Dim.x; x++)
-				{
-					size_t idx = x + (int)m_Fluid.m_Dim.x * (y + (int)m_Fluid.m_Dim.y * z);
-					Voxel& fluid_voxel = m_Fluid.m_Volume[idx];
-					delta = 0.01f * fluid_voxel.velocity;
-					glm::vec3 nextPos = fluid_voxel.position + delta;
+	//	glm::vec3 gravity(0.0, -1 * GRAVITY, 0.0);
+	//	glm::vec3 delta;
+	//	for (int y = 0; y < m_Fluid.m_Dim.y; y++)
+	//		for (int z = 0; z < m_Fluid.m_Dim.z; z++)
+	//			for (int x = 0; x < m_Fluid.m_Dim.x; x++)
+	//			{
+	//				size_t idx = x + (int)m_Fluid.m_Dim.x * (y + (int)m_Fluid.m_Dim.y * z);
+	//				Voxel& fluid_voxel = m_Fluid.m_Volume[idx];
+	//				delta = 0.01f * fluid_voxel.velocity;
+	//				glm::vec3 nextPos = fluid_voxel.position + delta;
 
-					if (nextPos.x >= 0 && nextPos.x < m_Dim.x &&
-						nextPos.y >= 0 && nextPos.y < m_Dim.y &&
-						nextPos.z >= 0 && nextPos.z < m_Dim.z)
-					{
-						processCollision(fluid_voxel, nextPos);
-					}
+	//				if (nextPos.x >= 0 && nextPos.x < m_Dim.x &&
+	//					nextPos.y >= 0 && nextPos.y < m_Dim.y &&
+	//					nextPos.z >= 0 && nextPos.z < m_Dim.z)
+	//				{
+	//					processCollision(fluid_voxel, nextPos);
+	//				}
 
-					if (fluid_voxel.position.x >= 0 && fluid_voxel.position.x < m_Dim.x &&
-						fluid_voxel.position.y >= 0 && fluid_voxel.position.y < m_Dim.y &&
-						fluid_voxel.position.z >= 0 && fluid_voxel.position.z < m_Dim.z)
-					{
-						fluidParts.push_back((float)fluid_voxel.position.x / 100.0f);
-						fluidParts.push_back((float)fluid_voxel.position.y / 100.0f);
-						fluidParts.push_back((float)fluid_voxel.position.z / 100.0f);
-					}
-				}
-	}
+	//				if (fluid_voxel.position.x >= 0 && fluid_voxel.position.x < m_Dim.x &&
+	//					fluid_voxel.position.y >= 0 && fluid_voxel.position.y < m_Dim.y &&
+	//					fluid_voxel.position.z >= 0 && fluid_voxel.position.z < m_Dim.z)
+	//				{
+	//					fluidParts.push_back((float)fluid_voxel.position.x / 100.0f);
+	//					fluidParts.push_back((float)fluid_voxel.position.y / 100.0f);
+	//					fluidParts.push_back((float)fluid_voxel.position.z / 100.0f);
+	//				}
+	//			}
+	//}
 
 	std::vector<unsigned int> GetIndices()
 	{
@@ -495,7 +495,7 @@ public:
 
 	FluidSystem& GetFluid()
 	{
-		return m_Fluid;
+		//return m_Fluid;
 	}
 };
 
