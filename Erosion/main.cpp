@@ -82,7 +82,7 @@ int main()
     //Shader surface_shader("vertex.glsl", "fragment_surface.glsl");
   
     char picture_path[100];
-    strcpy_s(picture_path, "lena_gray.png");
+    strcpy_s(picture_path, "pumba_gray.png");
 
     int width, height, channels;
     unsigned char* img = stbi_load(picture_path, &width, &height, &channels, 1);
@@ -163,15 +163,19 @@ int main()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
-    fluidsph.SetOrigin(glm::vec3(0.4, -0.9, 0.1));
+    fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
     //camera.PlaceTo(glm::vec3(fluidsph.GetOrigin().x, fluidsph.GetOrigin().y, 3.0));
-    camera.PlaceTo(glm::vec3(0.0, 0.1, 3.0));
-    fluidsph.Initialize(1);
+    camera.PlaceTo(glm::vec3(33.0, 125.1, 45.0));
+    fluidsph.Initialize(2000);
     Shape shape;
     shape.CreateCube();
     shape.CreateBowl();
 
     Hemisphere hsphere(30, 30, 1, glm::vec3(0.0, 0.0, 0.0));
+    Mesh terrain(surface_verts, indices);
+    Mesh mHsphere(hsphere.GetVertices(), hsphere.GetIndices());
+
+
 
     glEnable(GL_DEPTH_TEST);
 
@@ -258,13 +262,9 @@ int main()
             ImGui::End();
         }
 
-        Mesh terrain(surface_verts, indices);
-        Mesh mHsphere(hsphere.GetVertices(), hsphere.GetIndices());
         
         
-        
-        
-        fluidsph.Run(mHsphere);//<------------------------
+        fluidsph.Run(grid);//<------------------------
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
@@ -275,7 +275,7 @@ int main()
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         shader.setMat4("model", model);
-        shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.2, -0.1));
+        shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.8, -0.8));
         shader.setVec3("dirLight.color", glm::vec3(1.0));
         shader.setVec3("viewerPos", camera.Position);
         shader.setVec3("material.ka", glm::vec3(0.2f));
@@ -292,7 +292,7 @@ int main()
         //shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
         //shape.DrawCube();
 
-        shader.setVec3("myColor", glm::vec3(1.0, 0.0, 0.0));
+        shader.setVec3("myColor", glm::vec3(0.7, 0.8, 0.5));
         shape.DrawBowl();
 
         shader.setVec3("myColor", glm::vec3(0.0, 1.0, 1.0));
@@ -301,30 +301,11 @@ int main()
 
         shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
         fluidsph.Draw(shader);
-
-
-        /*shader.use();
-        shader.setMat4("projection", projection);
-        shader.setMat4("view", view);
-        shader.setMat4("model", model);
-
-        glBindVertexArray(fluidVAO);
-        glDrawArrays(GL_POINTS, 0, fluid_size / 3);*/
         
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        /*grid.FluidRun();
-        fluid_verts = grid.GetFluidParts();
-        fluid_size = grid.GetFluidPartsSize();
-        glDeleteBuffers(1, &fluidVBO);
-        glGenBuffers(1, &fluidVBO);
-        glBindVertexArray(fluidVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
-        glBufferData(GL_ARRAY_BUFFER, fluid_verts.size() * sizeof(float), &fluid_verts[0], GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glEnableVertexAttribArray(0);*/
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -452,7 +433,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE && pause)
     {
         if (fluidsph.GetDeltaTime() == 0)
-            fluidsph.SetDeltaTime(0.0001f);
+            fluidsph.SetDeltaTime(0.001f);
         else
             fluidsph.SetDeltaTime(0.0f);
         pause = false;

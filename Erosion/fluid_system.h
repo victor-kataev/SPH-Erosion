@@ -2,78 +2,15 @@
 #include <memory>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "voxel.h"
 #include "mesh.h"
 #include "sphere.h"
 #include "shader.h"
+#include "grid.h"
 
 
 #define GRAVITY 9.8
 
-class FluidSystem
-{
-public:
-	FluidSystem() = default;
 
-	FluidSystem(glm::vec3 o, glm::vec3 d)
-		: m_Origin(o), m_Dim(d)
-	{
-		m_Volume = new Voxel[d.x * d.y * d.z];
-		for(int y = 0; y < m_Dim.y; y++)
-			for(int z = 0; z < m_Dim.z; z++)
-				for (int x = 0; x < m_Dim.x; x++)
-				{
-					m_Volume[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].position = glm::vec3(x, y, z) + m_Origin;
-					m_Volume[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].type = VoxelType::VOXEL_WAT;
-					m_Volume[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].velocity = glm::vec3(0.2, -GRAVITY, 0.0);
-				}
-	}
-
-	~FluidSystem()
-	{
-		delete[] m_Volume;
-	}
-	
-	void operator=(const FluidSystem& other)
-	{
-		m_Dim = other.m_Dim;
-		m_Origin = other.m_Origin;
-		m_Volume = new Voxel[m_Dim.x * m_Dim.y * m_Dim.z];
-		for (int i = 0; i < m_Dim.x * m_Dim.y * m_Dim.z; i++)
-			m_Volume[i] = other.m_Volume[i];
-
-	}
-
-	Voxel* GetVolume() const
-	{
-		return m_Volume;
-	}
-
-	void Run()
-	{
-		glm::vec3 gravity(0.0, -1 * GRAVITY, 0.0);
-		glm::vec3 delta;
-		for (int y = 0; y < m_Dim.y; y++)
-			for (int z = 0; z < m_Dim.z; z++)
-				for (int x = 0; x < m_Dim.x; x++)
-				{
-					size_t idx = x + (int)m_Dim.x * (y + (int)m_Dim.y * z);
-					delta = 0.01f * (gravity + m_Volume[idx].velocity);
-					m_Volume[idx].position += delta;
-				}
-	}
-
-
-	glm::vec3 m_Origin;
-	glm::vec3 m_Dim;
-	Voxel *m_Volume;
-
-	static float Cr;
-
-};
-
-
-float FluidSystem::Cr = 0.3;
 
 typedef unsigned int uint;
 
@@ -158,7 +95,7 @@ public:
 		l = sqrt(p0 / x);
 	}
 
-	void Run(Mesh terrain)
+	void Run(Grid & grid)
 	{
 
 		//compute density and pressure
@@ -231,7 +168,7 @@ public:
 			currPart.SurfaceForce = -surf_tens * colorFieldLapl * currPart.SurfaceNormal;
 		}
 
-		advance(terrain);
+		advance(grid);
 		m_Time += m_Dt;
 	}
 
@@ -293,9 +230,9 @@ private:
 	}
 
 	//leap-frog + collision handling
-	void advance(Mesh terrain)
+	void advance(Grid & grid)
 	{
-//#pragma omp parallel for
+#pragma omp parallel for
 		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
@@ -315,10 +252,18 @@ private:
 			//{
 			//	currPart.Velocity = currPart.Velocity - 0.5f * m_Dt * currPart.Acceleration;
 			//}
-
+			
 			velNext = currPart.Velocity + m_Dt * acc;
 			posNext = currPart.Position + m_Dt * velNext;
-			handleCollision(currPart.Position, posNext, velNext, terrain);
+
+			glm::vec3 contactP;
+			glm::vec3 norm;
+			if (grid.collision(currPart.Position, posNext, velNext, contactP, norm))
+			{
+				float d = glm::length(posNext - contactP);
+				velNext = velNext - (float)(1 + cR * (d / (m_Dt * glm::length(velNext)))) * glm::dot(velNext, norm) * norm;
+				posNext = contactP;
+			}
 
 			currPart.Velocity = velNext;
 			currPart.Position = posNext;
@@ -333,7 +278,7 @@ private:
 		glm::vec3 N; //normal
 		//glm::vec3 dir = glm::normalize(posNext - posCurr);
 		glm::vec3 dir = glm::normalize(velNext); 
-		std::cout << dir.x << " " << dir.y << " " << dir.z << std::endl;
+		//std::cout << dir.x << " " << dir.y << " " << dir.z << std::endl;
 
 
 		//check collision with each triangle
@@ -361,9 +306,11 @@ private:
 				if (rayIntersectsTriangle(posNext, N, C, B, A, &t, &u, &v, N))
 				{
 					//std::cout << "Intersec with itself: " << N.x << " " << N.y << " " << N.z << std::endl;
-					t += 0.00009; 
+					//t += 0.00002; 
 					glm::vec3 contactP = posNext + t * N;
 					float d = glm::length(contactP - posNext);
+					d += 0.00002;
+					contactP = posNext + d * N;
 					velNext = velNext - (float)(1 + cR * (d / (m_Dt * glm::length(velNext)))) * glm::dot(velNext, N) * N;
 					posNext = contactP;
 					return;
@@ -390,9 +337,11 @@ private:
 						if (rayIntersectsTriangle(posNext, dirN, C, B, A, &t, &u, &v, N))
 						{
 							//std::cout << "Intersec with adj: " << N.x << " " << N.y << " " << N.z << std::endl;
-							t += 10.2;
+							//t += 0.00002;
 							glm::vec3 contactP = posNext + t * dirN;
 							float d = glm::length(contactP - posNext);
+							d += 0.00002;
+							contactP = posNext + d * dirN;
 							velNext = velNext - (float)(1 + cR * d / (m_Dt * glm::length(velNext))) * glm::dot(velNext, dirN) * dirN;
 							posNext = contactP;
 							return;
