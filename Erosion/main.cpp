@@ -166,7 +166,7 @@ int main()
     fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
     //camera.PlaceTo(glm::vec3(fluidsph.GetOrigin().x, fluidsph.GetOrigin().y, 3.0));
     camera.PlaceTo(glm::vec3(33.0, 125.1, 45.0));
-    fluidsph.Initialize(2000);
+    fluidsph.Initialize(1000);
     Shape shape;
     shape.CreateCube();
     shape.CreateBowl();

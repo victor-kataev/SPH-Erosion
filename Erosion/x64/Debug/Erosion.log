@@ -95,15 +95,21 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(137,28): wa
           ]
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(183,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(279,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(287,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(300,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(308,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(410,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(424,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(431,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(443,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(457,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(464,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(288,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(295,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(309,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(319,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(326,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(429,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(447,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(454,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(461,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(468,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(498,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(531,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(538,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(545,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(552,1): warning C4305: '+=': truncation from 'double' to 'float'
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shader.h(42,40): warning C4101: 'e': unreferenced local variable
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\sphere.h(100,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(80,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data

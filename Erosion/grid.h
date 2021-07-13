@@ -276,20 +276,29 @@ public:
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, norm, C, B, A, &t, &u, &v, N))
 				{
-					t += 0.0003;
+					t += 0.0001;
 					contactP = posNext + t * norm;
 					return true;
 				}
 				else
 				{	//try to map on second triangle
-					if (rayIntersectsTriangle(posNext, norm, AA, B, C, &t, &u, &v, N))
+					glm::vec3 N1 = glm::normalize(glm::cross(B - AA, C - AA));
+					if (rayIntersectsTriangle(posNext, norm + N1, C, B, A, &t, &u, &v, N))
 					{
-						t += 0.0003;
+						t += 0.0001;
+						norm = norm + N1;
+						contactP = posNext + t * norm;
+						return true;
+					}
+					else if (rayIntersectsTriangle(posNext, norm + N1, AA, B, C, &t, &u, &v, N))
+					{
+						t += 0.0001;
+						norm = norm + N1;
 						contactP = posNext + t * norm;
 						return true;
 					}
 				}
-				//particle didn't go through collision didn not occur
+				//particle didn't go through collision did not occur
 				return false;
 			}
 			else if (rayIntersectsTriangle(posCurr, dir, AA, B, C, &t, &u, &v, N))
@@ -297,15 +306,25 @@ public:
 				norm = glm::normalize(N);
 				if (rayIntersectsTriangle(posNext, norm, AA, B, C, &t, &u, &v, N))
 				{
-					t += 0.0003;
+					t += 0.0001;
 					contactP = posNext + t * norm;
 					return true;
 				}
 				else
 				{
-					if (rayIntersectsTriangle(posNext, norm, C, B, A, &t, &u, &v, N))
+					//try to map on second triangle
+					glm::vec3 N1 = glm::normalize(glm::cross(B - C, A - C));
+					if (rayIntersectsTriangle(posNext, norm + N1, C, B, A, &t, &u, &v, N))
 					{
-						t += 0.0003;
+						t += 0.0001;
+						norm = norm + N1;
+						contactP = posNext + t * norm;
+						return true;
+					}
+					else if (rayIntersectsTriangle(posNext, norm + N1, AA, B, C, &t, &u, &v, N))
+					{
+						t += 0.0001;
+						norm = norm + N1;
 						contactP = posNext + t * norm;
 						return true;
 					}
@@ -407,7 +426,7 @@ public:
 				norm = glm::normalize(N);
 				if (rayIntersectsTriangle(posNext, norm, C, B, A, &t, &u, &v, N))
 				{
-					t += 0.0003;
+					t += 0.0001;
 					contactP = posNext + t * norm;
 					return true;
 				}
@@ -418,20 +437,56 @@ public:
 					glm::vec3 B1(cellIndexNext[0] + 1, GetHeightfieldAt(cellIndexNext[0] + 1, cellIndexNext[1]), cellIndexNext[1]);
 					glm::vec3 C1(cellIndexNext[0], GetHeightfieldAt(cellIndexNext[0], cellIndexNext[1] + 1), cellIndexNext[1] + 1);
 
-					//1st triangle
-					if (rayIntersectsTriangle(posNext, norm, C1, B1, A1, &t, &u, &v, N))
+					//glm::vec3 E1 = B - A;
+					//glm::vec3 E2 = C - A;
+					glm::vec3 N1 = glm::normalize(glm::cross(B1 - C1, A1 - C1));
+					glm::vec3 N2 = glm::normalize(glm::cross(B1 - AA1, C1 - AA1));
+
+					if (rayIntersectsTriangle(posNext, norm + N1, C, B, A, &t, &u, &v, N))
 					{
-						t += 0.0003;
+						t += 0.0001;
+						norm = norm + N1;
 						contactP = posNext + t * norm;
 						return true;
 					}
-					//2nd triangle
-					else if (rayIntersectsTriangle(posNext, norm, AA1, B1, C1, &t, &u, &v, N))
+					else if (rayIntersectsTriangle(posNext, norm + N1, C1, B1, A1, &t, &u, &v, N))
 					{
-						t += 0.0003;
+						t += 0.0001;
+						norm = norm + N1;
 						contactP = posNext + t * norm;
 						return true;
 					}
+					else if (rayIntersectsTriangle(posNext, norm + N2, C, B, A, &t, &u, &v, N))
+					{
+						t += 0.0001;
+						norm = norm + N2;
+						contactP = posNext + t * norm;
+						return true;
+					}
+					else if (rayIntersectsTriangle(posNext, norm + N2, AA1, B1, C1, &t, &u, &v, N))
+					{
+						t += 0.0001;
+						norm = norm + N2;
+						contactP = posNext + t * norm;
+						return true;
+					}
+
+					////1st triangle
+					//if (rayIntersectsTriangle(posNext, norm, C1, B1, A1, &t, &u, &v, N))
+					//{
+					//	t += 0.0001;
+					//	norm = norm + N;
+					//	contactP = posNext + t * norm;
+					//	return true;
+					//}
+					////2nd triangle
+					//else if (rayIntersectsTriangle(posNext, norm, AA1, B1, C1, &t, &u, &v, N))
+					//{
+					//	t += 0.0001;
+					//	norm = norm + N;
+					//	contactP = posNext + t * norm;
+					//	return true;
+					//}
 				}
 				return false;
 			}
@@ -440,7 +495,7 @@ public:
 				norm = glm::normalize(N);
 				if (rayIntersectsTriangle(posNext, norm, AA, B, C, &t, &u, &v, N))
 				{
-					t += 0.0003;
+					t += 0.0001;
 					contactP = posNext + t * norm;
 					return true;
 				}
@@ -451,17 +506,51 @@ public:
 					glm::vec3 B1(cellIndexNext[0] + 1, GetHeightfieldAt(cellIndexNext[0] + 1, cellIndexNext[1]), cellIndexNext[1]);
 					glm::vec3 C1(cellIndexNext[0], GetHeightfieldAt(cellIndexNext[0], cellIndexNext[1] + 1), cellIndexNext[1] + 1);
 
-					//1st triangle
-					if (rayIntersectsTriangle(posNext, norm, C1, B1, A1, &t, &u, &v, N))
+					////1st triangle
+					//if (rayIntersectsTriangle(posNext, norm, C1, B1, A1, &t, &u, &v, N))
+					//{
+					//	t += 0.0001;
+					//	norm = norm + N;
+					//	contactP = posNext + t * norm;
+					//	return true;
+					//}
+					////2nd triangle
+					//else if (rayIntersectsTriangle(posNext, norm, AA1, B1, C1, &t, &u, &v, N))
+					//{
+					//	t += 0.0001;
+					//	norm = norm + N;
+					//	contactP = posNext + t * norm;
+					//	return true;
+					//}
+
+					glm::vec3 N1 = glm::normalize(glm::cross(B1 - C1, A1 - C1));
+					glm::vec3 N2 = glm::normalize(glm::cross(B1 - AA1, C1 - AA1));
+
+					if (rayIntersectsTriangle(posNext, norm + N1, AA, B, C, &t, &u, &v, N))
 					{
-						t += 0.0003;
+						t += 0.0001;
+						norm = norm + N1;
 						contactP = posNext + t * norm;
 						return true;
 					}
-					//2nd triangle
-					else if (rayIntersectsTriangle(posNext, norm, AA1, B1, C1, &t, &u, &v, N))
+					else if (rayIntersectsTriangle(posNext, norm + N1, C1, B1, A1, &t, &u, &v, N))
 					{
-						t += 0.0003;
+						t += 0.0001;
+						norm = norm + N1;
+						contactP = posNext + t * norm;
+						return true;
+					}
+					else if (rayIntersectsTriangle(posNext, norm + N2, AA, B, C, &t, &u, &v, N))
+					{
+						t += 0.0001;
+						norm = norm + N2;
+						contactP = posNext + t * norm;
+						return true;
+					}
+					else if (rayIntersectsTriangle(posNext, norm + N2, AA1, B1, C1, &t, &u, &v, N))
+					{
+						t += 0.0001;
+						norm = norm + N2;
 						contactP = posNext + t * norm;
 						return true;
 					}
