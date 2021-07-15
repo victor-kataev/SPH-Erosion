@@ -7,6 +7,20 @@
 
 #include "voxel.h"
 
+struct Triangle
+{
+	Triangle(glm::vec3 a, glm::vec3 b, glm::vec3 c)
+		: A(a), B(b), C(c)
+	{
+		norm = glm::normalize(glm::cross(B - A, C - A));
+	}
+
+	glm::vec3 A;
+	glm::vec3 B;
+	glm::vec3 C;
+	glm::vec3 norm;
+};
+
 class Grid
 {
 private:
@@ -173,82 +187,125 @@ public:
 				}*/
 	}
 
-	bool rayIntersectsTriangle(const glm::vec3& pos, const glm::vec3& dir, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C, float* t, float* u, float* v, glm::vec3& N)
+	bool rayIntersectsTriangle(const glm::vec3& pos, const glm::vec3& dir, const Triangle tri, float* t)
 	{
-		glm::vec3 E1 = B - A;
-		glm::vec3 E2 = C - A;
-		N = glm::cross(E1, E2);
-		//glm::vec3 dir = glm::normalize(currParticle.velocity);
+		float u, v;
+		glm::vec3 E1 = tri.B - tri.A;
+		glm::vec3 E2 = tri.C - tri.A;
+		glm::vec3 N = glm::cross(E1, E2);
+		//glm::vec3 N = tri.norm;
 		float det = -glm::dot(dir, N);
 		float invdet = 1.0 / det;
-		glm::vec3 AO = pos - A;
+		glm::vec3 AO = pos - tri.A;
 		glm::vec3 DAO = glm::cross(AO, dir);
-		*u = glm::dot(E2, DAO) * invdet;
-		*v = -glm::dot(E1, DAO) * invdet;
+		u = glm::dot(E2, DAO) * invdet;
+		v = -glm::dot(E1, DAO) * invdet;
 		*t = glm::dot(AO, N) * invdet;
-		return (abs(det) >= 1e-6 && *t >= 0.0 && *u >= 0.0 && *v >= 0.0 && (*u + *v) <= 1.0);
+		return (abs(det) >= 1e-6 && *t >= 0.0 && u >= 0.0 && v >= 0.0 && (u + v) <= 1.0);
 	}
 
-	//bool testCellForCollision(const glm::ivec2& cellIndex, Voxel& currParticle, const glm::vec3& nextPos)
-	//{
-	//	float t, u, v; //where t is R.Origin + t*R.Dir;  u,v - barycentric coords
-	//	glm::vec3 N; //normal
-
-	//	//triangle points in 3D
-	//	glm::vec3 A(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1]), cellIndex[1]);
-	//	glm::vec3 B(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1]), cellIndex[1]);
-	//	glm::vec3 C(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1] + 1), cellIndex[1] + 1);
-	//	
-	//	//first triangle of the cell
-	//	if (rayIntersectsTriangle(currParticle, A, B, C, &t, &u, &v, N))
-	//	{
-	//		glm::vec3 contactP = currParticle.position + t * glm::normalize(currParticle.velocity); //R.Origin + t*R.Dir
-	//		float currNextDistance = sqrt(pow(currParticle.position.x - nextPos.x, 2) + pow(currParticle.position.y - nextPos.y, 2) + pow(currParticle.position.z - nextPos.z, 2));
-	//		float currIntersecDistance = sqrt(pow(currParticle.position.x - contactP.x, 2) + pow(currParticle.position.y - intersectionPoint.y, 2) + pow(currParticle.position.z - intersectionPoint.z, 2));
-	//		//if distance between current particle and next step intersects the triangle
-	//		if (currIntersecDistance <= currNextDistance)
-	//		{
-	//			//depth of penetration
-	//			float d = sqrt(pow(intersectionPoint.x - nextPos.x, 2) + pow(intersectionPoint.y - nextPos.y, 2) + pow(intersectionPoint.z - nextPos.z, 2));
-	//			glm::vec3 n = N;
-	//			n = glm::normalize(n);
-
-	//			currParticle.position = intersectionPoint;
-	//			currParticle.velocity = currParticle.velocity - (1 + FluidSystem::Cr * (d / glm::length(currParticle.velocity))) * (currParticle.velocity * N) * N;
-	//			return true;
-	//		}
-	//		else
-	//		{
-	//			//in order to not check the intersection with another triangle
-	//			return false;
-	//		}
-	//	}
-
-
-	//	//second triangle of the cell
-	//	A = { A.x + 1, A.y, A.z + 1 };
-	//	if (rayIntersectsTriangle(currParticle, A, B, C, &t, &u, &v, N))
-	//	{
-	//		glm::vec3 intersectionPoint = currParticle.position + t * glm::normalize(currParticle.velocity); //R.Origin + t*R.Dir
-	//		float currNextDistance = sqrt(pow(currParticle.position.x - nextPos.x, 2) + pow(currParticle.position.y - nextPos.y, 2) + pow(currParticle.position.z - nextPos.z, 2));
-	//		float currIntersecDistance = sqrt(pow(currParticle.position.x - intersectionPoint.x, 2) + pow(currParticle.position.y - intersectionPoint.y, 2) + pow(currParticle.position.z - intersectionPoint.z, 2));
-	//		//if distance between current particle and next step intersects the triangle
-	//		if (currIntersecDistance <= currNextDistance)
-	//		{
-	//			float d = sqrt(pow(intersectionPoint.x - nextPos.x, 2) + pow(intersectionPoint.y - nextPos.y, 2) + pow(intersectionPoint.z - nextPos.z, 2));
-
-	//			currParticle.position = intersectionPoint;
-	//			currParticle.velocity = currParticle.velocity - (1 + FluidSystem::Cr * (d / glm::length(currParticle.velocity))) * (currParticle.velocity * N) * N;
-	//			return true;
-	//		}
-	//	}
-
-	//	return false;
-	//}
-
-	//3D-DDA
-	bool collision(const glm::vec3& posCurr, glm::vec3& posNext, glm::vec3& velNext, glm::vec3 & contactP, glm::vec3 & norm)
+	std::vector<Triangle> getCellTriangles(glm::vec2 cellIndex)
 	{
+		glm::vec3 A(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1]), cellIndex[1]);
+		glm::vec3 AA(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1] + 1), cellIndex[1] + 1);
+		glm::vec3 B(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1]), cellIndex[1]);
+		glm::vec3 C(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1] + 1), cellIndex[1] + 1);
+		
+		std::vector<Triangle> ret;
+		ret.emplace_back(C, B, A); //ABC = normal is opposite
+		ret.emplace_back(AA, B, C);
+
+		return ret;
+	}
+
+	//3D-DDA (modified)
+	glm::vec2 findAdjacentCell(const glm::vec3& pos, const glm::vec2& dir, glm::vec2 cellIndex)
+	{
+		float t_x, t_z;
+		glm::vec2 deltaT;
+		glm::vec2 cellDim(1, 1);
+		glm::vec2 rayOrigin(pos.x, pos.z);
+
+		if (dir[0] < 0)
+		{
+			deltaT[0] = -cellDim[0] / dir[0];
+			t_x = (floor(rayOrigin[0] / cellDim[0]) * cellDim[0] - rayOrigin[0]) / dir[0];
+		}
+		else if (dir[0] > 0)
+		{
+			deltaT[0] = cellDim[0] / dir[0];
+			t_x = ((floor(rayOrigin[0] / cellDim[0]) + 1) * cellDim[0] - rayOrigin[0]) / dir[0];
+		}
+		else
+		{
+			deltaT[0] = 0;
+			t_x = INFINITY;
+		}
+
+		if (dir[1] < 0)
+		{
+			deltaT[1] = -cellDim[1] / dir[1];
+			t_z = (floor(rayOrigin[1] / cellDim[1]) * cellDim[1] - rayOrigin[1]) / dir[1];
+		}
+		else if (dir[1] > 0)
+		{
+			deltaT[1] = cellDim[1] / dir[1];
+			t_z = ((floor(rayOrigin[1] / cellDim[1]) + 1) * cellDim[1] - rayOrigin[1]) / dir[1];
+		}
+		else
+		{
+			deltaT[1] = 0;
+			t_z = INFINITY;
+		}
+
+		if (t_x < t_z)
+		{
+			if (dir[0] < 0)
+				cellIndex[0]--;
+			else if (dir[0] > 0)
+				cellIndex[0]++;
+		}
+		else
+		{
+			if (dir[1] < 0)
+				cellIndex[1]--;
+			else if (dir[1] > 0)
+				cellIndex[1]++;
+		}
+
+		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ)
+			cellIndex = glm::vec2(-1, -1);
+
+		return cellIndex;
+	}
+
+	bool mappedBetweenTriangles(const Triangle tri1, const Triangle tri2, const glm::vec3 & pos, glm::vec3& cp, glm::vec3& norm)
+	{
+		float t;
+
+		if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri1, &t))
+		{
+			t += 0.0001;
+			norm = glm::normalize(tri1.norm + tri2.norm);
+			cp = pos + t * norm;
+			return true;
+		}
+		else if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri2, &t))
+		{
+			t += 0.0001;
+			norm = glm::normalize(tri1.norm + tri2.norm);
+			cp = pos + t * norm;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool collision(const glm::vec3& posCurr, const glm::vec3& posNext, const glm::vec3& velNext, glm::vec3 & contactP, glm::vec3 & norm)
+	{
+		float t; //where t is R.Origin + t*R.Dir
+		glm::vec3 dir = glm::normalize(velNext);
+
 		glm::ivec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
 		glm::ivec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
 		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX-1 || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ-1
@@ -258,308 +315,130 @@ public:
 		//if in the same cell
 		if (cellIndex == cellIndexNext)
 		{
-			float t, u, v; //where t is R.Origin + t*R.Dir;  u,v - barycentric coords
-			glm::vec3 N; //normal
-			glm::vec3 dir = glm::normalize(velNext);
+			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
+			Triangle ABC = cellTriangles[0];
+			Triangle AABC = cellTriangles[1];
 
-			//triangle points in 3D
-			glm::vec3 A(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1]), cellIndex[1]);
-			glm::vec3 AA(cellIndex[0]+1, GetHeightfieldAt(cellIndex[0]+1, cellIndex[1]+1), cellIndex[1]+1);
-			glm::vec3 B(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1]), cellIndex[1]);
-			glm::vec3 C(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1] + 1), cellIndex[1] + 1);
-
-			//the cell is built of two triangles
+			//the cell is built out of two triangles
 			//check intersection with both and try to map on appropriate one
-			if (rayIntersectsTriangle(posCurr, dir, C, B, A, &t, &u, &v, N))
+			if (rayIntersectsTriangle(posCurr, dir, ABC, &t))
 			{
-				norm = glm::normalize(N);
 				//try to map on the same triangle
-				if (rayIntersectsTriangle(posNext, norm, C, B, A, &t, &u, &v, N))
+				if (rayIntersectsTriangle(posNext, ABC.norm, ABC, &t))
 				{
 					t += 0.0001;
+					norm = ABC.norm;
 					contactP = posNext + t * norm;
 					return true;
 				}
+				//try to map between triangles in the same cell
+				/*else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+				{
+					return true;
+				}*/
+				//try to map between triangles with adjacent cell
 				else
-				{	//try to map on second triangle
-					glm::vec3 N1 = glm::normalize(glm::cross(B - AA, C - AA));
-					if (rayIntersectsTriangle(posNext, norm + N1, C, B, A, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N1;
-						contactP = posNext + t * norm;
+				{
+					glm::vec2 adjCellIndex = findAdjacentCell(posNext, ABC.norm, cellIndex);
+					if (adjCellIndex == glm::vec2(-1, -1))
+						return false;
+					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
+					Triangle ABC_adj = adjCellTriangles[0];
+					Triangle AABC_adj = adjCellTriangles[1];
+
+					if (mappedBetweenTriangles(ABC, ABC_adj, posNext, contactP, norm))
 						return true;
-					}
-					else if (rayIntersectsTriangle(posNext, norm + N1, AA, B, C, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N1;
-						contactP = posNext + t * norm;
+					else if (mappedBetweenTriangles(ABC, AABC_adj, posNext, contactP, norm))
 						return true;
-					}
 				}
-				//particle didn't go through collision did not occur
-				return false;
 			}
-			else if (rayIntersectsTriangle(posCurr, dir, AA, B, C, &t, &u, &v, N))
+			else if (rayIntersectsTriangle(posCurr, dir, AABC, &t))
 			{
-				norm = glm::normalize(N);
-				if (rayIntersectsTriangle(posNext, norm, AA, B, C, &t, &u, &v, N))
+				//try to map on the same triangle
+				if (rayIntersectsTriangle(posNext, AABC.norm, AABC, &t))
 				{
 					t += 0.0001;
+					norm = AABC.norm;
 					contactP = posNext + t * norm;
 					return true;
 				}
+				//try to map between triangles in the same cell
+				/*else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+				{
+					return true;
+				}*/
+				//try to map between triangles with adjacent cell
 				else
 				{
-					//try to map on second triangle
-					glm::vec3 N1 = glm::normalize(glm::cross(B - C, A - C));
-					if (rayIntersectsTriangle(posNext, norm + N1, C, B, A, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N1;
-						contactP = posNext + t * norm;
+					glm::vec2 adjCellIndex = findAdjacentCell(posNext, AABC.norm, cellIndex);
+					if (adjCellIndex == glm::vec2(-1, -1))
+						return false;
+					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
+					Triangle ABC_adj = adjCellTriangles[0];
+					Triangle AABC_adj = adjCellTriangles[1];
+
+					if (mappedBetweenTriangles(AABC, ABC_adj, posNext, contactP, norm))
 						return true;
-					}
-					else if (rayIntersectsTriangle(posNext, norm + N1, AA, B, C, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N1;
-						contactP = posNext + t * norm;
+					else if (mappedBetweenTriangles(AABC, AABC_adj, posNext, contactP, norm))
 						return true;
-					}
 				}
-				return false;
+			}
+			//particle did not go through collision did not occur
+			return false;
+		}
+		else
+		{
+			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
+			Triangle ABC_poscurr = cellTriangles[0];
+			Triangle AABC_poscurr = cellTriangles[1];
+			std::vector<Triangle> cellNextTriangles = getCellTriangles(cellIndexNext);
+			Triangle ABC_posnext = cellNextTriangles[0];
+			Triangle AABC_posnext = cellNextTriangles[1];
+
+			if (rayIntersectsTriangle(posCurr, dir, ABC_poscurr, &t))
+			{
+				if (mappedBetweenTriangles(ABC_poscurr, ABC_posnext, posNext, contactP, norm))
+					return true;
+				else if (mappedBetweenTriangles(ABC_poscurr, AABC_posnext, posNext, contactP, norm))
+					return true;
+			}
+			else if (rayIntersectsTriangle(posCurr, dir, AABC_poscurr, &t))
+			{
+				if (mappedBetweenTriangles(AABC_poscurr, ABC_posnext, posNext, contactP, norm))
+					return true;
+				else if (mappedBetweenTriangles(AABC_poscurr, AABC_posnext, posNext, contactP, norm))
+					return true;
+			}
+			else if (rayIntersectsTriangle(posCurr, dir, ABC_posnext, &t))
+			{
+				if (rayIntersectsTriangle(posNext, ABC_posnext.norm, ABC_posnext, &t))
+				{
+					t += 0.0001;
+					norm = ABC_posnext.norm;
+					contactP = posNext + t * norm;
+					return true;
+				}
+				if (mappedBetweenTriangles(ABC_posnext, ABC_poscurr, posNext, contactP, norm))
+					return true;
+				else if (mappedBetweenTriangles(ABC_posnext, AABC_poscurr, posNext, contactP, norm))
+					return true;
+			}
+			else if (rayIntersectsTriangle(posCurr, dir, AABC_posnext, &t))
+			{
+				if (rayIntersectsTriangle(posNext, AABC_posnext.norm, AABC_posnext, &t))
+				{
+					t += 0.0001;
+					norm = AABC_posnext.norm;
+					contactP = posNext + t * norm;
+					return true;
+				}
+				if (mappedBetweenTriangles(AABC_posnext, ABC_poscurr, posNext, contactP, norm))
+					return true;
+				else if (mappedBetweenTriangles(AABC_posnext, AABC_poscurr, posNext, contactP, norm))
+					return true;
 			}
 			return false;
 		}
-
-		glm::vec2 vel2D(velNext.x, velNext.z);
-		glm::vec2 rayDirection = glm::normalize(vel2D);
-		glm::vec2 rayOrigin(posCurr.x, posCurr.z);
-		glm::vec2 cellDim(1, 1);
-		glm::vec2 deltaT;
-		float t_x, t_z;
-
-		if (rayDirection[0] < 0)
-		{
-			deltaT[0] = -cellDim[0] / rayDirection[0];
-			t_x = (floor(rayOrigin[0] / cellDim[0]) * cellDim[0] - rayOrigin[0]) / rayDirection[0];
-		}
-		else if (rayDirection[0] > 0)
-		{
-			deltaT[0] = cellDim[0] / rayDirection[0];
-			t_x = ((floor(rayOrigin[0] / cellDim[0]) + 1) * cellDim[0] - rayOrigin[0]) / rayDirection[0];
-		}
-		else
-		{
-			deltaT[0] = 0;
-			t_x = INFINITY;
-		}
-
-		if (rayDirection[1] < 0)
-		{
-			deltaT[1] = -cellDim[1] / rayDirection[1];
-			t_z = (floor(rayOrigin[1] / cellDim[1]) * cellDim[1] - rayOrigin[1]) / rayDirection[1];
-		}
-		else if (rayDirection[1] > 0)
-		{
-			deltaT[1] = cellDim[1] / rayDirection[1];
-			t_z = ((floor(rayOrigin[1] / cellDim[1]) + 1) * cellDim[1] - rayOrigin[1]) / rayDirection[1];
-		}
-		else
-		{
-			deltaT[1] = 0;
-			t_z = INFINITY;
-		}
-
-		float t = 0;
-		std::vector<glm::ivec2> cellsToTest;
-		cellsToTest.push_back(cellIndex);
-		while (1)
-		{
-			if (t_x < t_z)
-			{
-				t = t_x;
-				t_x += deltaT[0];
-				if (rayDirection[0] < 0)
-					cellIndex[0]--;
-				else if(rayDirection[0] > 0)
-					cellIndex[0]++;
-			}
-			else
-			{
-				t = t_z;
-				t_z += deltaT[1];
-				if (rayDirection[1] < 0)
-					cellIndex[1]--;
-				else if (rayDirection[1] > 0)
-					cellIndex[1]++;
-			}
-
-			if (cellIndex == cellIndexNext)
-			{
-				cellsToTest.push_back(cellIndex);
-				break;
-			}
-
-			if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ)
-				break;
-
-			cellsToTest.push_back(cellIndex);
-		}
-
-		for (const auto& cell : cellsToTest)
-		{
-			float t, u, v; //where t is R.Origin + t*R.Dir;  u,v - barycentric coords
-			glm::vec3 N; //normal
-			glm::vec3 dir = glm::normalize(velNext);
-
-			glm::vec3 A(cell[0], GetHeightfieldAt(cell[0], cell[1]), cell[1]);
-			glm::vec3 AA(cell[0]+1, GetHeightfieldAt(cell[0]+1, cell[1]+1), cell[1]+1);
-			glm::vec3 B(cell[0] + 1, GetHeightfieldAt(cell[0] + 1, cell[1]), cell[1]);
-			glm::vec3 C(cell[0], GetHeightfieldAt(cell[0], cell[1] + 1), cell[1] + 1);
-
-			//1st triangle
-			if (rayIntersectsTriangle(posCurr, dir, C, B, A, &t, &u, &v, N))
-			{
-				norm = glm::normalize(N);
-				if (rayIntersectsTriangle(posNext, norm, C, B, A, &t, &u, &v, N))
-				{
-					t += 0.0001;
-					contactP = posNext + t * norm;
-					return true;
-				}
-				else
-				{
-					glm::vec3 A1(cellIndexNext[0], GetHeightfieldAt(cellIndexNext[0], cellIndexNext[1]), cellIndexNext[1]);
-					glm::vec3 AA1(cellIndexNext[0] + 1, GetHeightfieldAt(cellIndexNext[0] + 1, cellIndexNext[1] + 1), cellIndexNext[1] + 1);
-					glm::vec3 B1(cellIndexNext[0] + 1, GetHeightfieldAt(cellIndexNext[0] + 1, cellIndexNext[1]), cellIndexNext[1]);
-					glm::vec3 C1(cellIndexNext[0], GetHeightfieldAt(cellIndexNext[0], cellIndexNext[1] + 1), cellIndexNext[1] + 1);
-
-					//glm::vec3 E1 = B - A;
-					//glm::vec3 E2 = C - A;
-					glm::vec3 N1 = glm::normalize(glm::cross(B1 - C1, A1 - C1));
-					glm::vec3 N2 = glm::normalize(glm::cross(B1 - AA1, C1 - AA1));
-
-					if (rayIntersectsTriangle(posNext, norm + N1, C, B, A, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N1;
-						contactP = posNext + t * norm;
-						return true;
-					}
-					else if (rayIntersectsTriangle(posNext, norm + N1, C1, B1, A1, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N1;
-						contactP = posNext + t * norm;
-						return true;
-					}
-					else if (rayIntersectsTriangle(posNext, norm + N2, C, B, A, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N2;
-						contactP = posNext + t * norm;
-						return true;
-					}
-					else if (rayIntersectsTriangle(posNext, norm + N2, AA1, B1, C1, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N2;
-						contactP = posNext + t * norm;
-						return true;
-					}
-
-					////1st triangle
-					//if (rayIntersectsTriangle(posNext, norm, C1, B1, A1, &t, &u, &v, N))
-					//{
-					//	t += 0.0001;
-					//	norm = norm + N;
-					//	contactP = posNext + t * norm;
-					//	return true;
-					//}
-					////2nd triangle
-					//else if (rayIntersectsTriangle(posNext, norm, AA1, B1, C1, &t, &u, &v, N))
-					//{
-					//	t += 0.0001;
-					//	norm = norm + N;
-					//	contactP = posNext + t * norm;
-					//	return true;
-					//}
-				}
-				return false;
-			}
-			else if (rayIntersectsTriangle(posCurr, dir, AA, B, C, &t, &u, &v, N))
-			{
-				norm = glm::normalize(N);
-				if (rayIntersectsTriangle(posNext, norm, AA, B, C, &t, &u, &v, N))
-				{
-					t += 0.0001;
-					contactP = posNext + t * norm;
-					return true;
-				}
-				else
-				{
-					glm::vec3 A1(cellIndexNext[0], GetHeightfieldAt(cellIndexNext[0], cellIndexNext[1]), cellIndexNext[1]);
-					glm::vec3 AA1(cellIndexNext[0] + 1, GetHeightfieldAt(cellIndexNext[0] + 1, cellIndexNext[1] + 1), cellIndexNext[1] + 1);
-					glm::vec3 B1(cellIndexNext[0] + 1, GetHeightfieldAt(cellIndexNext[0] + 1, cellIndexNext[1]), cellIndexNext[1]);
-					glm::vec3 C1(cellIndexNext[0], GetHeightfieldAt(cellIndexNext[0], cellIndexNext[1] + 1), cellIndexNext[1] + 1);
-
-					////1st triangle
-					//if (rayIntersectsTriangle(posNext, norm, C1, B1, A1, &t, &u, &v, N))
-					//{
-					//	t += 0.0001;
-					//	norm = norm + N;
-					//	contactP = posNext + t * norm;
-					//	return true;
-					//}
-					////2nd triangle
-					//else if (rayIntersectsTriangle(posNext, norm, AA1, B1, C1, &t, &u, &v, N))
-					//{
-					//	t += 0.0001;
-					//	norm = norm + N;
-					//	contactP = posNext + t * norm;
-					//	return true;
-					//}
-
-					glm::vec3 N1 = glm::normalize(glm::cross(B1 - C1, A1 - C1));
-					glm::vec3 N2 = glm::normalize(glm::cross(B1 - AA1, C1 - AA1));
-
-					if (rayIntersectsTriangle(posNext, norm + N1, AA, B, C, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N1;
-						contactP = posNext + t * norm;
-						return true;
-					}
-					else if (rayIntersectsTriangle(posNext, norm + N1, C1, B1, A1, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N1;
-						contactP = posNext + t * norm;
-						return true;
-					}
-					else if (rayIntersectsTriangle(posNext, norm + N2, AA, B, C, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N2;
-						contactP = posNext + t * norm;
-						return true;
-					}
-					else if (rayIntersectsTriangle(posNext, norm + N2, AA1, B1, C1, &t, &u, &v, N))
-					{
-						t += 0.0001;
-						norm = norm + N2;
-						contactP = posNext + t * norm;
-						return true;
-					}
-				}
-				return false;
-			}
-		}
-
-		return false;
 	}
 
 	std::vector<unsigned int> GetIndices()

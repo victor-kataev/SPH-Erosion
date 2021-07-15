@@ -95,9 +95,7 @@ int main()
     
     float dimensions[3] = { 50, 355, 50};
     Grid grid(dimensions[0], dimensions[1], dimensions[2]);
-    //FluidSystem fluid(glm::vec3(0, 265, 100), glm::vec3(100, 10, 100));
     grid.LoadHeightfield(img);
-    //grid.LoadFluid(fluid);
     stbi_image_free(img);
 
     grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
@@ -163,10 +161,11 @@ int main()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
-    fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
-    //camera.PlaceTo(glm::vec3(fluidsph.GetOrigin().x, fluidsph.GetOrigin().y, 3.0));
-    camera.PlaceTo(glm::vec3(33.0, 125.1, 45.0));
-    fluidsph.Initialize(1000);
+    //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
+    fluidsph.SetOrigin(glm::vec3(15.9, 255.5, 15.2));
+    //fluidsph.SetOrigin(glm::vec3(30.0, 255.5, 30.2));
+    camera.PlaceTo(glm::vec3(15.5, 255.1, 18.0));
+    fluidsph.Initialize(3);
     Shape shape;
     shape.CreateCube();
     shape.CreateBowl();

@@ -232,7 +232,7 @@ private:
 	//leap-frog + collision handling
 	void advance(Grid & grid)
 	{
-#pragma omp parallel for
+//#pragma omp parallel for
 		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
