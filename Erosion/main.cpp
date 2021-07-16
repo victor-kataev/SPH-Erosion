@@ -41,6 +41,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void checkGLError(const char* where, int line);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
 #define CHECK_GL_ERROR() do { checkGLError(__FUNCTION__, __LINE__); } while (0)
 
@@ -67,7 +68,8 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
-    
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -162,10 +164,11 @@ int main()
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
     //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
-    fluidsph.SetOrigin(glm::vec3(15.9, 255.5, 15.2));
+    fluidsph.SetOrigin(glm::vec3(0.0));
     //fluidsph.SetOrigin(glm::vec3(30.0, 255.5, 30.2));
-    camera.PlaceTo(glm::vec3(15.5, 255.1, 18.0));
-    fluidsph.Initialize(3);
+    //camera.PlaceTo(glm::vec3(33.0, 125.0, 43.5));
+    camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
+    fluidsph.Initialize(2);
     Shape shape;
     shape.CreateCube();
     shape.CreateBowl();
@@ -294,8 +297,8 @@ int main()
         shader.setVec3("myColor", glm::vec3(0.7, 0.8, 0.5));
         shape.DrawBowl();
 
-        shader.setVec3("myColor", glm::vec3(0.0, 1.0, 1.0));
-        hsphere.Draw();
+        //shader.setVec3("myColor", glm::vec3(0.0, 1.0, 1.0));
+        //hsphere.Draw();
 
 
         shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
@@ -427,12 +430,12 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
         pause = true;
-    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE && pause)
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE && pause)
     {
         if (fluidsph.GetDeltaTime() == 0)
-            fluidsph.SetDeltaTime(0.001f);
+            fluidsph.SetDeltaTime(0.01f);
         else
             fluidsph.SetDeltaTime(0.0f);
         pause = false;
@@ -440,13 +443,27 @@ void processInput(GLFWwindow* window)
 
     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
         fluidsph.PrintCoords();
-
-
+    
     /*std::cout << "Position: "
         << camera.GetPosition().x << ' ' << camera.GetPosition().y << ' ' << camera.GetPosition().z
         << std::endl
         << "Front: "
         << camera.GetFront().x << ' ' << camera.GetFront().y << ' ' << camera.GetFront().z << std::endl;*/
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+    {
+        fluidsph.Reset();
+        std::cout << "Particles reseted\n";
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        fluidsph.AddParticles(125);
+        std::cout << "Added 125 particles\n";
+    }
 }
 
 void checkGLError(const char* where, int line)

@@ -72,6 +72,7 @@ public:
 	void Initialize(int nParts)
 	{
 		num = nParts;
+		init_num = nParts;
 
 		for (int i = 0; i < cbrt(num); i++)
 			for (int j = 0; j < cbrt(num); j++)
@@ -215,6 +216,33 @@ public:
 			std::cout << "[" << i << "] " << m_Particles[i].Position.x << ' ' << m_Particles[i].Position.y << ' ' << m_Particles[i].Position.z << std::endl;
 	}
 
+	void AddParticles(int n) {
+		float offset = -(cbrt(n) / 2 * 0.15f);
+		for (int i = 0; i < cbrt(n); i++) {
+			for (int j = 0; j < cbrt(n); j++) {
+				for (int k = 0; k < cbrt(n); k++) {
+					float x = -0.2 + i * 0.025;
+					float y = -0.05 + j * 0.025;
+					float z = -0.15 + k * 0.025;
+					FluidParticle tmp;
+					tmp.Position = glm::vec3(x+ m_Origin.x, y+ m_Origin.y, z+ m_Origin.z);
+					tmp.Velocity = glm::vec3(0.0, 0.0, 0.0);
+					tmp.Acceleration = glm::vec3(0.0);
+					tmp.Mass = m;
+					m_Particles.push_back(tmp);
+				}
+			}
+		}
+		num += n;
+	}
+
+	void Reset()
+	{
+		m_Particles.clear();
+		num = 0;
+		AddParticles(init_num);
+	}
+
 private:
 
 	std::vector<float> getVertices()
@@ -232,7 +260,7 @@ private:
 	//leap-frog + collision handling
 	void advance(Grid & grid)
 	{
-//#pragma omp parallel for
+#pragma omp parallel for
 		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
@@ -258,10 +286,17 @@ private:
 
 			glm::vec3 contactP;
 			glm::vec3 norm;
-			if (grid.collision(currPart.Position, posNext, velNext, contactP, norm))
+			/*if (grid.collision(currPart.Position, posNext, velNext, contactP, norm))
 			{
 				float d = glm::length(posNext - contactP);
 				velNext = velNext - (float)(1 + cR * (d / (m_Dt * glm::length(velNext)))) * glm::dot(velNext, norm) * norm;
+				posNext = contactP;
+			}*/
+
+			if (collisionS(posNext, contactP, norm))
+			{
+				float d = glm::length(posNext - contactP);
+				velNext = velNext - (float)(1 + cR * d / (m_Dt * glm::length(velNext))) * glm::dot(velNext, norm) * norm;
 				posNext = contactP;
 			}
 
@@ -270,6 +305,62 @@ private:
 			
 		}
 	}
+
+	bool collisionS(glm::vec3 pos, glm::vec3& contactP, glm::vec3& normal) {
+		if (abs(pos.x) < len && abs(pos.y) < len && abs(pos.z) < len) {
+			return false;
+		}
+		float x = pos.x;
+		float y = pos.y;
+		float z = pos.z;
+		char max = 'x';
+		float maxP = abs(x);
+		if (maxP < abs(y)) {
+			max = 'y';
+			maxP = abs(y);
+		}
+		if (maxP < abs(z)) {
+			max = 'z';
+			maxP = abs(z);
+		}
+		contactP = pos;
+		switch (max) {
+		case 'x':
+			if (x < -len) {
+				contactP.x = -len;
+				normal = glm::vec3(1, 0, 0);
+			}
+			else {
+				contactP.x = len;
+				normal = glm::vec3(-1, 0, 0);
+			}
+			break;
+		case'y':
+			if (y < -len) {
+				contactP.y = -len;
+				//print(contactP);
+				normal = glm::vec3(0, 1, 0);
+			}
+			else {
+				contactP.y = len;
+				normal = glm::vec3(0, -1, 0);
+			}
+			break;
+		case'z':
+			if (z < -len) {
+				contactP.z = -len;
+				normal = glm::vec3(0, 0, 1);
+			}
+			else {
+				contactP.z = len;
+				normal = glm::vec3(0, 0, -1);
+			}
+			break;
+		}
+		return true;
+	}
+
+	
 
 	
 	void handleCollision(const glm::vec3 & posCurr,  glm::vec3& posNext, glm::vec3 & velNext, const Mesh terrain)
@@ -470,9 +561,11 @@ private:
 		//const float h = 0.0457;
 		float h;
 		int num = 10;
+		int init_num;
 		float vol;
 		float smoothRadius;
 		float s = 1;
+		float len = 0.2f;
 
 private:
 	std::vector<FluidParticle> m_Particles;

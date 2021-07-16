@@ -171,20 +171,6 @@ public:
 				surfaceParts.push_back(normal.z);
 			}
 		genIndices();
-		/*for (int y = 0; y < m_Fluid.m_Dim.y; y++)
-			for(int z = 0; z < m_Fluid.m_Dim.z; z++)
-				for(int x = 0; x < m_Fluid.m_Dim.x; x++)
-				{
-					Voxel& fluid_voxel = m_Fluid.m_Volume[x + (int)m_Fluid.m_Dim.x * (y + (int)m_Fluid.m_Dim.y * z)];
-					if (fluid_voxel.position.x >= 0 && fluid_voxel.position.x < m_Dim.x &&
-						fluid_voxel.position.y >= 0 && fluid_voxel.position.y < m_Dim.y &&
-						fluid_voxel.position.z >= 0 && fluid_voxel.position.z < m_Dim.z)
-					{
-						fluidParts.push_back((float)fluid_voxel.position.x / 100.0f);
-						fluidParts.push_back((float)fluid_voxel.position.y / 100.0f);
-						fluidParts.push_back((float)fluid_voxel.position.z / 100.0f);
-					}
-				}*/
 	}
 
 	bool rayIntersectsTriangle(const glm::vec3& pos, const glm::vec3& dir, const Triangle tri, float* t)
@@ -219,22 +205,23 @@ public:
 	}
 
 	//3D-DDA (modified)
-	glm::vec2 findAdjacentCell(const glm::vec3& pos, const glm::vec2& dir, glm::vec2 cellIndex)
+	glm::vec2 findAdjacentCell(const glm::vec3& pos, const glm::vec3& dir, glm::vec2 cellIndex)
 	{
 		float t_x, t_z;
 		glm::vec2 deltaT;
 		glm::vec2 cellDim(1, 1);
 		glm::vec2 rayOrigin(pos.x, pos.z);
+		glm::vec2 dir2D(dir.x, dir.z);
 
-		if (dir[0] < 0)
+		if (dir2D[0] < 0)
 		{
-			deltaT[0] = -cellDim[0] / dir[0];
-			t_x = (floor(rayOrigin[0] / cellDim[0]) * cellDim[0] - rayOrigin[0]) / dir[0];
+			deltaT[0] = -cellDim[0] / dir2D[0];
+			t_x = (floor(rayOrigin[0] / cellDim[0]) * cellDim[0] - rayOrigin[0]) / dir2D[0];
 		}
-		else if (dir[0] > 0)
+		else if (dir2D[0] > 0)
 		{
-			deltaT[0] = cellDim[0] / dir[0];
-			t_x = ((floor(rayOrigin[0] / cellDim[0]) + 1) * cellDim[0] - rayOrigin[0]) / dir[0];
+			deltaT[0] = cellDim[0] / dir2D[0];
+			t_x = ((floor(rayOrigin[0] / cellDim[0]) + 1) * cellDim[0] - rayOrigin[0]) / dir2D[0];
 		}
 		else
 		{
@@ -242,15 +229,15 @@ public:
 			t_x = INFINITY;
 		}
 
-		if (dir[1] < 0)
+		if (dir2D[1] < 0)
 		{
-			deltaT[1] = -cellDim[1] / dir[1];
-			t_z = (floor(rayOrigin[1] / cellDim[1]) * cellDim[1] - rayOrigin[1]) / dir[1];
+			deltaT[1] = -cellDim[1] / dir2D[1];
+			t_z = (floor(rayOrigin[1] / cellDim[1]) * cellDim[1] - rayOrigin[1]) / dir2D[1];
 		}
-		else if (dir[1] > 0)
+		else if (dir2D[1] > 0)
 		{
-			deltaT[1] = cellDim[1] / dir[1];
-			t_z = ((floor(rayOrigin[1] / cellDim[1]) + 1) * cellDim[1] - rayOrigin[1]) / dir[1];
+			deltaT[1] = cellDim[1] / dir2D[1];
+			t_z = ((floor(rayOrigin[1] / cellDim[1]) + 1) * cellDim[1] - rayOrigin[1]) / dir2D[1];
 		}
 		else
 		{
@@ -260,16 +247,16 @@ public:
 
 		if (t_x < t_z)
 		{
-			if (dir[0] < 0)
+			if (dir2D[0] < 0)
 				cellIndex[0]--;
-			else if (dir[0] > 0)
+			else if (dir2D[0] > 0)
 				cellIndex[0]++;
 		}
 		else
 		{
-			if (dir[1] < 0)
+			if (dir2D[1] < 0)
 				cellIndex[1]--;
-			else if (dir[1] > 0)
+			else if (dir2D[1] > 0)
 				cellIndex[1]++;
 		}
 
@@ -285,14 +272,14 @@ public:
 
 		if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri1, &t))
 		{
-			t += 0.0001;
+			t += 0.0005;
 			norm = glm::normalize(tri1.norm + tri2.norm);
 			cp = pos + t * norm;
 			return true;
 		}
 		else if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri2, &t))
 		{
-			t += 0.0001;
+			t += 0.0005;
 			norm = glm::normalize(tri1.norm + tri2.norm);
 			cp = pos + t * norm;
 			return true;
@@ -326,16 +313,16 @@ public:
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, ABC.norm, ABC, &t))
 				{
-					t += 0.0001;
+					t += 0.0005;
 					norm = ABC.norm;
 					contactP = posNext + t * norm;
 					return true;
 				}
 				//try to map between triangles in the same cell
-				/*else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+				else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
 				{
 					return true;
-				}*/
+				}
 				//try to map between triangles with adjacent cell
 				else
 				{
@@ -357,16 +344,16 @@ public:
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, AABC.norm, AABC, &t))
 				{
-					t += 0.0001;
+					t += 0.0005;
 					norm = AABC.norm;
 					contactP = posNext + t * norm;
 					return true;
 				}
 				//try to map between triangles in the same cell
-				/*else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+				else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
 				{
 					return true;
-				}*/
+				}
 				//try to map between triangles with adjacent cell
 				else
 				{
@@ -413,7 +400,7 @@ public:
 			{
 				if (rayIntersectsTriangle(posNext, ABC_posnext.norm, ABC_posnext, &t))
 				{
-					t += 0.0001;
+					t += 0.0005;
 					norm = ABC_posnext.norm;
 					contactP = posNext + t * norm;
 					return true;
@@ -427,7 +414,7 @@ public:
 			{
 				if (rayIntersectsTriangle(posNext, AABC_posnext.norm, AABC_posnext, &t))
 				{
-					t += 0.0001;
+					t += 0.0005;
 					norm = AABC_posnext.norm;
 					contactP = posNext + t * norm;
 					return true;
