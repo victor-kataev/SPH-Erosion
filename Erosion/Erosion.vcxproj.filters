@@ -80,6 +80,15 @@
     <ClInclude Include="voxel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shapes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="vertex.glsl" />

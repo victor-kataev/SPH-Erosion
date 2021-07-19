@@ -17,7 +17,7 @@ enum Camera_Movement {
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 2.5f;
+const float SPEED = 3.5f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
@@ -57,6 +57,11 @@ public:
         Yaw = yaw;
         Pitch = pitch;
         updateCameraVectors();
+    }
+
+    void PlaceTo(const glm::vec3 &pos)
+    {
+        Position = pos;
     }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix

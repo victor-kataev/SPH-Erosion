@@ -1,56 +1,25 @@
-#pragma once
+﻿#pragma once
 #include <glm/glm.hpp>
 #include <vector>
 #include <list>
 #include <omp.h>
 #include <cstring>
 
-#include "fluid_system.h"
+#include "voxel.h"
 
-class Graph
+struct Triangle
 {
-public:
-	Graph(int dimx, int dimz)
-		: m_DimX(dimx), m_DimZ(dimz)
+	Triangle(glm::vec3 a, glm::vec3 b, glm::vec3 c)
+		: A(a), B(b), C(c)
 	{
-		m_adjacents = new std::vector<std::pair<int, int>>*[dimz];
-		for(int i = 0; i < dimx; i++)
-			m_adjacents[i] = new std::vector<std::pair<int, int>>[dimx];
+		norm = glm::normalize(glm::cross(B - A, C - A));
 	}
 
-	~Graph()
-	{
-		for (int i = 0; i < m_DimZ; i++)
-			delete[] m_adjacents[i];
-		delete[] m_adjacents;
-	}
-
-	void AddEdge(int x1, int z1, int x2, int z2)
-	{
-		if (x2 >= m_DimX || x2 < 0 || z2 >= m_DimZ || z2 < 0)
-			return;
-
-		std::pair<int, int> coords2 = std::make_pair<int, int>((int)x2, (int)z2);
-		auto found = std::find(m_adjacents[x1][z1].begin(), m_adjacents[x1][z1].end(), coords2);
-		if (found != m_adjacents[x1][z1].end())
-			return;
-		std::pair<int, int> coords1 = std::make_pair<int, int>((int)x1, (int)z1);
-		m_adjacents[x1][z1].push_back(coords2);
-		m_adjacents[x2][z2].push_back(coords1);
-	}
-
-	std::vector<std::pair<int, int>> GetAdjacents(int x, int z) const
-	{
-		return m_adjacents[x][z];
-	}
-
-private:
-	std::vector<std::pair<int, int>> **m_adjacents;
-	int m_DimX;
-	int m_DimZ;
-
+	glm::vec3 A;
+	glm::vec3 B;
+	glm::vec3 C;
+	glm::vec3 norm;
 };
-
 
 class Grid
 {
@@ -63,7 +32,7 @@ private:
 	int m_filled_voxels;
 
 	Voxel* m_Grid;
-	FluidSystem m_Fluid;
+	//FluidSystem m_Fluid;
 
 	std::vector<float> surfaceParts;
 	std::vector<float> fluidParts;
@@ -83,6 +52,7 @@ private:
 	{
 		delete[] m_Grid;
 		surfaceParts.clear();
+		fluidParts.clear();
 	}
 
 	void createGrid(int dimx, int dimy, int dimz)
@@ -129,11 +99,6 @@ public:
 		HeightFieldMax();
 	}
 
-	void LoadFluid(const FluidSystem& fs)
-	{
-		m_Fluid = fs;
-	}
-
 	unsigned char GetHeightfieldAt(int x, int y)
 	{
 		return m_heightfield.map[m_heightfield.dimY * x + y];
@@ -147,19 +112,6 @@ public:
 				max = m_heightfield.map[i];
 		std::cout << "Heightfield max = " << max << std::endl;
 	}
-
-	//void buildGraph()
-	//{
-	//	
-	//	for(int z = 0; z < m_Dim.z; z++)
-	//		for (int x = 0; x < m_Dim.x; x++)
-	//		{
-	//			m_Graph.AddEdge(x, z, x + 1, z);
-	//			m_Graph.AddEdge(x, z, x, z + 1);
-	//			m_Graph.AddEdge(x, z, x - 1, z);
-	//			m_Graph.AddEdge(x, z, x, z - 1);
-	//		}
-	//}
 
 	void genIndices()
 	{
@@ -181,77 +133,6 @@ public:
 			}
 	}
 
-	//void generateIndices()
-	//{
-	//	bool **visited = new bool*[m_DimZ];
-	//	for (int i = 0; i < m_DimZ; i++)
-	//	{
-	//		visited[i] = new bool[m_DimX];
-	//		for (int j = 0; j < m_DimX; j++)
-	//			visited[i][j] = false;
-	//	}
-
-	//	std::list<std::pair<int, int>> queue;
-
-	//	visited[0][0] = true;
-	//	queue.push_back(std::pair<int, int>(0, 0));
-	//	std::list<unsigned int> triangle;
-
-	//	while (!queue.empty())
-	//	{
-	//		std::pair<int, int> current = queue.front();
-	//		queue.pop_front();
-	//		triangle.push_back(current.second * m_DimX + current.first);
-	//		
-	//		if (triangle.size() == 3)
-	//		{
-	//			for (unsigned int index : triangle)
-	//				indices.push_back(index);
-
-	//			triangle.pop_front();
-	//		}
-
-	//		for (const auto& adj : m_Graph.GetAdjacents(current.first, current.second))
-	//		{
-	//			if (!visited[adj.first][adj.second])
-	//			{
-	//				queue.push_back(adj);
-	//				visited[adj.first][adj.second] = true;
-	//			}
-	//		}
-	//	}
-	//}
-
-	void UpdateGridDepricated(int dimx, int dimy, int dimz)
-	{
-		destroyGrid();
-		createGrid(dimx, dimy, dimz);
-		for (int z = 0; z < m_Dim.z; z++)
-			for (int x = 0; x < m_Dim.x; x++)
-				for (int y = 0; y < m_Dim.y; y++)
-					if (y <= GetHeightfieldAt(x, z))
-					{
-						SetVoxel(x, y, z, VoxelType::VOXEL_MAT);
-						//SetVoxel(x, y, z, 1);
-						m_filled_voxels++;
-
-						if (y == GetHeightfieldAt(x, z) || y == m_Dim.y - 1)
-						{
-							surfaceParts.push_back((float)x / 100.0f);
-							surfaceParts.push_back((float)y / 100.0f);
-							surfaceParts.push_back((float)z / 100.0f);
-						}
-					}
-					else
-					{
-						SetVoxel(x, y, z, VoxelType::VOXEL_AIR);
-						//SetVoxel(x, y, z, 0);
-						m_empty_voxels++;
-					}
-		genIndices();
-		std::cout << "empty voxels = " << m_empty_voxels << " --- filled voxels = " << m_filled_voxels << std::endl;
-	}
-
 	void UpdateGrid(int dimx, int dimy, int dimz)
 	{
 		destroyGrid();
@@ -265,30 +146,291 @@ public:
 					y = dimy-1;
 				}
 				SetVoxel(x, y, z, VoxelType::VOXEL_MAT);
-				surfaceParts.push_back((float)x / 100.0f);
-				surfaceParts.push_back((float)y / 100.0f);
-				surfaceParts.push_back((float)z / 100.0f);
+				surfaceParts.push_back(x);
+				surfaceParts.push_back(y);
+				surfaceParts.push_back(z);
+
+				//normals
+				glm::vec3 u(0.0);
+				glm::vec3 d(0.0);
+				glm::vec3 r(0.0);
+				glm::vec3 l(0.0);
+
+				if (x - 1 >= 0)
+					l = glm::vec3(x - (x - 1), y - GetHeightfieldAt(x - 1, z), z - z);
+				if (x + 1 < m_Dim.x)
+					r = glm::vec3((x + 1) - x, GetHeightfieldAt(x + 1, z) - y, z - z);
+				if (z - 1 >= 0)
+					u = glm::vec3(x - x, y - GetHeightfieldAt(x, z - 1), z - (z - 1));
+				if (z + 1 < m_Dim.y)
+					d = glm::vec3(x - x, GetHeightfieldAt(x, z + 1) - y, (z + 1) - z);
+
+				glm::vec3 normal = glm::normalize(glm::cross(u, l) + glm::cross(u, r) + glm::cross(d, l) + glm::cross(d, r));
+				surfaceParts.push_back(normal.x);
+				surfaceParts.push_back(normal.y);
+				surfaceParts.push_back(normal.z);
 			}
 		genIndices();
-		for (int y = 0; y < m_Fluid.m_Dim.y; y++)
-			for(int z = 0; z < m_Fluid.m_Dim.z; z++)
-				for(int x = 0; x < m_Fluid.m_Dim.x; x++)
-				{
-					Voxel fluid_voxel = m_Fluid.m_Volume[x + (int)m_Fluid.m_Dim.x * (y + (int)m_Fluid.m_Dim.y * z)];
-					if (fluid_voxel.position.x >= 0 && fluid_voxel.position.x < m_Dim.x &&
-						fluid_voxel.position.y >= 0 && fluid_voxel.position.y < m_Dim.y &&
-						fluid_voxel.position.z >= 0 && fluid_voxel.position.z < m_Dim.z)
-					{
-						fluidParts.push_back((float)fluid_voxel.position.x / 100.0f);
-						fluidParts.push_back((float)fluid_voxel.position.y / 100.0f);
-						fluidParts.push_back((float)fluid_voxel.position.z / 100.0f);
-					}
-				}
 	}
 
-	unsigned int* GetIndices()
+	bool rayIntersectsTriangle(const glm::vec3& pos, const glm::vec3& dir, const Triangle tri, float* t)
 	{
-		return indices.data();
+		float u, v;
+		glm::vec3 E1 = tri.B - tri.A;
+		glm::vec3 E2 = tri.C - tri.A;
+		glm::vec3 N = glm::cross(E1, E2);
+		//glm::vec3 N = tri.norm;
+		float det = -glm::dot(dir, N);
+		float invdet = 1.0 / det;
+		glm::vec3 AO = pos - tri.A;
+		glm::vec3 DAO = glm::cross(AO, dir);
+		u = glm::dot(E2, DAO) * invdet;
+		v = -glm::dot(E1, DAO) * invdet;
+		*t = glm::dot(AO, N) * invdet;
+		return (abs(det) >= 1e-6 && *t >= 0.0 && u >= 0.0 && v >= 0.0 && (u + v) <= 1.0);
+	}
+
+	std::vector<Triangle> getCellTriangles(glm::vec2 cellIndex)
+	{
+		glm::vec3 A(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1]), cellIndex[1]);
+		glm::vec3 AA(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1] + 1), cellIndex[1] + 1);
+		glm::vec3 B(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1]), cellIndex[1]);
+		glm::vec3 C(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1] + 1), cellIndex[1] + 1);
+		
+		std::vector<Triangle> ret;
+		ret.emplace_back(C, B, A); //ABC = normal is opposite
+		ret.emplace_back(AA, B, C);
+
+		return ret;
+	}
+
+	//3D-DDA (modified)
+	glm::vec2 findAdjacentCell(const glm::vec3& pos, const glm::vec3& dir, glm::vec2 cellIndex)
+	{
+		float t_x, t_z;
+		glm::vec2 deltaT;
+		glm::vec2 cellDim(1, 1);
+		glm::vec2 rayOrigin(pos.x, pos.z);
+		glm::vec2 dir2D(dir.x, dir.z);
+
+		if (dir2D[0] < 0)
+		{
+			deltaT[0] = -cellDim[0] / dir2D[0];
+			t_x = (floor(rayOrigin[0] / cellDim[0]) * cellDim[0] - rayOrigin[0]) / dir2D[0];
+		}
+		else if (dir2D[0] > 0)
+		{
+			deltaT[0] = cellDim[0] / dir2D[0];
+			t_x = ((floor(rayOrigin[0] / cellDim[0]) + 1) * cellDim[0] - rayOrigin[0]) / dir2D[0];
+		}
+		else
+		{
+			deltaT[0] = 0;
+			t_x = INFINITY;
+		}
+
+		if (dir2D[1] < 0)
+		{
+			deltaT[1] = -cellDim[1] / dir2D[1];
+			t_z = (floor(rayOrigin[1] / cellDim[1]) * cellDim[1] - rayOrigin[1]) / dir2D[1];
+		}
+		else if (dir2D[1] > 0)
+		{
+			deltaT[1] = cellDim[1] / dir2D[1];
+			t_z = ((floor(rayOrigin[1] / cellDim[1]) + 1) * cellDim[1] - rayOrigin[1]) / dir2D[1];
+		}
+		else
+		{
+			deltaT[1] = 0;
+			t_z = INFINITY;
+		}
+
+		if (t_x < t_z)
+		{
+			if (dir2D[0] < 0)
+				cellIndex[0]--;
+			else if (dir2D[0] > 0)
+				cellIndex[0]++;
+		}
+		else
+		{
+			if (dir2D[1] < 0)
+				cellIndex[1]--;
+			else if (dir2D[1] > 0)
+				cellIndex[1]++;
+		}
+
+		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ)
+			cellIndex = glm::vec2(-1, -1);
+
+		return cellIndex;
+	}
+
+	bool mappedBetweenTriangles(const Triangle tri1, const Triangle tri2, const glm::vec3 & pos, glm::vec3& cp, glm::vec3& norm)
+	{
+		float t;
+
+		if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri1, &t))
+		{
+			t += 0.0005;
+			norm = glm::normalize(tri1.norm + tri2.norm);
+			cp = pos + t * norm;
+			return true;
+		}
+		else if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri2, &t))
+		{
+			t += 0.0005;
+			norm = glm::normalize(tri1.norm + tri2.norm);
+			cp = pos + t * norm;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool collision(const glm::vec3& posCurr, const glm::vec3& posNext, const glm::vec3& velNext, glm::vec3 & contactP, glm::vec3 & norm)
+	{
+		float t; //where t is R.Origin + t*R.Dir
+		glm::vec3 dir = glm::normalize(velNext);
+
+		glm::ivec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
+		glm::ivec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
+		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX-1 || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ-1
+			|| cellIndexNext[0] < 0 || cellIndexNext[0] >= m_DimX-1 || cellIndexNext[1] < 0 || cellIndexNext[1] >= m_DimZ-1)
+			return false;
+		
+		//if in the same cell
+		if (cellIndex == cellIndexNext)
+		{
+			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
+			Triangle ABC = cellTriangles[0];
+			Triangle AABC = cellTriangles[1];
+
+			//the cell is built out of two triangles
+			//check intersection with both and try to map on appropriate one
+			if (rayIntersectsTriangle(posCurr, dir, ABC, &t))
+			{
+				//try to map on the same triangle
+				if (rayIntersectsTriangle(posNext, ABC.norm, ABC, &t))
+				{
+					t += 0.0005;
+					norm = ABC.norm;
+					contactP = posNext + t * norm;
+					return true;
+				}
+				//try to map between triangles in the same cell
+				else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+				{
+					return true;
+				}
+				//try to map between triangles with adjacent cell
+				else
+				{
+					glm::vec2 adjCellIndex = findAdjacentCell(posNext, ABC.norm, cellIndex);
+					if (adjCellIndex == glm::vec2(-1, -1))
+						return false;
+					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
+					Triangle ABC_adj = adjCellTriangles[0];
+					Triangle AABC_adj = adjCellTriangles[1];
+
+					if (mappedBetweenTriangles(ABC, ABC_adj, posNext, contactP, norm))
+						return true;
+					else if (mappedBetweenTriangles(ABC, AABC_adj, posNext, contactP, norm))
+						return true;
+				}
+			}
+			else if (rayIntersectsTriangle(posCurr, dir, AABC, &t))
+			{
+				//try to map on the same triangle
+				if (rayIntersectsTriangle(posNext, AABC.norm, AABC, &t))
+				{
+					t += 0.0005;
+					norm = AABC.norm;
+					contactP = posNext + t * norm;
+					return true;
+				}
+				//try to map between triangles in the same cell
+				else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+				{
+					return true;
+				}
+				//try to map between triangles with adjacent cell
+				else
+				{
+					glm::vec2 adjCellIndex = findAdjacentCell(posNext, AABC.norm, cellIndex);
+					if (adjCellIndex == glm::vec2(-1, -1))
+						return false;
+					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
+					Triangle ABC_adj = adjCellTriangles[0];
+					Triangle AABC_adj = adjCellTriangles[1];
+
+					if (mappedBetweenTriangles(AABC, ABC_adj, posNext, contactP, norm))
+						return true;
+					else if (mappedBetweenTriangles(AABC, AABC_adj, posNext, contactP, norm))
+						return true;
+				}
+			}
+			//particle did not go through collision did not occur
+			return false;
+		}
+		else
+		{
+			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
+			Triangle ABC_poscurr = cellTriangles[0];
+			Triangle AABC_poscurr = cellTriangles[1];
+			std::vector<Triangle> cellNextTriangles = getCellTriangles(cellIndexNext);
+			Triangle ABC_posnext = cellNextTriangles[0];
+			Triangle AABC_posnext = cellNextTriangles[1];
+
+			if (rayIntersectsTriangle(posCurr, dir, ABC_poscurr, &t))
+			{
+				if (mappedBetweenTriangles(ABC_poscurr, ABC_posnext, posNext, contactP, norm))
+					return true;
+				else if (mappedBetweenTriangles(ABC_poscurr, AABC_posnext, posNext, contactP, norm))
+					return true;
+			}
+			else if (rayIntersectsTriangle(posCurr, dir, AABC_poscurr, &t))
+			{
+				if (mappedBetweenTriangles(AABC_poscurr, ABC_posnext, posNext, contactP, norm))
+					return true;
+				else if (mappedBetweenTriangles(AABC_poscurr, AABC_posnext, posNext, contactP, norm))
+					return true;
+			}
+			else if (rayIntersectsTriangle(posCurr, dir, ABC_posnext, &t))
+			{
+				if (rayIntersectsTriangle(posNext, ABC_posnext.norm, ABC_posnext, &t))
+				{
+					t += 0.0005;
+					norm = ABC_posnext.norm;
+					contactP = posNext + t * norm;
+					return true;
+				}
+				if (mappedBetweenTriangles(ABC_posnext, ABC_poscurr, posNext, contactP, norm))
+					return true;
+				else if (mappedBetweenTriangles(ABC_posnext, AABC_poscurr, posNext, contactP, norm))
+					return true;
+			}
+			else if (rayIntersectsTriangle(posCurr, dir, AABC_posnext, &t))
+			{
+				if (rayIntersectsTriangle(posNext, AABC_posnext.norm, AABC_posnext, &t))
+				{
+					t += 0.0005;
+					norm = AABC_posnext.norm;
+					contactP = posNext + t * norm;
+					return true;
+				}
+				if (mappedBetweenTriangles(AABC_posnext, ABC_poscurr, posNext, contactP, norm))
+					return true;
+				else if (mappedBetweenTriangles(AABC_posnext, AABC_poscurr, posNext, contactP, norm))
+					return true;
+			}
+			return false;
+		}
+	}
+
+	std::vector<unsigned int> GetIndices()
+	{
+		return indices;
 	}
 
 	size_t GetIndicesSize() const
@@ -301,9 +443,9 @@ public:
 		return m_Dim;
 	}
 
-	float* GetSurfaceParts()
+	std::vector<float> GetSurfaceParts()
 	{
-		return surfaceParts.data();
+		return surfaceParts;
 	}
 
 	size_t GetSurfacePartsSize() const
@@ -311,9 +453,9 @@ public:
 		return surfaceParts.size();
 	}
 
-	float* GetFluidParts()
+	std::vector<float> GetFluidParts()
 	{
-		return fluidParts.data();
+		return fluidParts;
 	}
 
 	size_t GetFluidPartsSize() const
