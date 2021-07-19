@@ -163,12 +163,12 @@ int main()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
-    //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
-    fluidsph.SetOrigin(glm::vec3(0.0));
+    fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
+    //fluidsph.SetOrigin(glm::vec3(0.0));
     //fluidsph.SetOrigin(glm::vec3(30.0, 255.5, 30.2));
-    //camera.PlaceTo(glm::vec3(33.0, 125.0, 43.5));
-    camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
-    fluidsph.Initialize(2);
+    camera.PlaceTo(glm::vec3(33.0, 125.0, 43.5));
+    //camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
+    fluidsph.Initialize(1000);
     Shape shape;
     shape.CreateCube();
     shape.CreateBowl();

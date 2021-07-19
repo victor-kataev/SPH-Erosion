@@ -17,7 +17,7 @@ typedef unsigned int uint;
 
 #define MAX_PARAM  50
 #define MAX_BUF	   25
-#define PI 3.141592f
+#define M_PI 3.14159265358979323846
 
 #define FPOS 0
 #define FVEL 1
@@ -86,27 +86,28 @@ public:
 					particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
 					particle.Velocity = glm::vec3(0.0, 0.0, 0.0);
 					particle.Acceleration = glm::vec3(0.0);
-					particle.Mass = m;
+					particle.Mass = MASS;
 					m_Particles.push_back(particle);
 				}
 
-		vol = num * m / p0;
-		smoothRadius = cbrt(3 * vol * x / (4 * PI * num));
-		h = smoothRadius;
-		l = sqrt(p0 / x);
+		vol = num * MASS / p0;
+		//smoothRadius = cbrt(3 * vol * x / (4 * PI * num));
+		smoothRadius = h;
+		//h = smoothRadius;
+		//l = sqrt(p0 / x);
 	}
 
-	void Run(Grid & grid)
+	void Run(Grid& grid)
 	{
 
 		//compute density and pressure
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
-			
+
 			float density = 0;
-			for (int j = 0; j < num; j++)
+			for (int j = 0; j < m_Particles.size(); j++)
 			{
 				FluidParticle& neighbPart = m_Particles[j];
 
@@ -121,14 +122,14 @@ public:
 
 		//internal forces
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& cur = m_Particles[i];
 
 			glm::vec3 fPress(0.0);
 			glm::vec3 fVisc(0.0);
 			glm::vec3 n(0.0); //inward surface normal
-			for (int j = 0; j < num; j++)
+			for (int j = 0; j < m_Particles.size(); j++)
 			{
 				FluidParticle& neighb = m_Particles[j];
 				float distance = glm::length(cur.Position - neighb.Position);
@@ -140,27 +141,26 @@ public:
 				}
 
 			}
-			cur.PressureForce = (-1) * cur.Density * fPress;
-			cur.ViscosityForce = visc * fVisc;
+			cur.PressureForce = -(fPress*cur.Density);
+			cur.ViscosityForce = fVisc * visc;
 			cur.SurfaceNormal = n;
 		}
 
+
 		//external forces
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			currPart.GravityForce = currPart.Density * g;
 			float colorFieldLapl = 0.0;
-			for (int j = 0; j < num; j++)
+			for (int j = 0; j < m_Particles.size(); j++)
 			{
 				FluidParticle& neighbPart = m_Particles[j];
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
 				if (distance <= smoothRadius)
-				{
 					colorFieldLapl += (neighbPart.Mass / neighbPart.Density) * laplDefault(currPart.Position - neighbPart.Position);
-				}
 			}
 
 			//currPart.SurfaceForce = glm::vec3(0.0);
@@ -169,8 +169,9 @@ public:
 			currPart.SurfaceForce = -surf_tens * colorFieldLapl * currPart.SurfaceNormal;
 		}
 
+
 		advance(grid);
-		m_Time += m_Dt;
+		//m_Time += m_Dt;
 	}
 
 	void Draw(const Shader& shader)
@@ -178,7 +179,7 @@ public:
 		if (!m_Sphere)
 			m_Sphere = std::make_unique<Sphere>(10, 10, 1, glm::vec3(0.0, 0.0, 0.0));
 
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			float r = s * cbrt(3 * m_Particles[i].Mass / (4 * PI * m_Particles[i].Density));
 			// r = 0.01f;
@@ -202,12 +203,12 @@ public:
 
 	void SetDeltaTime(float dt)
 	{
-		m_Dt = dt;
+		deltaT = dt;
 	}
 
 	float GetDeltaTime() const
 	{
-		return m_Dt;
+		return deltaT;
 	}
 
 	void PrintCoords() const
@@ -228,7 +229,7 @@ public:
 					tmp.Position = glm::vec3(x+ m_Origin.x, y+ m_Origin.y, z+ m_Origin.z);
 					tmp.Velocity = glm::vec3(0.0, 0.0, 0.0);
 					tmp.Acceleration = glm::vec3(0.0);
-					tmp.Mass = m;
+					tmp.Mass = MASS;
 					m_Particles.push_back(tmp);
 				}
 			}
@@ -261,7 +262,7 @@ private:
 	void advance(Grid & grid)
 	{
 #pragma omp parallel for
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			glm::vec3 F;
@@ -281,24 +282,24 @@ private:
 			//	currPart.Velocity = currPart.Velocity - 0.5f * m_Dt * currPart.Acceleration;
 			//}
 			
-			velNext = currPart.Velocity + m_Dt * acc;
-			posNext = currPart.Position + m_Dt * velNext;
+			velNext = currPart.Velocity + acc * deltaT;
+			posNext = currPart.Position + velNext * deltaT;
 
 			glm::vec3 contactP;
 			glm::vec3 norm;
-			/*if (grid.collision(currPart.Position, posNext, velNext, contactP, norm))
+			if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
 			{
 				float d = glm::length(posNext - contactP);
-				velNext = velNext - (float)(1 + cR * (d / (m_Dt * glm::length(velNext)))) * glm::dot(velNext, norm) * norm;
-				posNext = contactP;
-			}*/
-
-			if (collisionS(posNext, contactP, norm))
-			{
-				float d = glm::length(posNext - contactP);
-				velNext = velNext - (float)(1 + cR * d / (m_Dt * glm::length(velNext))) * glm::dot(velNext, norm) * norm;
+				velNext = velNext - (float)(1 + cR * (d / (deltaT * glm::length(velNext)))) * glm::dot(velNext, norm) * norm;
 				posNext = contactP;
 			}
+
+			/*if (collisionS(posNext, contactP, norm) && deltaT != 0)
+			{
+				float d = glm::length(posNext - contactP);
+				velNext = velNext - norm * (float)(1 + 0.5f * d / (deltaT * glm::length(velNext))) * glm::dot(velNext, norm);
+				posNext = contactP;
+			}*/
 
 			currPart.Velocity = velNext;
 			currPart.Position = posNext;
@@ -360,159 +361,25 @@ private:
 		return true;
 	}
 
-	
-
-	
-	void handleCollision(const glm::vec3 & posCurr,  glm::vec3& posNext, glm::vec3 & velNext, const Mesh terrain)
-	{
-		float t, u, v; //where t is R.Origin + t*R.Dir;  u,v - barycentric coords
-		glm::vec3 N; //normal
-		//glm::vec3 dir = glm::normalize(posNext - posCurr);
-		glm::vec3 dir = glm::normalize(velNext); 
-		//std::cout << dir.x << " " << dir.y << " " << dir.z << std::endl;
-
-
-		//check collision with each triangle
-		for (int i = 0; i < terrain.Indices.size(); i += 3)
-		{
-			float a1 = terrain.Vertices[terrain.Indices[i] * 6]; // 6 - offset
-			float a2 = terrain.Vertices[terrain.Indices[i] * 6 + 1];
-			float a3 = terrain.Vertices[terrain.Indices[i] * 6 + 2];
-			float b1 = terrain.Vertices[terrain.Indices[i+1] * 6];
-			float b2 = terrain.Vertices[terrain.Indices[i+1] * 6 + 1];
-			float b3 = terrain.Vertices[terrain.Indices[i+1] * 6 + 2];
-			float c1 = terrain.Vertices[terrain.Indices[i+2] * 6];
-			float c2 = terrain.Vertices[terrain.Indices[i+2] * 6 + 1];
-			float c3 = terrain.Vertices[terrain.Indices[i+2] * 6 + 2];
-
-			//triangle
-			glm::vec3 A(a1, a2, a3);
-			glm::vec3 B(b1, b2, b3);
-			glm::vec3 C(c1, c2, c3);
-
-			if (rayIntersectsTriangle(posCurr, dir, C, B, A, &t, &u, &v, N))
-			{
-				glm::vec3 dirN = N;
-				//std::cout << "before int: " << N.x << " " << N.y << " " << N.z << std::endl;
-				if (rayIntersectsTriangle(posNext, N, C, B, A, &t, &u, &v, N))
-				{
-					//std::cout << "Intersec with itself: " << N.x << " " << N.y << " " << N.z << std::endl;
-					//t += 0.00002; 
-					glm::vec3 contactP = posNext + t * N;
-					float d = glm::length(contactP - posNext);
-					d += 0.00002;
-					contactP = posNext + d * N;
-					velNext = velNext - (float)(1 + cR * (d / (m_Dt * glm::length(velNext)))) * glm::dot(velNext, N) * N;
-					posNext = contactP;
-					return;
-				}
-				else
-				{
-					//iterate over all triangles again 
-					for (int i = 0; i < terrain.Indices.size(); i += 3)
-					{
-						float a1 = terrain.Vertices[terrain.Indices[i] * 6]; // 6 - offset
-						float a2 = terrain.Vertices[terrain.Indices[i] * 6 + 1];
-						float a3 = terrain.Vertices[terrain.Indices[i] * 6 + 2];
-						float b1 = terrain.Vertices[terrain.Indices[i + 1] * 6];
-						float b2 = terrain.Vertices[terrain.Indices[i + 1] * 6 + 1];
-						float b3 = terrain.Vertices[terrain.Indices[i + 1] * 6 + 2];
-						float c1 = terrain.Vertices[terrain.Indices[i + 2] * 6];
-						float c2 = terrain.Vertices[terrain.Indices[i + 2] * 6 + 1];
-						float c3 = terrain.Vertices[terrain.Indices[i + 2] * 6 + 2];
-
-						//triangle
-						glm::vec3 A(a1, a2, a3);
-						glm::vec3 B(b1, b2, b3);
-						glm::vec3 C(c1, c2, c3);
-						if (rayIntersectsTriangle(posNext, dirN, C, B, A, &t, &u, &v, N))
-						{
-							//std::cout << "Intersec with adj: " << N.x << " " << N.y << " " << N.z << std::endl;
-							//t += 0.00002;
-							glm::vec3 contactP = posNext + t * dirN;
-							float d = glm::length(contactP - posNext);
-							d += 0.00002;
-							contactP = posNext + d * dirN;
-							velNext = velNext - (float)(1 + cR * d / (m_Dt * glm::length(velNext))) * glm::dot(velNext, dirN) * dirN;
-							posNext = contactP;
-							return;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	bool rayIntersectsTriangle(const glm::vec3 & pos, const glm::vec3 & dir, const glm::vec3& A, const glm::vec3& B, const glm::vec3& C, float* t, float* u, float* v, glm::vec3& N)
-	{
-		glm::vec3 E1 = B - A;
-		glm::vec3 E2 = C - A;
-		N = glm::cross(E1, E2);
-		//glm::vec3 dir = glm::normalize(currParticle.velocity);
-		float det = -glm::dot(dir, N);
-		float invdet = 1.0 / det ;
-		glm::vec3 AO = pos - A;
-		glm::vec3 DAO = glm::cross(AO, dir);
-		*u = glm::dot(E2, DAO) * invdet;
-		*v = -glm::dot(E1, DAO) * invdet;
-		*t = glm::dot(AO, N) * invdet;
-		return (abs(det) >= 1e-6 && *t >= 0.0 && *u >= 0.0 && *v >= 0.0 && (*u + *v) <= 1.0);
-	}
-
-	bool RayIntersectsTriangle(glm::vec3 rayOrigin, glm::vec3 rayVector, glm::vec3 & A, glm::vec3& B, glm::vec3& C, glm::vec3& outIntersectionPoint, glm::vec3 & N)
-	{
-		const float EPSILON = 0.0000001;
-		glm::vec3 vertex0 = A;
-		glm::vec3 vertex1 = B;
-		glm::vec3 vertex2 = C;
-		glm::vec3 edge1, edge2, h, s, q;
-		float a, f, u, v;
-		edge1 = vertex1 - vertex0;
-		edge2 = vertex2 - vertex0;
-		N = glm::cross(edge1, edge2);
-		h = glm::cross(rayVector,edge2);
-		a = glm::dot(edge1, h);
-		if (a > -EPSILON && a < EPSILON)
-			return false;    // This ray is parallel to this triangle.
-		f = 1.0 / a;
-		s = rayOrigin - vertex0;
-		u = f * glm::dot(s, h);
-		if (u < 0.0 || u > 1.0)
-			return false;
-		q = glm::cross(s, edge1);
-		v = f * glm::dot(rayVector, q);
-		if (v < 0.0 || u + v > 1.0)
-			return false;
-		// At this stage we can compute t to find out where the intersection point is on the line.
-		float t = f * glm::dot(edge2, q);
-		if (t > EPSILON) // ray intersection
-		{
-			outIntersectionPoint = rayOrigin + rayVector * t;
-			return true;
-		}
-		else // This means that there is a line intersection but not a ray intersection.
-			return false;
-	}
 
 	float kernDefault(const glm::vec3& r)
 	{
 		float len = glm::length(r);
-		if (len >= 0 && len <= h)
-			return (float)(315.0f / (64.0f * PI * powf(h, 9.0f))) * powf((h*h - len*len), 3.0f);
-		else
-			return 0;
+		if (len > h) 
+			return 0.0f;
+		return (float)(315.0f / (64.0f * PI * powf(h, 9.0f))) * powf((h*h - len*len), 3.0f);
 	}
 
 	glm::vec3 gradDefault(const glm::vec3& r)
 	{
 		float len = glm::length(r);
-		return -945.0f / (32.0f * PI * (float)powf(h, 9.0f)) * r * (float)powf((h * h - len * len), 2.0f);
+		return -(r * (float)(945.0f / (32.0f * PI * powf(h, 9.0f))) * powf((h*h - len*len), 2.0f));
 	}
 
 	float laplDefault(const glm::vec3& r)
 	{
 		float len = glm::length(r);
-		return (-945.0f / (32.0f * PI * powf(h, 9.0f))) * (h*h - len*len) * (3 * h*h - 7 * len*len);
+		return -(945.0f / (32.0f * PI * powf(h, 9.0f))) * (h*h - len*len) * (3 * h*h - 7 * len*len);
 	}
 
 	glm::vec3 gradPressure(const glm::vec3& r)
@@ -540,26 +407,25 @@ private:
 		return (float)(45.0f / (PI * powf(h, 6.0f))) * (h - len);
 	}
 
-	
 
 private:
 		//Simulation parameters
 		//float m_Param[MAX_PARAM];
 		//FBufs m_Fluid;
 		glm::vec3 g = glm::vec3(0.0, -9.82f, 0.0);
-		float m_Dt = 0.0f;
+		float deltaT = 0.01f;
 		float m_Time = 0.0f;
 		const float p0 = 998.29f;
-		const float m = 0.02f;
+		const float MASS = 0.02f;
 		const float visc = 3.5f;
 		const float surf_tens = 0.0728f;
 		//const float l = 7.065;
 		float l;
 		const float k = 3.0f;
-		const float cR = 0.1f;
+		const float cR = 0.5f;
 		const int x = 20;
 		//const float h = 0.0457;
-		float h;
+		float h = 0.0457f;
 		int num = 10;
 		int init_num;
 		float vol;

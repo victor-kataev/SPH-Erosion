@@ -145,18 +145,13 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\sphere.h(100,1): w
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(81,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(82,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(83,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(103,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(123,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(149,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(220,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(224,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(104,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(124,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(151,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(221,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(225,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(226,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(403,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(434,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(453,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(464,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(477,11): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(227,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shapes.h(75,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shapes.h(92,35): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
           with
@@ -194,9 +189,9 @@ C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.2
           [
               _Ty=int
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(179): message : see reference to function template instantiation 'std::unique_ptr<Sphere,std::default_delete<Sphere>> std::make_unique<Sphere,int,int,int,glm::vec3,0>(int &&,int &&,int &&,glm::vec3 &&)' being compiled
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(180): message : see reference to function template instantiation 'std::unique_ptr<Sphere,std::default_delete<Sphere>> std::make_unique<Sphere,int,int,int,glm::vec3,0>(int &&,int &&,int &&,glm::vec3 &&)' being compiled
   Generating code
-  2 of 2029 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  8 of 2103 functions ( 0.4%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     28 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
