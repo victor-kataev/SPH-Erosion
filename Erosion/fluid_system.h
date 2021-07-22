@@ -413,7 +413,7 @@ private:
 		//float m_Param[MAX_PARAM];
 		//FBufs m_Fluid;
 		glm::vec3 g = glm::vec3(0.0, -9.82f, 0.0);
-		float deltaT = 0.01f;
+		float deltaT = 0.0f;
 		float m_Time = 0.0f;
 		const float p0 = 998.29f;
 		const float MASS = 0.02f;

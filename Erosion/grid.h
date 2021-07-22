@@ -272,14 +272,14 @@ public:
 
 		if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri1, &t))
 		{
-			t += 0.0005;
+			t += 0.000002;
 			norm = glm::normalize(tri1.norm + tri2.norm);
 			cp = pos + t * norm;
 			return true;
 		}
 		else if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri2, &t))
 		{
-			t += 0.0005;
+			t += 0.000002;
 			norm = glm::normalize(tri1.norm + tri2.norm);
 			cp = pos + t * norm;
 			return true;
@@ -306,24 +306,36 @@ public:
 			Triangle ABC = cellTriangles[0];
 			Triangle AABC = cellTriangles[1];
 
-			//the cell is built out of two triangles
-			//check intersection with both and try to map on appropriate one
+			glm::vec3 cptmp;
+			float dABC = INFINITY, dAABC = INFINITY;
 			if (rayIntersectsTriangle(posCurr, dir, ABC, &t))
 			{
+				cptmp = posCurr + t * dir;
+				dABC = glm::length(cptmp - posCurr);
+			}
+
+			if (rayIntersectsTriangle(posCurr, dir, AABC, &t))
+			{
+				cptmp = posCurr + t * dir;
+				dAABC = glm::length(cptmp - posCurr);
+			}
+
+			
+
+			//the cell is built out of two triangles
+			//check intersection with both and try to map on appropriate one
+			if (dABC < dAABC)
+			{
+				//glm::vec3 cpABC = posCurr + t * dir;
+				//if(rayIntersectsTriangle)
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, ABC.norm, ABC, &t))
 				{
-					t += 0.0005;
+					t += 0.000002;
 					norm = ABC.norm;
 					contactP = posNext + t * norm;
 					return true;
 				}
-				//try to map between triangles in the same cell
-				else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
-				{
-					return true;
-				}
-				//try to map between triangles with adjacent cell
 				else
 				{
 					glm::vec2 adjCellIndex = findAdjacentCell(posNext, ABC.norm, cellIndex);
@@ -332,29 +344,32 @@ public:
 					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
 					Triangle ABC_adj = adjCellTriangles[0];
 					Triangle AABC_adj = adjCellTriangles[1];
+					glm::vec2 cellDir = { adjCellIndex.x - cellIndex.x, adjCellIndex.y - cellIndex.y };
 
-					if (mappedBetweenTriangles(ABC, ABC_adj, posNext, contactP, norm))
-						return true;
-					else if (mappedBetweenTriangles(ABC, AABC_adj, posNext, contactP, norm))
-						return true;
+					//intersection with hypotenuse
+					if (cellDir.x > 0 || cellDir.y > 0)
+					{
+						if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+							return true;
+					}
+					else 
+					{
+						//intersection with cathenus
+						if (mappedBetweenTriangles(ABC, AABC_adj, posNext, contactP, norm))
+							return true;
+					}
 				}
 			}
-			else if (rayIntersectsTriangle(posCurr, dir, AABC, &t))
+			else if (dAABC < dABC)
 			{
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, AABC.norm, AABC, &t))
 				{
-					t += 0.0005;
+					t += 0.000002;
 					norm = AABC.norm;
 					contactP = posNext + t * norm;
 					return true;
 				}
-				//try to map between triangles in the same cell
-				else if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
-				{
-					return true;
-				}
-				//try to map between triangles with adjacent cell
 				else
 				{
 					glm::vec2 adjCellIndex = findAdjacentCell(posNext, AABC.norm, cellIndex);
@@ -363,11 +378,19 @@ public:
 					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
 					Triangle ABC_adj = adjCellTriangles[0];
 					Triangle AABC_adj = adjCellTriangles[1];
+					glm::vec2 cellDir = { adjCellIndex.x - cellIndex.x, adjCellIndex.y - cellIndex.y };
 
-					if (mappedBetweenTriangles(AABC, ABC_adj, posNext, contactP, norm))
-						return true;
-					else if (mappedBetweenTriangles(AABC, AABC_adj, posNext, contactP, norm))
-						return true;
+					//intersection with hypotenuse
+					if (cellDir.x < 0 || cellDir.y < 0)
+					{
+						if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+							return true;
+					}
+					else
+					{//intersection with cathenus
+						if (mappedBetweenTriangles(AABC, ABC_adj, posNext, contactP, norm))
+							return true;
+					}
 				}
 			}
 			//particle did not go through collision did not occur
@@ -384,45 +407,55 @@ public:
 
 			if (rayIntersectsTriangle(posCurr, dir, ABC_poscurr, &t))
 			{
-				if (mappedBetweenTriangles(ABC_poscurr, ABC_posnext, posNext, contactP, norm))
-					return true;
-				else if (mappedBetweenTriangles(ABC_poscurr, AABC_posnext, posNext, contactP, norm))
+				if (mappedBetweenTriangles(ABC_poscurr, AABC_posnext, posNext, contactP, norm))
 					return true;
 			}
 			else if (rayIntersectsTriangle(posCurr, dir, AABC_poscurr, &t))
 			{
 				if (mappedBetweenTriangles(AABC_poscurr, ABC_posnext, posNext, contactP, norm))
 					return true;
-				else if (mappedBetweenTriangles(AABC_poscurr, AABC_posnext, posNext, contactP, norm))
-					return true;
 			}
-			else if (rayIntersectsTriangle(posCurr, dir, ABC_posnext, &t))
+			else
 			{
-				if (rayIntersectsTriangle(posNext, ABC_posnext.norm, ABC_posnext, &t))
+				glm::vec3 cptmp;
+				float dABC_posnext = INFINITY, dAABC_posnext = INFINITY;
+				if (rayIntersectsTriangle(posCurr, dir, ABC_posnext, &t))
 				{
-					t += 0.0005;
-					norm = ABC_posnext.norm;
-					contactP = posNext + t * norm;
-					return true;
+					cptmp = posCurr + t * dir;
+					dABC_posnext = glm::length(cptmp - posCurr);
 				}
-				if (mappedBetweenTriangles(ABC_posnext, ABC_poscurr, posNext, contactP, norm))
-					return true;
-				else if (mappedBetweenTriangles(ABC_posnext, AABC_poscurr, posNext, contactP, norm))
-					return true;
-			}
-			else if (rayIntersectsTriangle(posCurr, dir, AABC_posnext, &t))
-			{
-				if (rayIntersectsTriangle(posNext, AABC_posnext.norm, AABC_posnext, &t))
+
+				if (rayIntersectsTriangle(posCurr, dir, AABC_posnext, &t))
 				{
-					t += 0.0005;
-					norm = AABC_posnext.norm;
-					contactP = posNext + t * norm;
-					return true;
+					cptmp = posCurr + t * dir;
+					dAABC_posnext = glm::length(cptmp - posCurr);
 				}
-				if (mappedBetweenTriangles(AABC_posnext, ABC_poscurr, posNext, contactP, norm))
-					return true;
-				else if (mappedBetweenTriangles(AABC_posnext, AABC_poscurr, posNext, contactP, norm))
-					return true;
+
+
+				if (dABC_posnext < dAABC_posnext)
+				{
+					if (rayIntersectsTriangle(posNext, ABC_posnext.norm, ABC_posnext, &t))
+					{
+						t += 0.000002;
+						norm = ABC_posnext.norm;
+						contactP = posNext + t * norm;
+						return true;
+					}
+					else if (mappedBetweenTriangles(ABC_posnext, AABC_poscurr, posNext, contactP, norm))
+						return true;
+				}
+				else if (dAABC_posnext < dABC_posnext)
+				{
+					if (rayIntersectsTriangle(posNext, AABC_posnext.norm, AABC_posnext, &t))
+					{
+						t += 0.000002;
+						norm = AABC_posnext.norm;
+						contactP = posNext + t * norm;
+						return true;
+					}
+					if (mappedBetweenTriangles(AABC_posnext, ABC_poscurr, posNext, contactP, norm))
+						return true;
+				}
 			}
 			return false;
 		}

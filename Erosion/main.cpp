@@ -163,10 +163,13 @@ int main()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
+    //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 41.8));//bug
     fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
+    //fluidsph.SetOrigin(glm::vec3(32.5, 128.8, 43.7));//bug
+    camera.PlaceTo(glm::vec3(32.9, 124.5, 44.2));
     //fluidsph.SetOrigin(glm::vec3(0.0));
-    //fluidsph.SetOrigin(glm::vec3(30.0, 255.5, 30.2));
-    camera.PlaceTo(glm::vec3(33.0, 125.0, 43.5));
+    //fluidsph.SetOrigin(glm::vec3(27.7, 125.5, 42.7));
+    //camera.PlaceTo(glm::vec3(27.4, 125.5, 43.7));
     //camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
     fluidsph.Initialize(1000);
     Shape shape;
@@ -277,7 +280,7 @@ int main()
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
         shader.setMat4("model", model);
-        shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.8, -0.8));
+        shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.7, 0.2));
         shader.setVec3("dirLight.color", glm::vec3(1.0));
         shader.setVec3("viewerPos", camera.Position);
         shader.setVec3("material.ka", glm::vec3(0.2f));
