@@ -182,7 +182,7 @@ public:
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			float r = s * cbrt(3 * m_Particles[i].Mass / (4 * PI * m_Particles[i].Density));
-			// r = 0.01f;
+			//r = 0.01f;
 			glm::mat4 model = glm::mat4(1.0);
 			model = glm::translate(model, m_Particles[i].Position);
 			model = glm::scale(model, glm::vec3(r));

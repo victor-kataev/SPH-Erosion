@@ -164,14 +164,15 @@ int main()
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
     //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 41.8));//bug
-    fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
+    //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2));
+    fluidsph.SetOrigin(glm::vec3(32.19, 124.5, 42.16));
     //fluidsph.SetOrigin(glm::vec3(32.5, 128.8, 43.7));//bug
     camera.PlaceTo(glm::vec3(32.9, 124.5, 44.2));
     //fluidsph.SetOrigin(glm::vec3(0.0));
     //fluidsph.SetOrigin(glm::vec3(27.7, 125.5, 42.7));
     //camera.PlaceTo(glm::vec3(27.4, 125.5, 43.7));
     //camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
-    fluidsph.Initialize(1000);
+    fluidsph.Initialize(1);
     Shape shape;
     shape.CreateCube();
     shape.CreateBowl();

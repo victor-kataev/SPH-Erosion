@@ -266,7 +266,21 @@ public:
 		return cellIndex;
 	}
 
-	bool mappedBetweenTriangles(const Triangle tri1, const Triangle tri2, const glm::vec3 & pos, glm::vec3& cp, glm::vec3& norm)
+	bool mappedOnTriangle(const Triangle tri, const glm::vec3& pos, const glm::vec3& dir, glm::vec3& cp, glm::vec3& norm)
+	{
+		float t;
+
+		if (rayIntersectsTriangle(pos, dir, tri, &t))
+		{
+			t += 0.000002;
+			norm = dir;
+			cp = pos + t * norm;
+			return true;
+		}
+		return false;
+	}
+
+	bool mappedBetweenTriangles(const Triangle & tri1, const Triangle & tri2, const glm::vec3 & pos, glm::vec3& cp, glm::vec3& norm)
 	{
 		float t;
 
@@ -293,8 +307,8 @@ public:
 		float t; //where t is R.Origin + t*R.Dir
 		glm::vec3 dir = glm::normalize(velNext);
 
-		glm::ivec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
-		glm::ivec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
+		glm::vec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
+		glm::vec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
 		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX-1 || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ-1
 			|| cellIndexNext[0] < 0 || cellIndexNext[0] >= m_DimX-1 || cellIndexNext[1] < 0 || cellIndexNext[1] >= m_DimZ-1)
 			return false;
@@ -306,18 +320,18 @@ public:
 			Triangle ABC = cellTriangles[0];
 			Triangle AABC = cellTriangles[1];
 
-			glm::vec3 cptmp;
+			glm::vec3 CPtmp;
 			float dABC = INFINITY, dAABC = INFINITY;
 			if (rayIntersectsTriangle(posCurr, dir, ABC, &t))
 			{
-				cptmp = posCurr + t * dir;
-				dABC = glm::length(cptmp - posCurr);
+				CPtmp = posCurr + t * dir;
+				dABC = glm::length(CPtmp - posCurr);
 			}
 
 			if (rayIntersectsTriangle(posCurr, dir, AABC, &t))
 			{
-				cptmp = posCurr + t * dir;
-				dAABC = glm::length(cptmp - posCurr);
+				CPtmp = posCurr + t * dir;
+				dAABC = glm::length(CPtmp - posCurr);
 			}
 
 			
@@ -326,8 +340,6 @@ public:
 			//check intersection with both and try to map on appropriate one
 			if (dABC < dAABC)
 			{
-				//glm::vec3 cpABC = posCurr + t * dir;
-				//if(rayIntersectsTriangle)
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, ABC.norm, ABC, &t))
 				{
@@ -338,7 +350,7 @@ public:
 				}
 				else
 				{
-					glm::vec2 adjCellIndex = findAdjacentCell(posNext, ABC.norm, cellIndex);
+					glm::vec2 adjCellIndex = findAdjacentCell(posNext, glm::normalize(dir+ABC.norm), cellIndex);
 					if (adjCellIndex == glm::vec2(-1, -1))
 						return false;
 					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
@@ -357,6 +369,9 @@ public:
 						//intersection with cathenus
 						if (mappedBetweenTriangles(ABC, AABC_adj, posNext, contactP, norm))
 							return true;
+						//??????????????? not sure about it
+						//if (mappedBetweenTriangles(ABC, ABC_adj, posNext, contactP, norm))
+							//return true;
 					}
 				}
 			}
@@ -372,7 +387,7 @@ public:
 				}
 				else
 				{
-					glm::vec2 adjCellIndex = findAdjacentCell(posNext, AABC.norm, cellIndex);
+					glm::vec2 adjCellIndex = findAdjacentCell(posNext, glm::normalize(dir+AABC.norm), cellIndex);
 					if (adjCellIndex == glm::vec2(-1, -1))
 						return false;
 					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
@@ -390,6 +405,9 @@ public:
 					{//intersection with cathenus
 						if (mappedBetweenTriangles(AABC, ABC_adj, posNext, contactP, norm))
 							return true;
+						//?????????????????? not sure about it
+						//if (mappedBetweenTriangles(AABC, AABC_adj, posNext, contactP, norm))
+							//return true;
 					}
 				}
 			}
@@ -405,30 +423,135 @@ public:
 			Triangle ABC_posnext = cellNextTriangles[0];
 			Triangle AABC_posnext = cellNextTriangles[1];
 
+			//corner case
+			glm::vec2 cellDiff(cellIndex - cellIndexNext);
+			if (cellDiff.x != 0 && cellDiff.y != 0)
+			{
+				glm::vec2 intermediateCell = findAdjacentCell(posCurr, dir, cellIndex);
+				std::vector<Triangle> intermediateCellTriangles = getCellTriangles(intermediateCell);
+				Triangle ABC_int = intermediateCellTriangles[0];
+				Triangle AABC_int = intermediateCellTriangles[1];
+				std::vector<Triangle> trianglesToMapOn;
+				std::vector<glm::vec3> normalsToInterpolate;
+
+				/*  \  */
+				if (cellDiff.x + cellDiff.y)
+				{
+					trianglesToMapOn.push_back(ABC_int);
+					trianglesToMapOn.push_back(AABC_int); 
+					normalsToInterpolate.push_back(ABC_int.norm);
+					normalsToInterpolate.push_back(AABC_int.norm);
+					
+					if (cellDiff.x + cellDiff.y == 2)
+					{
+						trianglesToMapOn.push_back(AABC_poscurr);
+						trianglesToMapOn.push_back(ABC_posnext);
+						normalsToInterpolate.push_back(AABC_poscurr.norm);
+						normalsToInterpolate.push_back(ABC_posnext.norm);
+						if (intermediateCell.x - cellIndex.x)
+						{
+							std::vector<Triangle> t = getCellTriangles(glm::vec2(cellIndex.x, cellIndex.y + 1));
+							trianglesToMapOn.push_back(t[0]);
+							trianglesToMapOn.push_back(t[1]);
+						}
+						else
+						{
+							std::vector<Triangle> t = getCellTriangles(glm::vec2(cellIndex.x+1, cellIndex.y));
+							trianglesToMapOn.push_back(t[0]);
+							trianglesToMapOn.push_back(t[1]);
+						}
+					}
+					else
+					{
+						trianglesToMapOn.push_back(ABC_poscurr);
+						trianglesToMapOn.push_back(AABC_posnext);
+						normalsToInterpolate.push_back(ABC_poscurr.norm);
+						normalsToInterpolate.push_back(AABC_posnext.norm);
+						if (intermediateCell.x - cellIndex.x)
+						{
+							std::vector<Triangle> t = getCellTriangles(glm::vec2(cellIndex.x, cellIndex.y - 1));
+							trianglesToMapOn.push_back(t[0]);
+							trianglesToMapOn.push_back(t[1]);
+						}
+						else
+						{
+							std::vector<Triangle> t = getCellTriangles(glm::vec2(cellIndex.x - 1, cellIndex.y));
+							trianglesToMapOn.push_back(t[0]);
+							trianglesToMapOn.push_back(t[1]);
+						}
+					}
+				}
+				/*  /  */
+				else
+				{
+					normalsToInterpolate.push_back(ABC_poscurr.norm);
+					normalsToInterpolate.push_back(AABC_poscurr.norm);
+					normalsToInterpolate.push_back(ABC_posnext.norm);
+					normalsToInterpolate.push_back(AABC_posnext.norm);
+					trianglesToMapOn.push_back(ABC_poscurr);
+					trianglesToMapOn.push_back(AABC_poscurr);
+					trianglesToMapOn.push_back(ABC_posnext);
+					trianglesToMapOn.push_back(AABC_posnext);
+
+					glm::vec2 intermCellDir(intermediateCell - cellIndex);
+					if (intermCellDir.x + intermCellDir.y == 1)
+					{
+						normalsToInterpolate.push_back(ABC_int.norm);
+						trianglesToMapOn.push_back(ABC_int);
+						std::vector<Triangle> t = getCellTriangles(intermediateCell - 1.0f);
+						trianglesToMapOn.push_back(t[1]);
+					}
+					else
+					{
+						normalsToInterpolate.push_back(AABC_int.norm);
+						trianglesToMapOn.push_back(AABC_int);
+						std::vector<Triangle> t = getCellTriangles(intermediateCell + 1.0f);
+						trianglesToMapOn.push_back(t[0]);
+					}
+				}
+
+				glm::vec3 n;
+				for (const auto& it : normalsToInterpolate)
+					n += it;
+				n = glm::normalize(n);
+				for (const auto& it : trianglesToMapOn)
+					if (mappedOnTriangle(it, posNext, n, contactP, norm))
+					{
+						std::cout << "corner case true\n";
+						return true;
+					}
+				std::cout << "corner case false\n";
+				return false;
+			}
+
 			if (rayIntersectsTriangle(posCurr, dir, ABC_poscurr, &t))
 			{
 				if (mappedBetweenTriangles(ABC_poscurr, AABC_posnext, posNext, contactP, norm))
+					return true;
+				if (mappedBetweenTriangles(ABC_poscurr, ABC_posnext, posNext, contactP, norm))
 					return true;
 			}
 			else if (rayIntersectsTriangle(posCurr, dir, AABC_poscurr, &t))
 			{
 				if (mappedBetweenTriangles(AABC_poscurr, ABC_posnext, posNext, contactP, norm))
 					return true;
+				if (mappedBetweenTriangles(AABC_poscurr, AABC_posnext, posNext, contactP, norm))
+					return true;
 			}
 			else
 			{
-				glm::vec3 cptmp;
+				glm::vec3 CPtmp;
 				float dABC_posnext = INFINITY, dAABC_posnext = INFINITY;
 				if (rayIntersectsTriangle(posCurr, dir, ABC_posnext, &t))
 				{
-					cptmp = posCurr + t * dir;
-					dABC_posnext = glm::length(cptmp - posCurr);
+					CPtmp = posCurr + t * dir;
+					dABC_posnext = glm::length(CPtmp - posCurr);
 				}
 
 				if (rayIntersectsTriangle(posCurr, dir, AABC_posnext, &t))
 				{
-					cptmp = posCurr + t * dir;
-					dAABC_posnext = glm::length(cptmp - posCurr);
+					CPtmp = posCurr + t * dir;
+					dAABC_posnext = glm::length(CPtmp - posCurr);
 				}
 
 
