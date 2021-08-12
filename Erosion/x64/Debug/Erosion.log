@@ -137,10 +137,10 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(198,57): wa
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(275,1): warning C4305: '+=': truncation from 'double' to 'float'
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(289,1): warning C4305: '+=': truncation from 'double' to 'float'
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(296,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(346,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(383,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(562,1): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(574,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(480,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(531,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(738,1): warning C4305: '+=': truncation from 'double' to 'float'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(754,1): warning C4305: '+=': truncation from 'double' to 'float'
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shader.h(42,40): warning C4101: 'e': unreferenced local variable
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\sphere.h(100,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(81,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
@@ -168,23 +168,23 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shapes.h(159,1): w
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(99,57): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(99,42): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(99,27): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(191,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(196,40): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(295,72): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(193,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(198,40): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(297,72): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(122,18): warning C4101: 'fluidVAO': unreferenced local variable
 C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(122,28): warning C4101: 'fluidVBO': unreferenced local variable
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(338,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(339,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(343,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(344,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(346,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(347,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(368,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(376,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(384,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(392,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(400,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(408,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(340,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(341,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(345,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(346,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(348,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(349,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(370,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(378,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(386,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(394,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(402,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(410,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\memory(3580,56): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
           with
           [
