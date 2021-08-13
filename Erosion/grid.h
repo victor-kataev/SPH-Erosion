@@ -110,7 +110,7 @@ public:
 		for (int i = 0; i < m_heightfield.dimX * m_heightfield.dimY; i++)
 			if (m_heightfield.map[i] > max)
 				max = m_heightfield.map[i];
-		std::cout << "Heightfield max = " << max << std::endl;
+		//std::cout << "Heightfield max = " << max << " " << __LINE__ << std::endl;
 	}
 
 	void genIndices()
@@ -266,7 +266,21 @@ public:
 		return cellIndex;
 	}
 
-	bool mappedBetweenTriangles(const Triangle tri1, const Triangle tri2, const glm::vec3 & pos, glm::vec3& cp, glm::vec3& norm)
+	bool mappedOnTriangle(const Triangle tri, const glm::vec3& pos, const glm::vec3& dir, glm::vec3& cp, glm::vec3& norm)
+	{
+		float t;
+
+		if (rayIntersectsTriangle(pos, dir, tri, &t))
+		{
+			t += 0.000002;
+			norm = dir;
+			cp = pos + t * norm;
+			return true;
+		}
+		return false;
+	}
+
+	bool mappedBetweenTriangles(const Triangle & tri1, const Triangle & tri2, const glm::vec3 & pos, glm::vec3& cp, glm::vec3& norm)
 	{
 		float t;
 
@@ -288,13 +302,154 @@ public:
 		return false;
 	}
 
+	float min3(float a, float b, float c)
+	{
+		if (a < b)
+			if (a < c)
+				return a;
+			else
+				return c;
+		else if (b < c)
+			return b;
+		else
+			return c;
+	}
+
+	bool cornerCaseABC(const Triangle ABC, const Triangle AABC, const glm::vec3& posCurr, const glm::vec3& posNext, glm::vec2 cellIndex, glm::vec3& cp, glm::vec3& norm)
+	{
+		glm::vec2 posCurr2D = { posCurr.x, posCurr.z };
+		glm::vec2 origin = { floor(posCurr.x), floor(posCurr.z) };
+		glm::vec2 right = { origin.x + 1, origin.y };
+		glm::vec2 down = { origin.x, origin.y + 1 };
+		float dorigin = glm::length(origin - posCurr2D);
+		float dright = glm::length(right - posCurr2D);
+		float ddown = glm::length(down - posCurr2D);
+		float dmin = min3(dorigin, dright, ddown);
+		std::vector<Triangle> triangles;
+		std::vector<Triangle> tmp;
+
+		if (dmin == dorigin)
+		{
+			triangles.push_back(ABC);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x - 1, cellIndex.y));
+			triangles.insert(triangles.end(), tmp.begin(), tmp.end());
+			tmp = getCellTriangles(glm::vec2(cellIndex.x, cellIndex.y - 1));
+			triangles.insert(triangles.end(), tmp.begin(), tmp.end());
+			tmp = getCellTriangles(glm::vec2(cellIndex.x - 1, cellIndex.y - 1));
+			triangles.push_back(tmp[1]); //AABC
+			//std::cout << "origin\n";
+		}
+		else if (dmin == dright)
+		{
+			triangles.push_back(ABC);
+			triangles.push_back(AABC);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x + 1, cellIndex.y));
+			triangles.push_back(tmp[0]);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x, cellIndex.y - 1));
+			triangles.push_back(tmp[1]);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x + 1, cellIndex.y - 1));
+			triangles.insert(triangles.end(), tmp.begin(), tmp.end());
+			//std::cout << "right\n";
+		}
+		else //dmin == ddown
+		{
+			triangles.push_back(ABC);
+			triangles.push_back(AABC);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x - 1, cellIndex.y));
+			triangles.push_back(tmp[1]);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x, cellIndex.y + 1));
+			triangles.push_back(tmp[0]);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x - 1, cellIndex.y + 1));
+			triangles.insert(triangles.end(), tmp.begin(), tmp.end());
+			//std::cout << "down\n";
+		}
+
+		glm::vec3 n(0.0);
+		for (const auto& tr : triangles)
+			n += tr.norm;
+		n = glm::normalize(n);
+
+		for (const auto& tr : triangles)
+			if (mappedOnTriangle(tr, posNext, n, cp, norm))
+				return true;
+		return false;
+	}
+
+	bool cornerCaseAABC(const Triangle ABC, const Triangle AABC, const glm::vec3& posCurr, const glm::vec3& posNext, glm::vec2 cellIndex, glm::vec3& cp, glm::vec3& norm)
+	{
+		glm::vec2 posCurr2D = { posCurr.x, posCurr.z };
+		glm::vec2 origin = { floor(posCurr.x) + 1, floor(posCurr.z) + 1 };
+		glm::vec2 left = { origin.x - 1, origin.y };
+		glm::vec2 up = { origin.x, origin.y - 1 };
+		float dorigin = glm::length(origin - posCurr2D);
+		float dleft = glm::length(left - posCurr2D);
+		float dup = glm::length(up - posCurr2D);
+		float dmin = min3(dorigin, dup, dleft);
+		std::vector<Triangle> triangles;
+		std::vector<Triangle> tmp;
+
+		if (dmin == dorigin)
+		{
+			triangles.push_back(AABC);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x + 1, cellIndex.y));
+			triangles.insert(triangles.end(), tmp.begin(), tmp.end());
+			tmp = getCellTriangles(glm::vec2(cellIndex.x, cellIndex.y + 1));
+			triangles.insert(triangles.end(), tmp.begin(), tmp.end());
+			tmp = getCellTriangles(glm::vec2(cellIndex.x + 1, cellIndex.y + 1));
+			triangles.push_back(tmp[0]); //ABC
+			//std::cout << "origin AABC\n";
+			//std::cout << "posCurr: " << posCurr.x << " " << posCurr.z << std::endl;
+			//std::cout << "cellIndex: " << cellIndex.x << " " << cellIndex.y << std::endl;
+		}
+		else if (dmin == dup)
+		{
+			triangles.push_back(ABC);
+			triangles.push_back(AABC);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x + 1, cellIndex.y));
+			triangles.push_back(tmp[0]);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x, cellIndex.y - 1));
+			triangles.push_back(tmp[1]);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x + 1, cellIndex.y - 1));
+			triangles.insert(triangles.end(), tmp.begin(), tmp.end());
+			//std::cout << "up\n";
+		}
+		else //dmin == dleft
+		{
+			triangles.push_back(ABC);
+			triangles.push_back(AABC);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x - 1, cellIndex.y));
+			triangles.push_back(tmp[1]);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x, cellIndex.y + 1));
+			triangles.push_back(tmp[0]);
+			tmp = getCellTriangles(glm::vec2(cellIndex.x - 1, cellIndex.y + 1));
+			triangles.insert(triangles.end(), tmp.begin(), tmp.end());
+			//std::cout << "left\n";
+		}
+
+		glm::vec3 n(0.0);
+		for (const auto& tr : triangles)
+			n += tr.norm;
+		n = glm::normalize(n);
+
+		for (const auto& tr : triangles)
+			if (mappedOnTriangle(tr, posNext, n, cp, norm))
+				return true;
+		return false;
+	}
+
+	bool cornerCaseDiffCells()
+	{
+
+	}
+
 	bool collision(const glm::vec3& posCurr, const glm::vec3& posNext, const glm::vec3& velNext, glm::vec3 & contactP, glm::vec3 & norm)
 	{
 		float t; //where t is R.Origin + t*R.Dir
 		glm::vec3 dir = glm::normalize(velNext);
 
-		glm::ivec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
-		glm::ivec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
+		//std::cout << posCurr.x << " " << posCurr.z << std::endl;
+		glm::vec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
+		glm::vec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
 		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX-1 || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ-1
 			|| cellIndexNext[0] < 0 || cellIndexNext[0] >= m_DimX-1 || cellIndexNext[1] < 0 || cellIndexNext[1] >= m_DimZ-1)
 			return false;
@@ -302,43 +457,43 @@ public:
 		//if in the same cell
 		if (cellIndex == cellIndexNext)
 		{
+			//std::cout << "in the same cell\n";
 			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
 			Triangle ABC = cellTriangles[0];
 			Triangle AABC = cellTriangles[1];
 
-			glm::vec3 cptmp;
+			glm::vec3 CPtmp;
 			float dABC = INFINITY, dAABC = INFINITY;
 			if (rayIntersectsTriangle(posCurr, dir, ABC, &t))
 			{
-				cptmp = posCurr + t * dir;
-				dABC = glm::length(cptmp - posCurr);
+				CPtmp = posCurr + t * dir;
+				dABC = glm::length(CPtmp - posCurr);
 			}
 
 			if (rayIntersectsTriangle(posCurr, dir, AABC, &t))
 			{
-				cptmp = posCurr + t * dir;
-				dAABC = glm::length(cptmp - posCurr);
+				CPtmp = posCurr + t * dir;
+				dAABC = glm::length(CPtmp - posCurr);
 			}
-
 			
 
 			//the cell is built out of two triangles
 			//check intersection with both and try to map on appropriate one
 			if (dABC < dAABC)
 			{
-				//glm::vec3 cpABC = posCurr + t * dir;
-				//if(rayIntersectsTriangle)
+				//std::cout << "ABC case\n";
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, ABC.norm, ABC, &t))
 				{
 					t += 0.000002;
 					norm = ABC.norm;
 					contactP = posNext + t * norm;
+					//std::cout << "mapped on ABC, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
 					return true;
 				}
 				else
 				{
-					glm::vec2 adjCellIndex = findAdjacentCell(posNext, ABC.norm, cellIndex);
+					glm::vec2 adjCellIndex = findAdjacentCell(posNext, glm::normalize(dir + ABC.norm), cellIndex);
 					if (adjCellIndex == glm::vec2(-1, -1))
 						return false;
 					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
@@ -349,30 +504,54 @@ public:
 					//intersection with hypotenuse
 					if (cellDir.x > 0 || cellDir.y > 0)
 					{
+						//std::cout << "hypotenuse\n";
 						if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+						{
+							//std::cout << "mapped between ABC AABC, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
 							return true;
+						}
+
+						//corner case
+						if (cornerCaseABC(ABC, AABC, posCurr, posNext, cellIndex, contactP, norm))
+						{
+							//std::cout << "corner case ABC " << __LINE__ << std::endl;
+							return true;
+						}
 					}
-					else 
+					else
 					{
+
 						//intersection with cathenus
 						if (mappedBetweenTriangles(ABC, AABC_adj, posNext, contactP, norm))
+						{
+							//std::cout << "mapped between ABC AABC_adj, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
 							return true;
+						}
+
+						//corner case
+						if (cornerCaseABC(ABC, AABC, posCurr, posNext, cellIndex, contactP, norm))
+						{
+							//std::cout << "corner case ABC " << __LINE__ << std::endl;
+							return true;
+						}
 					}
 				}
 			}
 			else if (dAABC < dABC)
 			{
+				//std::cout << "AABC case\n";
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, AABC.norm, AABC, &t))
 				{
 					t += 0.000002;
 					norm = AABC.norm;
 					contactP = posNext + t * norm;
+					//std::cout << "mapped on AABC, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
 					return true;
 				}
 				else
 				{
-					glm::vec2 adjCellIndex = findAdjacentCell(posNext, AABC.norm, cellIndex);
+					glm::vec2 adjCellIndex = findAdjacentCell(posNext, glm::normalize(dir + AABC.norm), cellIndex);
 					if (adjCellIndex == glm::vec2(-1, -1))
 						return false;
 					std::vector<Triangle> adjCellTriangles = getCellTriangles(adjCellIndex);
@@ -383,13 +562,36 @@ public:
 					//intersection with hypotenuse
 					if (cellDir.x < 0 || cellDir.y < 0)
 					{
+						//std::cout << "hypotenuse\n";
 						if (mappedBetweenTriangles(ABC, AABC, posNext, contactP, norm))
+						{
+							//std::cout << "mapped between AABC ABC, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
 							return true;
+						}
+
+						//corner case
+						if (cornerCaseAABC(ABC, AABC, posCurr, posNext, cellIndex, contactP, norm))
+						{
+							//std::cout << "corner case AABC " << __LINE__ << std::endl;
+							return true;
+						}
 					}
 					else
-					{//intersection with cathenus
+					{
+
+						//intersection with cathenus
 						if (mappedBetweenTriangles(AABC, ABC_adj, posNext, contactP, norm))
+						{
+							//std::cout << "mapped between AABC ABC_adj, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
 							return true;
+						}
+
+						//corner case
+						if (cornerCaseAABC(ABC, AABC, posCurr, posNext, cellIndex, contactP, norm))
+						{
+							//std::cout << "corner case AABC " << __LINE__ << std::endl;
+							return true;
+						}
 					}
 				}
 			}
@@ -398,63 +600,184 @@ public:
 		}
 		else
 		{
+		//todo
+		//-rewrite corner case, make it a separate function
+		//-
+			//std::cout << "in different cells\n";
+			//std::cout << "cellIndex: " << cellIndex.x << " " << cellIndex.y << " | cellIndexNext: " << cellIndexNext.x << " " << cellIndexNext.y << std::endl;
 			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
 			Triangle ABC_poscurr = cellTriangles[0];
 			Triangle AABC_poscurr = cellTriangles[1];
 			std::vector<Triangle> cellNextTriangles = getCellTriangles(cellIndexNext);
 			Triangle ABC_posnext = cellNextTriangles[0];
 			Triangle AABC_posnext = cellNextTriangles[1];
+			glm::vec2 cellDir = { cellIndexNext - cellIndex };
 
-			if (rayIntersectsTriangle(posCurr, dir, ABC_poscurr, &t))
+			if (cellDir.x != 0 && cellDir.y != 0)
 			{
-				if (mappedBetweenTriangles(ABC_poscurr, AABC_posnext, posNext, contactP, norm))
-					return true;
-			}
-			else if (rayIntersectsTriangle(posCurr, dir, AABC_poscurr, &t))
-			{
-				if (mappedBetweenTriangles(AABC_poscurr, ABC_posnext, posNext, contactP, norm))
-					return true;
+				if (cellDir.x + cellDir.y == -2)
+				{
+					if (cornerCaseABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+					{
+						//std::cout << "corner case ABC diagonal " << __LINE__ << std::endl;
+						return true;
+					}
+				}
+				else if(cellDir.x + cellDir.y == 2)
+				{
+					if (cornerCaseAABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+					{
+						//std::cout << "corner case AABC diagonal " << __LINE__ << std::endl;
+						return true;
+					}
+				}
+				else
+				{
+					if (cornerCaseABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+					{
+						//std::cout << "corner case ABC diagonal " << __LINE__ << std::endl;
+						return true;
+					}
+				}
 			}
 			else
 			{
-				glm::vec3 cptmp;
-				float dABC_posnext = INFINITY, dAABC_posnext = INFINITY;
-				if (rayIntersectsTriangle(posCurr, dir, ABC_posnext, &t))
+				if (rayIntersectsTriangle(posCurr, dir, ABC_poscurr, &t))
 				{
-					cptmp = posCurr + t * dir;
-					dABC_posnext = glm::length(cptmp - posCurr);
-				}
-
-				if (rayIntersectsTriangle(posCurr, dir, AABC_posnext, &t))
-				{
-					cptmp = posCurr + t * dir;
-					dAABC_posnext = glm::length(cptmp - posCurr);
-				}
-
-
-				if (dABC_posnext < dAABC_posnext)
-				{
-					if (rayIntersectsTriangle(posNext, ABC_posnext.norm, ABC_posnext, &t))
+					if (cellDir.x == -1 || cellDir.y == -1)
 					{
-						t += 0.000002;
-						norm = ABC_posnext.norm;
-						contactP = posNext + t * norm;
-						return true;
+						if (mappedBetweenTriangles(ABC_poscurr, AABC_posnext, posNext, contactP, norm))
+						{
+							//std::cout << "mapped between ABC_poscurr AABC_posnext, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
+							return true;
+						}
+
+						if (cornerCaseABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+						{
+							//std::cout << "corner case ABC celldiff " << __LINE__ << std::endl;
+							return true;
+						}
 					}
-					else if (mappedBetweenTriangles(ABC_posnext, AABC_poscurr, posNext, contactP, norm))
-						return true;
-				}
-				else if (dAABC_posnext < dABC_posnext)
-				{
-					if (rayIntersectsTriangle(posNext, AABC_posnext.norm, AABC_posnext, &t))
+					else
 					{
-						t += 0.000002;
-						norm = AABC_posnext.norm;
-						contactP = posNext + t * norm;
-						return true;
+						if (cornerCaseABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+						{
+							//std::cout << "corner case ABC celldiff " << __LINE__ << std::endl;
+							return true;
+						}
 					}
-					if (mappedBetweenTriangles(AABC_posnext, ABC_poscurr, posNext, contactP, norm))
-						return true;
+
+				}
+				else if (rayIntersectsTriangle(posCurr, dir, AABC_poscurr, &t))
+				{
+					if (cellDir.x == 1 || cellDir.y == 1)
+					{
+						if (mappedBetweenTriangles(AABC_poscurr, ABC_posnext, posNext, contactP, norm))
+						{
+							//std::cout << "mapped between AABC_poscurr ABC_posnext, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
+							return true;
+						}
+
+						if (cornerCaseAABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+						{
+							//std::cout << "corner case AABC celldiff " << __LINE__ << std::endl;
+							return true;
+						}
+					}
+					else
+					{
+						if (cornerCaseAABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+						{
+							//std::cout << "corner case AABC celldiff " << __LINE__ << std::endl;
+							return true;
+						}
+					}
+				}
+				else
+				{
+					glm::vec3 CPtmp;
+					float dABC_posnext = INFINITY, dAABC_posnext = INFINITY;
+					if (rayIntersectsTriangle(posCurr, dir, ABC_posnext, &t))
+					{
+						CPtmp = posCurr + t * dir;
+						dABC_posnext = glm::length(CPtmp - posCurr);
+					}
+
+					if (rayIntersectsTriangle(posCurr, dir, AABC_posnext, &t))
+					{
+						CPtmp = posCurr + t * dir;
+						dAABC_posnext = glm::length(CPtmp - posCurr);
+					}
+
+
+					if (dABC_posnext < dAABC_posnext)
+					{
+						if (rayIntersectsTriangle(posNext, ABC_posnext.norm, ABC_posnext, &t))
+						{
+							t += 0.000002;
+							norm = ABC_posnext.norm;
+							contactP = posNext + t * norm;
+							//std::cout << "mapped on ABC_posnext, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
+							return true;
+						}
+
+						if (cellDir.x == 1 || cellDir.y == 1)
+						{
+							if (mappedBetweenTriangles(ABC_posnext, AABC_poscurr, posNext, contactP, norm))
+							{
+								//std::cout << "mapped between ABC_posnext AABC_poscurr, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
+								return true;
+							}
+
+							if (cornerCaseAABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+							{
+								//std::cout << "corner case AABC celldiff " << __LINE__ << std::endl;
+								return true;
+							}
+						}
+						else
+						{
+							if (cornerCaseABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+							{
+								//std::cout << "corner case ABC celldiff " << __LINE__ << std::endl;
+								return true;
+							}
+						}
+					}
+					else if (dAABC_posnext < dABC_posnext)
+					{
+						if (rayIntersectsTriangle(posNext, AABC_posnext.norm, AABC_posnext, &t))
+						{
+							t += 0.000002;
+							norm = AABC_posnext.norm;
+							contactP = posNext + t * norm;
+							//std::cout << "mapped on AABC_posnext, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
+							return true;
+						}
+
+						if (cellDir.x == -1 || cellDir.y == -1)
+						{
+							if (mappedBetweenTriangles(AABC_posnext, ABC_poscurr, posNext, contactP, norm))
+							{
+								//std::cout << "mapped between AABC_posnext ABC_poscurr, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
+								return true;
+							}
+
+							if (cornerCaseABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+							{
+								//std::cout << "corner case ABC celldiff " << __LINE__ << std::endl;
+								return true;
+							}
+						}
+						else
+						{
+							if (cornerCaseAABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
+							{
+								//std::cout << "corner case ABC celldiff " << __LINE__ << std::endl;
+								return true;
+							}
+						}
+					}
 				}
 			}
 			return false;

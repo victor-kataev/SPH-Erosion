@@ -84,7 +84,7 @@ public:
 
 					FluidParticle particle;
 					particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
-					particle.Velocity = glm::vec3(0.0, 0.0, 0.0);
+					particle.Velocity = glm::vec3(0.1, 0.0, -0.1);
 					particle.Acceleration = glm::vec3(0.0);
 					particle.Mass = MASS;
 					m_Particles.push_back(particle);
@@ -182,7 +182,7 @@ public:
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			float r = s * cbrt(3 * m_Particles[i].Mass / (4 * PI * m_Particles[i].Density));
-			// r = 0.01f;
+			//r = 0.01f;
 			glm::mat4 model = glm::mat4(1.0);
 			model = glm::translate(model, m_Particles[i].Position);
 			model = glm::scale(model, glm::vec3(r));
@@ -227,7 +227,7 @@ public:
 					float z = -0.15 + k * 0.025;
 					FluidParticle tmp;
 					tmp.Position = glm::vec3(x+ m_Origin.x, y+ m_Origin.y, z+ m_Origin.z);
-					tmp.Velocity = glm::vec3(0.0, 0.0, 0.0);
+					tmp.Velocity = glm::vec3(0.1, 0.0, -0.1);
 					tmp.Acceleration = glm::vec3(0.0);
 					tmp.Mass = MASS;
 					m_Particles.push_back(tmp);
