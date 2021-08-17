@@ -4,6 +4,8 @@
 #include <list>
 #include <omp.h>
 #include <cstring>
+#include <iomanip>
+#include <float.h>
 
 #include "voxel.h"
 
@@ -272,7 +274,7 @@ public:
 
 		if (rayIntersectsTriangle(pos, dir, tri, &t))
 		{
-			t += 0.000002;
+			//t += 0.000002;
 			norm = dir;
 			cp = pos + t * norm;
 			return true;
@@ -286,14 +288,14 @@ public:
 
 		if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri1, &t))
 		{
-			t += 0.000002;
+			//t += 0.000002;
 			norm = glm::normalize(tri1.norm + tri2.norm);
 			cp = pos + t * norm;
 			return true;
 		}
 		else if (rayIntersectsTriangle(pos, glm::normalize(tri1.norm + tri2.norm), tri2, &t))
 		{
-			t += 0.000002;
+			//t += 0.000002;
 			norm = glm::normalize(tri1.norm + tri2.norm);
 			cp = pos + t * norm;
 			return true;
@@ -437,17 +439,33 @@ public:
 		return false;
 	}
 
-	bool cornerCaseDiffCells()
+	bool pointLaysOnTriangle(const glm::vec3 & p, Triangle & tri)
 	{
+		float S = fabs(glm::dot(tri.B - tri.A, tri.C - tri.A)) / 2.0f;
+		float a = fabs(glm::dot(tri.B - p, tri.C - p)) / 2.0f / S;
+		float b = fabs(glm::dot(tri.C - p, tri.A - p)) / 2.0f / S;
+		float c = 1 - a - b;
+		return a >= 0 && a <= 1 && b >= 0 && b <= 1 && c >= 0 && c <= 1;
+	}
 
+	bool pointLaysOnPlane(const glm::vec3& p, const Triangle& tri)
+	{
+		const float myEpsilon = 1.192092896e-05F;
+		float d = glm::dot(tri.norm, tri.B);
+		float res = tri.norm.x * tri.C.x + tri.norm.y * tri.C.y + tri.norm.z * tri.C.z - d;
+		//std::cout << "plane res: " << res << std::endl;
+		if (fabs(res) < myEpsilon)
+			return true;
+		return false;
 	}
 
 	bool collision(const glm::vec3& posCurr, const glm::vec3& posNext, const glm::vec3& velNext, glm::vec3 & contactP, glm::vec3 & norm)
 	{
 		float t; //where t is R.Origin + t*R.Dir
 		glm::vec3 dir = glm::normalize(velNext);
+		glm::vec3 dirOpposite = -dir;
 
-		//std::cout << posCurr.x << " " << posCurr.z << std::endl;
+		//std::cout << posCurr.x << " " << posCurr.y << " " << posCurr.z << std::endl;
 		glm::vec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
 		glm::vec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
 		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX-1 || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ-1
@@ -458,34 +476,38 @@ public:
 		if (cellIndex == cellIndexNext)
 		{
 			//std::cout << "in the same cell\n";
+			//std::cout << "dir: " << dir.x << " " << dir.y << " " << dir.z << std::endl;
+			//std::cout << "diroposite: " << dirOposite.x << " " << dirOposite.y << " " << dirOposite.z << std::endl;
 			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
 			Triangle ABC = cellTriangles[0];
 			Triangle AABC = cellTriangles[1];
 
 			glm::vec3 CPtmp;
 			float dABC = INFINITY, dAABC = INFINITY;
-			if (rayIntersectsTriangle(posCurr, dir, ABC, &t))
+			if (rayIntersectsTriangle(posNext, dirOpposite, ABC, &t))
 			{
-				CPtmp = posCurr + t * dir;
-				dABC = glm::length(CPtmp - posCurr);
+				CPtmp = posNext + t * dirOpposite;
+				dABC = glm::length(CPtmp - posNext);
+				//std::cout << "true1\n";
 			}
 
-			if (rayIntersectsTriangle(posCurr, dir, AABC, &t))
+			if (rayIntersectsTriangle(posNext, dirOpposite, AABC, &t))
 			{
-				CPtmp = posCurr + t * dir;
-				dAABC = glm::length(CPtmp - posCurr);
+				CPtmp = posNext + t * dirOpposite;
+				dAABC = glm::length(CPtmp - posNext);
+				//std::cout << "true2\n";
 			}
+
 			
-
 			//the cell is built out of two triangles
 			//check intersection with both and try to map on appropriate one
-			if (dABC < dAABC)
+			if (dABC < dAABC || (fabs(dABC - dAABC) < FLT_EPSILON && dABC != INFINITY)) //or dABC == dAABC
 			{
 				//std::cout << "ABC case\n";
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, ABC.norm, ABC, &t))
 				{
-					t += 0.000002;
+					//t += 0.000002;
 					norm = ABC.norm;
 					contactP = posNext + t * norm;
 					//std::cout << "mapped on ABC, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
@@ -543,7 +565,7 @@ public:
 				//try to map on the same triangle
 				if (rayIntersectsTriangle(posNext, AABC.norm, AABC, &t))
 				{
-					t += 0.000002;
+					//t += 0.000002;
 					norm = AABC.norm;
 					contactP = posNext + t * norm;
 					//std::cout << "mapped on AABC, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
@@ -600,9 +622,6 @@ public:
 		}
 		else
 		{
-		//todo
-		//-rewrite corner case, make it a separate function
-		//-
 			//std::cout << "in different cells\n";
 			//std::cout << "cellIndex: " << cellIndex.x << " " << cellIndex.y << " | cellIndexNext: " << cellIndexNext.x << " " << cellIndexNext.y << std::endl;
 			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
@@ -613,6 +632,7 @@ public:
 			Triangle AABC_posnext = cellNextTriangles[1];
 			glm::vec2 cellDir = { cellIndexNext - cellIndex };
 
+			//diagonal corner case
 			if (cellDir.x != 0 && cellDir.y != 0)
 			{
 				if (cellDir.x + cellDir.y == -2)
@@ -642,7 +662,7 @@ public:
 			}
 			else
 			{
-				if (rayIntersectsTriangle(posCurr, dir, ABC_poscurr, &t))
+				if (rayIntersectsTriangle(posNext, dirOpposite, ABC_poscurr, &t))
 				{
 					if (cellDir.x == -1 || cellDir.y == -1)
 					{
@@ -668,7 +688,7 @@ public:
 					}
 
 				}
-				else if (rayIntersectsTriangle(posCurr, dir, AABC_poscurr, &t))
+				else if (rayIntersectsTriangle(posNext, dirOpposite, AABC_poscurr, &t))
 				{
 					if (cellDir.x == 1 || cellDir.y == 1)
 					{
@@ -710,11 +730,11 @@ public:
 					}
 
 
-					if (dABC_posnext < dAABC_posnext)
+					if (dABC_posnext < dAABC_posnext || (fabs(dABC_posnext - dAABC_posnext) < FLT_EPSILON && dABC_posnext != INFINITY))
 					{
 						if (rayIntersectsTriangle(posNext, ABC_posnext.norm, ABC_posnext, &t))
 						{
-							t += 0.000002;
+							//t += 0.000002;
 							norm = ABC_posnext.norm;
 							contactP = posNext + t * norm;
 							//std::cout << "mapped on ABC_posnext, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
@@ -748,7 +768,7 @@ public:
 					{
 						if (rayIntersectsTriangle(posNext, AABC_posnext.norm, AABC_posnext, &t))
 						{
-							t += 0.000002;
+							//t += 0.000002;
 							norm = AABC_posnext.norm;
 							contactP = posNext + t * norm;
 							//std::cout << "mapped on AABC_posnext, cellindex: " << cellIndex.x << " " << cellIndex.y << " " << __LINE__ << std::endl;
