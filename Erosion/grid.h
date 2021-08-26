@@ -465,7 +465,7 @@ public:
 		glm::vec3 dir = glm::normalize(velNext);
 		glm::vec3 dirOpposite = -dir;
 
-		//std::cout << posCurr.x << " " << posCurr.y << " " << posCurr.z << std::endl;
+		////std::cout << posCurr.x << " " << posCurr.y << " " << posCurr.z << std::endl;
 		glm::vec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
 		glm::vec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
 		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX-1 || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ-1
@@ -475,9 +475,9 @@ public:
 		//if in the same cell
 		if (cellIndex == cellIndexNext)
 		{
-			//std::cout << "in the same cell\n";
-			//std::cout << "dir: " << dir.x << " " << dir.y << " " << dir.z << std::endl;
-			//std::cout << "diroposite: " << dirOposite.x << " " << dirOposite.y << " " << dirOposite.z << std::endl;
+			////std::cout << "in the same cell\n";
+			////std::cout << "dir: " << dir.x << " " << dir.y << " " << dir.z << std::endl;
+			////std::cout << "diroposite: " << dirOpposite.x << " " << dirOpposite.y << " " << dirOpposite.z << std::endl;
 			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
 			Triangle ABC = cellTriangles[0];
 			Triangle AABC = cellTriangles[1];
@@ -622,8 +622,8 @@ public:
 		}
 		else
 		{
-			//std::cout << "in different cells\n";
-			//std::cout << "cellIndex: " << cellIndex.x << " " << cellIndex.y << " | cellIndexNext: " << cellIndexNext.x << " " << cellIndexNext.y << std::endl;
+			////std::cout << "in different cells\n";
+			////std::cout << "cellIndex: " << cellIndex.x << " " << cellIndex.y << " | cellIndexNext: " << cellIndexNext.x << " " << cellIndexNext.y << std::endl;
 			std::vector<Triangle> cellTriangles = getCellTriangles(cellIndex);
 			Triangle ABC_poscurr = cellTriangles[0];
 			Triangle AABC_poscurr = cellTriangles[1];

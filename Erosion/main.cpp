@@ -28,6 +28,8 @@ GLint w = SCREEN_WIDTH;
 GLint h = SCREEN_HEIGHT;
 float deltaTime = 0;
 float lastFrame = 0;
+int g_part_id = 0;
+
 
 Camera camera(glm::vec3(7.0, 256.0, 10.0));
 float lastX = SCREEN_WIDTH / 2.0f;
@@ -95,7 +97,7 @@ int main()
     }
     printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
     
-    float dimensions[3] = { 50, 355, 50};
+    float dimensions[3] = { 50, 255, 50 };
     Grid grid(dimensions[0], dimensions[1], dimensions[2]);
     grid.LoadHeightfield(img);
     stbi_image_free(img);
@@ -164,26 +166,28 @@ int main()
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
     //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 41.8));//bug
-    //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 43.2)); //video
-    fluidsph.SetOrigin(glm::vec3(32.2, 124.5, 43.0)); //bug fixed
+    //fluidsph.SetOrigin(glm::vec3(33.9, 124.5, 43.2)); //video
+    fluidsph.SetOrigin(glm::vec3(0.0));
+    //fluidsph.SetOrigin(glm::vec3(32.2, 124.5, 43.0)); //bug fixed
+    //fluidsph.SetOrigin(glm::vec3(7.2, 90.5, 9.0)); //pit
     //fluidsph.SetOrigin(glm::vec3(34, 124.5, 43.2));
     //fluidsph.SetOrigin(glm::vec3(32.19, 124.5, 42.16));//bug fixed
     //fluidsph.SetOrigin(glm::vec3(33.20, 124.5, 41.16));//bug fixed
     //fluidsph.SetOrigin(glm::vec3(32.89, 124.5, 41.8));
     //fluidsph.SetOrigin(glm::vec3(32.5, 128.8, 43.7));//bug
-    camera.PlaceTo(glm::vec3(32.9, 124.5, 44.2));
+    //camera.PlaceTo(glm::vec3(32.9, 125.5, 44.2));
     //fluidsph.SetOrigin(glm::vec3(0.0));
     //fluidsph.SetOrigin(glm::vec3(27.7, 125.5, 42.7));
     //camera.PlaceTo(glm::vec3(27.4, 125.5, 43.7));
-    //camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
-    fluidsph.Initialize(1);
-    Shape shape;
-    shape.CreateCube();
-    shape.CreateBowl();
+    camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
+    fluidsph.Initialize(1000);
+    //Shape shape;
+    //shape.CreateCube();
+    //shape.CreateBowl();
 
-    Hemisphere hsphere(30, 30, 1, glm::vec3(0.0, 0.0, 0.0));
-    Mesh terrain(surface_verts, indices);
-    Mesh mHsphere(hsphere.GetVertices(), hsphere.GetIndices());
+    //Hemisphere hsphere(30, 30, 1, glm::vec3(0.0, 0.0, 0.0));
+    //Mesh terrain(surface_verts, indices);
+    //Mesh mHsphere(hsphere.GetVertices(), hsphere.GetIndices());
 
 
 
@@ -204,10 +208,12 @@ int main()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         
-        
         if (!disabled)
         {
             ImGui::Begin("New window");
+
+
+            ImGui::InputFloat3("Camera pos:", (float*)&camera.Position);
 
             ImGui::ColorEdit3("clear color", (float*)&clear_color);
             ImGui::InputFloat3("dimensions", dimensions);
@@ -268,6 +274,36 @@ int main()
                 glEnableVertexAttribArray(0);
             }
 
+            ImGui::NewLine();
+            ImGui::InputFloat("Mass", fluidsph.GetMass(), 0.001f);
+            ImGui::InputFloat("Visc", fluidsph.GetVisc(), 0.001f);
+            ImGui::InputFloat("SurfTens", fluidsph.GetSurfTen(), 0.0001f, 0.0f, "%.4f");
+            ImGui::InputFloat("p0", fluidsph.Getp0(), 1.0f);
+            float g[3];
+            glm::vec3* gr = fluidsph.GetGrav();
+            g[0] = gr->x;
+            g[1] = gr->y;
+            g[2] = gr->z;
+            ImGui::InputFloat3("Gravity", g);
+            gr->x = g[0];
+            gr->y = g[1];
+            gr->z = g[2];
+            ImGui::NewLine();
+            ImGui::InputInt("particle_id", &g_part_id);
+            FluidParticle fp = fluidsph.GetParticle(g_part_id);
+            ImGui::InputFloat3("Pos", (float*)&fp.Position);
+            ImGui::InputFloat3("Vel", (float*)&fp.Velocity);
+            ImGui::InputFloat3("Acc", (float*)&fp.Acceleration);
+            ImGui::InputFloat("Dens", &fp.Density);
+            ImGui::InputFloat("Pres", &fp.Pressure);
+            ImGui::InputFloat3("PresF", (float*)&fp.PressureForce);
+            //ImGui::InputFloat3("fPressTmp", (float*)&fp.fPressTmp);
+            ImGui::InputInt("NeighbId", &fp.NeighbId, 0);
+            ImGui::InputFloat3("GravF", (float*)&fp.GravityForce);
+            ImGui::InputFloat3("SurfF", (float*)&fp.SurfaceForce);
+            ImGui::InputFloat3("SurfNorm", (float*)&fp.SurfaceNormal);
+            ImGui::InputFloat3("ViscF", (float*)&fp.ViscosityForce);
+
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
         }
@@ -302,15 +338,14 @@ int main()
         //shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
         //shape.DrawCube();
 
-        shader.setVec3("myColor", glm::vec3(0.7, 0.8, 0.5));
-        shape.DrawBowl();
+        //shader.setVec3("myColor", glm::vec3(0.7, 0.8, 0.5));
+        //shape.DrawBowl();
 
         //shader.setVec3("myColor", glm::vec3(0.0, 1.0, 1.0));
         //hsphere.Draw();
 
 
-        shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
-        fluidsph.Draw(shader);
+        fluidsph.Draw(shader, g_part_id);
         
 
         ImGui::Render();
@@ -467,7 +502,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         std::cout << "Particles reseted\n";
     }
 
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && disabled)
+    {
+        fluidsph.AddParticles(125);
+        std::cout << "Added 125 particles\n";
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
     {
         fluidsph.AddParticles(125);
         std::cout << "Added 125 particles\n";

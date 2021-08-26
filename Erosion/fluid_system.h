@@ -48,10 +48,11 @@ struct FBufs
 
 struct FluidParticle
 {
+	int Id;
 	glm::vec3 Position;
 	glm::vec3 Velocity;
 	glm::vec3 Acceleration;
-	float Mass;
+	//float Mass;
 	float Density;
 	float Pressure;
 	glm::vec3 PressureForce;
@@ -59,6 +60,7 @@ struct FluidParticle
 	glm::vec3 GravityForce;
 	glm::vec3 SurfaceForce;
 	glm::vec3 SurfaceNormal;
+	int NeighbId;
 };
 
 class FluidSystemSPH
@@ -73,6 +75,7 @@ public:
 	{
 		num = nParts;
 		init_num = nParts;
+		id = 0;
 
 		for (int i = 0; i < cbrt(num); i++)
 			for (int j = 0; j < cbrt(num); j++)
@@ -83,10 +86,11 @@ public:
 					float z = -0.15 + k * 0.025;
 
 					FluidParticle particle;
+					particle.Id = id++;
 					particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
-					particle.Velocity = glm::vec3(0.1, 0.0, -0.1);
+					particle.Velocity = glm::vec3(0.0, 0.0, 0.0);
 					particle.Acceleration = glm::vec3(0.0);
-					particle.Mass = MASS;
+					//particle.Mass = MASS;
 					m_Particles.push_back(particle);
 				}
 
@@ -113,7 +117,7 @@ public:
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
 				if (distance <= smoothRadius)
-					density += neighbPart.Mass * kernDefault(currPart.Position - neighbPart.Position);
+					density += MASS * kernDefault(currPart.Position - neighbPart.Position);
 			}
 			currPart.Density = density;
 			currPart.Pressure = k * (currPart.Density - p0);
@@ -133,15 +137,19 @@ public:
 			{
 				FluidParticle& neighb = m_Particles[j];
 				float distance = glm::length(cur.Position - neighb.Position);
+				if(distance < 0)
+					std::cout << "distance: " << distance << std::endl;
 				if (distance <= smoothRadius && i != j)
 				{
-					fPress += (cur.Pressure / (cur.Density * cur.Density) + neighb.Pressure / (neighb.Density * neighb.Density)) * neighb.Mass * gradPressure(cur.Position - neighb.Position);
-					fVisc += (neighb.Velocity - cur.Velocity) * (neighb.Mass / neighb.Density) * laplVisc(cur.Position - neighb.Position);
-					n += (neighb.Mass / neighb.Density) * gradDefault(cur.Position - neighb.Position);
+					cur.NeighbId = neighb.Id;
+					fPress += (cur.Pressure / (cur.Density * cur.Density) + neighb.Pressure / (neighb.Density * neighb.Density)) * MASS * gradPressure(cur.Position - neighb.Position);
+					fVisc += (neighb.Velocity - cur.Velocity) * (MASS / neighb.Density) * laplVisc(cur.Position - neighb.Position);
+					n += (MASS / neighb.Density) * gradDefault(cur.Position - neighb.Position);
 				}
 
 			}
 			cur.PressureForce = -(fPress*cur.Density);
+			//cur.fPressTmp = fPress;
 			cur.ViscosityForce = fVisc * visc;
 			cur.SurfaceNormal = n;
 		}
@@ -160,7 +168,7 @@ public:
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
 				if (distance <= smoothRadius)
-					colorFieldLapl += (neighbPart.Mass / neighbPart.Density) * laplDefault(currPart.Position - neighbPart.Position);
+					colorFieldLapl += (MASS / neighbPart.Density) * laplDefault(currPart.Position - neighbPart.Position);
 			}
 
 			//currPart.SurfaceForce = glm::vec3(0.0);
@@ -174,19 +182,23 @@ public:
 		//m_Time += m_Dt;
 	}
 
-	void Draw(const Shader& shader)
+	void Draw(const Shader& shader, int selected_part)
 	{
 		if (!m_Sphere)
 			m_Sphere = std::make_unique<Sphere>(10, 10, 1, glm::vec3(0.0, 0.0, 0.0));
 
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
-			float r = s * cbrt(3 * m_Particles[i].Mass / (4 * PI * m_Particles[i].Density));
-			//r = 0.01f;
+			float r = s * cbrt(3 * MASS / (4 * PI * m_Particles[i].Density));
+			r = 0.01f;
 			glm::mat4 model = glm::mat4(1.0);
 			model = glm::translate(model, m_Particles[i].Position);
 			model = glm::scale(model, glm::vec3(r));
 			shader.setMat4("model", model);
+			if (i == selected_part)
+				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
+			else
+				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
 			m_Sphere->Draw();
 		}
 	}
@@ -226,10 +238,11 @@ public:
 					float y = -0.05 + j * 0.025;
 					float z = -0.15 + k * 0.025;
 					FluidParticle tmp;
+					tmp.Id = id++;
 					tmp.Position = glm::vec3(x+ m_Origin.x, y+ m_Origin.y, z+ m_Origin.z);
-					tmp.Velocity = glm::vec3(0.1, 0.0, -0.1);
+					tmp.Velocity = glm::vec3(0.0, 0.0, 0.0);
 					tmp.Acceleration = glm::vec3(0.0);
-					tmp.Mass = MASS;
+					//tmp.Mass = MASS;
 					m_Particles.push_back(tmp);
 				}
 			}
@@ -241,7 +254,38 @@ public:
 	{
 		m_Particles.clear();
 		num = 0;
+		id = 0;
 		AddParticles(init_num);
+	}
+
+	float* GetMass()
+	{
+		return &MASS;
+	}
+
+	float* GetVisc()
+	{
+		return &visc;
+	}
+
+	float* GetSurfTen()
+	{
+		return &surf_tens;
+	}
+
+	float* Getp0()
+	{
+		return &p0;
+	}
+
+	glm::vec3* GetGrav()
+	{
+		return &g;
+	}
+
+	FluidParticle GetParticle(int id)
+	{
+		return m_Particles[id];
 	}
 
 private:
@@ -275,6 +319,7 @@ private:
 			fExternal = currPart.GravityForce + currPart.SurfaceForce;
 			F = fInternal + fExternal;
 			glm::vec3 acc = F / currPart.Density;
+			currPart.Acceleration = acc; //for debug purposes
 
 			//if initial velocity offset not initialized
 			//if (m_Time == 0.0)
@@ -287,19 +332,19 @@ private:
 
 			glm::vec3 contactP;
 			glm::vec3 norm;
-			if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
+			/*if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
 			{
 				float d = glm::length(posNext - contactP);
 				velNext = velNext - (float)(1 + cR * (d / (deltaT * glm::length(velNext)))) * glm::dot(velNext, norm) * norm;
 				posNext = contactP;
-			}
+			}*/
 
-			/*if (collisionS(posNext, contactP, norm) && deltaT != 0)
+			if (collisionS(posNext, contactP, norm) && deltaT != 0)
 			{
 				float d = glm::length(posNext - contactP);
 				velNext = velNext - norm * (float)(1 + 0.5f * d / (deltaT * glm::length(velNext))) * glm::dot(velNext, norm);
 				posNext = contactP;
-			}*/
+			}
 
 			currPart.Velocity = velNext;
 			currPart.Position = posNext;
@@ -415,16 +460,15 @@ private:
 		glm::vec3 g = glm::vec3(0.0, -9.82f, 0.0);
 		float deltaT = 0.0f;
 		float m_Time = 0.0f;
-		const float p0 = 998.29f;
-		const float MASS = 0.02f;
-		const float visc = 3.5f;
-		const float surf_tens = 0.0728f;
+		float p0 = 998.29f;
+		float MASS = 0.02f;
+		float visc = 3.5f;
+		float surf_tens = 0.0728f;
+		float k = 3.0f;
 		//const float l = 7.065;
 		float l;
-		const float k = 3.0f;
-		const float cR = 0.5f;
-		const int x = 20;
-		//const float h = 0.0457;
+		float cR = 0.5f;
+		//const int x = 20;
 		float h = 0.0457f;
 		int num = 10;
 		int init_num;
@@ -432,6 +476,7 @@ private:
 		float smoothRadius;
 		float s = 1;
 		float len = 0.2f;
+		int id;
 
 private:
 	std::vector<FluidParticle> m_Particles;
