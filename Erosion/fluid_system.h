@@ -61,6 +61,7 @@ struct FluidParticle
 	glm::vec3 SurfaceForce;
 	glm::vec3 SurfaceNormal;
 	int NeighbId;
+	int cnt;
 };
 
 class FluidSystemSPH
@@ -106,19 +107,32 @@ public:
 
 		//compute density and pressure
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 
 			float density = 0;
-			for (int j = 0; j < m_Particles.size(); j++)
+			int cnt = 0;
+			for (int j = 0; j < num; j++)
 			{
 				FluidParticle& neighbPart = m_Particles[j];
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
 				if (distance <= smoothRadius)
+				{
+					cnt++;
 					density += MASS * kernDefault(currPart.Position - neighbPart.Position);
+				}
 			}
+			if (density < 1000 && cnt == 1)
+				density = 328.0f;
+			else if (density < 1000 && cnt == 2)
+				density = 1005.0f;
+			else if (density < 1000 && cnt == 3)
+				density = 1020.0f;
+			else if(density < 1000)
+				density = 1002.0f;
+			
 			currPart.Density = density;
 			currPart.Pressure = k * (currPart.Density - p0);
 		}
@@ -126,30 +140,31 @@ public:
 
 		//internal forces
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& cur = m_Particles[i];
 
 			glm::vec3 fPress(0.0);
 			glm::vec3 fVisc(0.0);
 			glm::vec3 n(0.0); //inward surface normal
-			for (int j = 0; j < m_Particles.size(); j++)
+			for (int j = 0; j < num; j++)
 			{
 				FluidParticle& neighb = m_Particles[j];
 				float distance = glm::length(cur.Position - neighb.Position);
-				if(distance < 0)
-					std::cout << "distance: " << distance << std::endl;
 				if (distance <= smoothRadius && i != j)
 				{
 					cur.NeighbId = neighb.Id;
-					fPress += (cur.Pressure / (cur.Density * cur.Density) + neighb.Pressure / (neighb.Density * neighb.Density)) * MASS * gradPressure(cur.Position - neighb.Position);
+					glm::vec3 grad = gradPressure(cur.Position - neighb.Position);
+					fPress += (cur.Pressure / (cur.Density * cur.Density) + neighb.Pressure / (neighb.Density * neighb.Density)) * MASS * grad;
+					//std::cout << "pressure: " << fPress.x << " " << fPress.y << " " << fPress.z;
+					//std::cout << "	kern: " << grad.x << " " << grad.y << " " << grad.z << std::endl;
 					fVisc += (neighb.Velocity - cur.Velocity) * (MASS / neighb.Density) * laplVisc(cur.Position - neighb.Position);
+					//std::cout << "visc: " << fVisc.x << " " << fVisc.y << " " << fVisc.z << std::endl;
 					n += (MASS / neighb.Density) * gradDefault(cur.Position - neighb.Position);
 				}
 
 			}
 			cur.PressureForce = -(fPress*cur.Density);
-			//cur.fPressTmp = fPress;
 			cur.ViscosityForce = fVisc * visc;
 			cur.SurfaceNormal = n;
 		}
@@ -157,12 +172,12 @@ public:
 
 		//external forces
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			currPart.GravityForce = currPart.Density * g;
 			float colorFieldLapl = 0.0;
-			for (int j = 0; j < m_Particles.size(); j++)
+			for (int j = 0; j < num; j++)
 			{
 				FluidParticle& neighbPart = m_Particles[j];
 
@@ -187,7 +202,7 @@ public:
 		if (!m_Sphere)
 			m_Sphere = std::make_unique<Sphere>(10, 10, 1, glm::vec3(0.0, 0.0, 0.0));
 
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < num; i++)
 		{
 			float r = s * cbrt(3 * MASS / (4 * PI * m_Particles[i].Density));
 			r = 0.01f;
@@ -199,6 +214,7 @@ public:
 				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
 			else
 				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
+				//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
 			m_Sphere->Draw();
 		}
 	}
@@ -222,6 +238,7 @@ public:
 	{
 		return deltaT;
 	}
+
 
 	void PrintCoords() const
 	{
@@ -283,6 +300,11 @@ public:
 		return &g;
 	}
 
+	float* GetDamping()
+	{
+		return &damping;
+	}
+
 	FluidParticle GetParticle(int id)
 	{
 		return m_Particles[id];
@@ -306,7 +328,7 @@ private:
 	void advance(Grid & grid)
 	{
 #pragma omp parallel for
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			glm::vec3 F;
@@ -332,19 +354,29 @@ private:
 
 			glm::vec3 contactP;
 			glm::vec3 norm;
-			/*if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
+			if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
 			{
 				float d = glm::length(posNext - contactP);
-				velNext = velNext - (float)(1 + cR * (d / (deltaT * glm::length(velNext)))) * glm::dot(velNext, norm) * norm;
+				if(glm::length(velNext))
+					velNext = velNext - (float)(1 + cR * (d / (deltaT * glm::length(velNext)))) * glm::dot(velNext, norm) * norm;
+				glm::vec3 velNextRev = -velNext;
+				float k = glm::dot(glm::normalize(velNextRev), norm);
+				float v_n_len = k * glm::length(velNext);
+				glm::vec3 v_n = v_n_len * (norm);
+				glm::vec3 v_t = velNext + v_n;
+				glm::vec3 reflected = v_n + (-v_t);
+				velNext = velNext + damping* reflected;
+				glm::vec3 v = -velNext;
+				//velNext = velNext + damping * v;
 				posNext = contactP;
-			}*/
+			}
 
-			if (collisionS(posNext, contactP, norm) && deltaT != 0)
+			/*if (collisionS(posNext, contactP, norm) && deltaT != 0)
 			{
 				float d = glm::length(posNext - contactP);
 				velNext = velNext - norm * (float)(1 + 0.5f * d / (deltaT * glm::length(velNext))) * glm::dot(velNext, norm);
 				posNext = contactP;
-			}
+			}*/
 
 			currPart.Velocity = velNext;
 			currPart.Position = posNext;
@@ -430,16 +462,12 @@ private:
 	glm::vec3 gradPressure(const glm::vec3& r)
 	{
 
-		//float len = glm::length(r);
-		//return (float)(-45.0f / (PI * (float)pow(h, 6))) * (r / len) * (float)pow((h - len), 2);
-
-
 		float dist = glm::length(r);
 		if (dist < 10e-5) {
-			return -(glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f)) * (float)(45.f / (PI * powf(h, 6.0f))) * powf(h - dist, 2.0f));
+			return glm::vec3(1.0f) * (float)(-45.f / (PI * powf(h, 6.0f))) * powf(h - dist, 2.0f);
 		}
 		else {
-			glm::vec3 returnValue = -(glm::normalize(r) * (float)(45.f / (PI * powf(h, 6.0f))) * powf(h - dist, 2.0f));
+			glm::vec3 returnValue = (float)(-45.f / (PI * powf(h, 6.0f))) * glm::normalize(r) * powf(h - dist, 2.0f);
 
 			return returnValue;
 		}
@@ -477,6 +505,7 @@ private:
 		float s = 1;
 		float len = 0.2f;
 		int id;
+		float damping = 0.1f;
 
 private:
 	std::vector<FluidParticle> m_Particles;

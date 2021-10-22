@@ -165,9 +165,9 @@ int main()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
 
-    //fluidsph.SetOrigin(glm::vec3(32.9, 124.5, 41.8));//bug
-    //fluidsph.SetOrigin(glm::vec3(33.9, 124.5, 43.2)); //video
-    fluidsph.SetOrigin(glm::vec3(0.0));
+    //fluidsph.SetOrigin(glm::vec3(33.1, 125.5, 42.0));//video
+    fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7)); //video
+    //fluidsph.SetOrigin(glm::vec3(0.0));
     //fluidsph.SetOrigin(glm::vec3(32.2, 124.5, 43.0)); //bug fixed
     //fluidsph.SetOrigin(glm::vec3(7.2, 90.5, 9.0)); //pit
     //fluidsph.SetOrigin(glm::vec3(34, 124.5, 43.2));
@@ -175,11 +175,10 @@ int main()
     //fluidsph.SetOrigin(glm::vec3(33.20, 124.5, 41.16));//bug fixed
     //fluidsph.SetOrigin(glm::vec3(32.89, 124.5, 41.8));
     //fluidsph.SetOrigin(glm::vec3(32.5, 128.8, 43.7));//bug
-    //camera.PlaceTo(glm::vec3(32.9, 125.5, 44.2));
-    //fluidsph.SetOrigin(glm::vec3(0.0));
+    camera.PlaceTo(glm::vec3(32.9, 125.5, 44.2));
     //fluidsph.SetOrigin(glm::vec3(27.7, 125.5, 42.7));
     //camera.PlaceTo(glm::vec3(27.4, 125.5, 43.7));
-    camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
+    //camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
     fluidsph.Initialize(1000);
     //Shape shape;
     //shape.CreateCube();
@@ -279,6 +278,7 @@ int main()
             ImGui::InputFloat("Visc", fluidsph.GetVisc(), 0.001f);
             ImGui::InputFloat("SurfTens", fluidsph.GetSurfTen(), 0.0001f, 0.0f, "%.4f");
             ImGui::InputFloat("p0", fluidsph.Getp0(), 1.0f);
+            ImGui::InputFloat("damping", fluidsph.GetDamping(), 0.1f);
             float g[3];
             glm::vec3* gr = fluidsph.GetGrav();
             g[0] = gr->x;
@@ -303,6 +303,7 @@ int main()
             ImGui::InputFloat3("SurfF", (float*)&fp.SurfaceForce);
             ImGui::InputFloat3("SurfNorm", (float*)&fp.SurfaceNormal);
             ImGui::InputFloat3("ViscF", (float*)&fp.ViscosityForce);
+
 
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
