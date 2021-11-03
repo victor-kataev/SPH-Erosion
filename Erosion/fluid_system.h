@@ -46,23 +46,7 @@ struct FBufs
 };
 
 
-struct FluidParticle
-{
-	int Id;
-	glm::vec3 Position;
-	glm::vec3 Velocity;
-	glm::vec3 Acceleration;
-	//float Mass;
-	float Density;
-	float Pressure;
-	glm::vec3 PressureForce;
-	glm::vec3 ViscosityForce;
-	glm::vec3 GravityForce;
-	glm::vec3 SurfaceForce;
-	glm::vec3 SurfaceNormal;
-	int NeighbId;
-	int cnt;
-};
+
 
 class FluidSystemSPH
 {
@@ -98,6 +82,7 @@ public:
 		vol = num * MASS / p0;
 		//smoothRadius = cbrt(3 * vol * x / (4 * PI * num));
 		smoothRadius = h;
+		deltaS = h / 2.0f;
 		//h = smoothRadius;
 		//l = sqrt(p0 / x);
 	}
@@ -107,13 +92,13 @@ public:
 
 		//compute density and pressure
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 
 			float density = 0;
 			int cnt = 0;
-			for (int j = 0; j < num; j++)
+			for (int j = 0; j < m_Particles.size(); j++)
 			{
 				FluidParticle& neighbPart = m_Particles[j];
 
@@ -140,14 +125,14 @@ public:
 
 		//internal forces
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& cur = m_Particles[i];
 
 			glm::vec3 fPress(0.0);
 			glm::vec3 fVisc(0.0);
 			glm::vec3 n(0.0); //inward surface normal
-			for (int j = 0; j < num; j++)
+			for (int j = 0; j < m_Particles.size(); j++)
 			{
 				FluidParticle& neighb = m_Particles[j];
 				float distance = glm::length(cur.Position - neighb.Position);
@@ -172,12 +157,12 @@ public:
 
 		//external forces
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			currPart.GravityForce = currPart.Density * g;
 			float colorFieldLapl = 0.0;
-			for (int j = 0; j < num; j++)
+			for (int j = 0; j < m_Particles.size(); j++)
 			{
 				FluidParticle& neighbPart = m_Particles[j];
 
@@ -202,7 +187,7 @@ public:
 		if (!m_Sphere)
 			m_Sphere = std::make_unique<Sphere>(10, 10, 1, glm::vec3(0.0, 0.0, 0.0));
 
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			float r = s * cbrt(3 * MASS / (4 * PI * m_Particles[i].Density));
 			r = 0.01f;
@@ -215,6 +200,17 @@ public:
 			else
 				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
 				//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
+			m_Sphere->Draw();
+		}
+
+		for (int i = 0; i < m_BParticles.size(); i++)
+		{
+			float r = 0.01f;
+			glm::mat4 model = glm::mat4(1.0);
+			model = glm::translate(model, m_BParticles[i].Position);
+			model = glm::scale(model, glm::vec3(r));
+			shader.setMat4("model", model);
+			shader.setVec3("myColor", glm::vec3(1.0, 1.0, 1.0));
 			m_Sphere->Draw();
 		}
 	}
@@ -270,6 +266,7 @@ public:
 	void Reset()
 	{
 		m_Particles.clear();
+		m_BParticles.clear();
 		num = 0;
 		id = 0;
 		AddParticles(init_num);
@@ -327,8 +324,10 @@ private:
 	//leap-frog + collision handling
 	void advance(Grid & grid)
 	{
+		omp_lock_t writelock;
+		omp_init_lock(&writelock);
 #pragma omp parallel for
-		for (int i = 0; i < num; i++)
+		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			glm::vec3 F;
@@ -343,7 +342,7 @@ private:
 			glm::vec3 acc = F / currPart.Density;
 			currPart.Acceleration = acc; //for debug purposes
 
-			//if initial velocity offset not initialized
+			//if initial velocity offset is not initialized
 			//if (m_Time == 0.0)
 			//{
 			//	currPart.Velocity = currPart.Velocity - 0.5f * m_Dt * currPart.Acceleration;
@@ -351,6 +350,8 @@ private:
 			
 			velNext = currPart.Velocity + acc * deltaT;
 			posNext = currPart.Position + velNext * deltaT;
+
+			grid.SeedCell(currPart.Position, m_BParticles, deltaS, &writelock);
 
 			glm::vec3 contactP;
 			glm::vec3 norm;
@@ -382,6 +383,7 @@ private:
 			currPart.Position = posNext;
 			
 		}
+		omp_destroy_lock(&writelock);
 	}
 
 	bool collisionS(glm::vec3 pos, glm::vec3& contactP, glm::vec3& normal) {
@@ -506,9 +508,11 @@ private:
 		float len = 0.2f;
 		int id;
 		float damping = 0.1f;
+		float deltaS;
 
 private:
 	std::vector<FluidParticle> m_Particles;
+	std::vector<FluidParticle> m_BParticles;
 	std::unique_ptr<Sphere> m_Sphere;
 	glm::vec3 m_Origin;
 };

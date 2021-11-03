@@ -1,39 +1,30 @@
 ﻿  main.cpp
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(64,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(84,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(65,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(85,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(66,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(86,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(120,20): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(140,20): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(121,22): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(141,22): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(125,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
-          with
-          [
-              T=float
-          ]
-          and
-          [
-              _Ty=unsigned int
-          ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(126,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(145,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
@@ -42,7 +33,7 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(126,36): wa
           [
               _Ty=unsigned int
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(127,40): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(146,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
@@ -51,7 +42,7 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(127,40): wa
           [
               _Ty=unsigned int
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(131,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(147,40): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
@@ -60,7 +51,7 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(131,36): wa
           [
               _Ty=unsigned int
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(132,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(151,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
@@ -69,7 +60,7 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(132,36): wa
           [
               _Ty=unsigned int
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(133,42): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(152,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
@@ -78,110 +69,124 @@ C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(133,42): wa
           [
               _Ty=unsigned int
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(151,28): warning C4244: 'argument': conversion from 'int' to 'const _Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(153,42): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
+          with
+          [
+              T=float
+          ]
+          and
+          [
+              _Ty=unsigned int
+          ]
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(171,28): warning C4244: 'argument': conversion from 'int' to 'const _Ty', possible loss of data
           with
           [
               _Ty=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(152,28): warning C4244: 'argument': conversion from 'int' to 'const _Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(172,28): warning C4244: 'argument': conversion from 'int' to 'const _Ty', possible loss of data
           with
           [
               _Ty=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(153,28): warning C4244: 'argument': conversion from 'int' to 'const _Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(173,28): warning C4244: 'argument': conversion from 'int' to 'const _Ty', possible loss of data
           with
           [
               _Ty=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(186,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(197,71): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(206,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(217,71): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(197,57): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(217,57): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(198,82): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(218,82): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(198,64): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(218,64): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(199,79): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(219,79): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(199,63): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(219,63): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(200,73): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(220,73): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\grid.h(200,57): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(220,57): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shader.h(42,40): warning C4101: 'e': unreferenced local variable
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\sphere.h(100,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(81,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(82,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(83,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(104,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(124,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(151,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(221,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(225,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(226,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(227,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shapes.h(75,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shapes.h(92,35): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\grid.h(835,26): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\shader.h(42,40): warning C4101: 'e': unreferenced local variable
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\sphere.h(100,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(69,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(70,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(71,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(94,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(127,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(159,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(247,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(251,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(252,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(253,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\shapes.h(75,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\shapes.h(92,35): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
           with
           [
               _Ty=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shapes.h(96,35): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\shapes.h(96,35): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
           with
           [
               _Ty=float
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\shapes.h(159,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(99,57): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(99,42): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(99,27): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(195,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(200,40): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(299,72): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(122,18): warning C4101: 'fluidVAO': unreferenced local variable
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(122,28): warning C4101: 'fluidVBO': unreferenced local variable
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(342,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(343,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(347,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(348,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(350,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(351,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(372,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(380,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(388,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(396,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(404,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\main.cpp(412,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\shapes.h(159,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(101,57): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(101,42): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(101,27): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(198,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(203,40): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(336,72): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(124,18): warning C4101: 'fluidVAO': unreferenced local variable
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(124,28): warning C4101: 'fluidVBO': unreferenced local variable
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(378,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(379,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(383,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(384,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(386,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(387,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(408,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(416,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(424,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(432,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(440,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\main.cpp(448,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.28.29910\include\memory(3580,56): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
           with
           [
               _Ty=int
           ]
-C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\Erosion\fluid_system.h(180): message : see reference to function template instantiation 'std::unique_ptr<Sphere,std::default_delete<Sphere>> std::make_unique<Sphere,int,int,int,glm::vec3,0>(int &&,int &&,int &&,glm::vec3 &&)' being compiled
-  Erosion.vcxproj -> C:\Users\victo\OneDrive\Desktop\BP\New folder\Erosion\x64\Debug\Erosion.exe
+C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\Erosion\fluid_system.h(189): message : see reference to function template instantiation 'std::unique_ptr<Sphere,std::default_delete<Sphere>> std::make_unique<Sphere,int,int,int,glm::vec3,0>(int &&,int &&,int &&,glm::vec3 &&)' being compiled
+  Erosion.vcxproj -> C:\Users\victo\OneDrive - České vysoké učení technické v Praze\Plocha\BP\New folder\Erosion\x64\Debug\Erosion.exe

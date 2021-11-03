@@ -6,8 +6,28 @@
 #include <cstring>
 #include <iomanip>
 #include <float.h>
+#include <unordered_map>
 
 #include "voxel.h"
+//#include "fluid_sysem.h"
+
+struct FluidParticle
+{
+	int Id;
+	glm::vec3 Position;
+	glm::vec3 Velocity;
+	glm::vec3 Acceleration;
+	//float Mass;
+	float Density;
+	float Pressure;
+	glm::vec3 PressureForce;
+	glm::vec3 ViscosityForce;
+	glm::vec3 GravityForce;
+	glm::vec3 SurfaceForce;
+	glm::vec3 SurfaceNormal;
+	int NeighbId;
+	int cnt;
+};
 
 struct Triangle
 {
@@ -34,7 +54,7 @@ private:
 	int m_filled_voxels;
 
 	Voxel* m_Grid;
-	//FluidSystem m_Fluid;
+	std::unordered_map<int, bool> m_SeededCells;
 
 	std::vector<float> surfaceParts;
 	std::vector<float> fluidParts;
@@ -803,6 +823,77 @@ public:
 			return false;
 		}
 	}
+
+	void SeedCell(const glm::vec3 partpos, std::vector<FluidParticle> & boundary, float deltaS, omp_lock_t * writelock)
+	{
+		glm::vec2 cell = { floor(partpos.x), floor(partpos.z) };
+		//out of grid
+		if (cell[0] < 0 || cell[0] >= m_Dim.x || cell[1] < 0 || cell[1] >= m_Dim.z)
+			return;
+
+		int mapIdx; 
+		mapIdx = cell[0] * 100 + cell[1]; // (34, 88) -> 3488;  (9, 2) -> 902;  (0, 0) -> 0
+		
+		omp_set_lock(writelock);
+		if (!m_SeededCells[mapIdx])
+		{
+			fillCell(cell, boundary, deltaS, writelock);
+			m_SeededCells[mapIdx] = true;
+		}
+		omp_unset_lock(writelock);
+
+		//for (int z = cell[1]-1; z < cell[1]-1 + 3; z++)
+		//{
+		//	for (int x = cell[0]-1; x < cell[0]-1 + 3; x++)
+		//	{
+		//		if (x < 0 || x >= m_Dim.x || z < 0 || z >= m_Dim.z)
+		//			continue;
+
+		//		mapIdx = x * 100 + z; // (34, 88) -> 3488;  (9, 2) -> 902;  (0, 0) -> 0
+		//		if (!m_SeededCells[mapIdx])
+		//		{
+		//			fillCell(cell, boundary, deltaS, writelock);
+		//			m_SeededCells[mapIdx] = true;
+		//		}
+		//	}
+		//}
+	}
+
+	void fillCell(const glm::vec2& cell, std::vector<FluidParticle>& boundary, float deltaS, omp_lock_t * writelock)
+	{
+		std::vector<Triangle> cellTriangles = getCellTriangles(cell);
+		Triangle ABC = cellTriangles[0];
+		Triangle AABC = cellTriangles[1];
+		float t = 0, u = 0;
+		
+		for (t = deltaS; t < 1; t += deltaS)
+		{
+			glm::vec3 a = ABC.A + t * (ABC.B - ABC.A);
+			glm::vec3 b = ABC.A + t * (ABC.C - ABC.A);
+			glm::vec3 c = ABC.A + t * (AABC.A - AABC.C);
+			float n = glm::length(b - a) / deltaS;
+			float step = 1.0f / n;
+
+			for (u = step; u < 1; u += step)
+			{
+				glm::vec3 d = a + u * (b - a);
+				glm::vec3 e = a + u * (c - a);
+
+			
+				FluidParticle bp;
+				bp.Position = d;
+				bp.Velocity = glm::vec3(0.0);
+				bp.Acceleration = glm::vec3(0.0);
+				boundary.push_back(bp);
+
+				bp.Position = e;
+				bp.Velocity = glm::vec3(0.0);
+				boundary.push_back(bp);
+			}
+		}
+	}
+
+
 
 	std::vector<unsigned int> GetIndices()
 	{
