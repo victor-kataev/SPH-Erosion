@@ -112,14 +112,6 @@ int main()
     //std::vector<float> fluid_verts = grid.GetFluidParts();
     //size_t fluid_size = grid.GetFluidPartsSize();
     
-
-    float vertices[] = {
-        1, 0, 1,
-        1, 0, 2,
-        -1, 0, 1,
-        -1, 0, 2
-    };
-
     unsigned int surfaceVAO, surfaceVBO, surfaceEBO;
     unsigned int fluidVAO, fluidVBO;
 

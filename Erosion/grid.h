@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <float.h>
 #include <unordered_map>
+#include <algorithm>
 
 #include "voxel.h"
 //#include "fluid_sysem.h"
@@ -43,6 +44,73 @@ struct Triangle
 	glm::vec3 norm;
 };
 
+bool cmpX(const FluidParticle& a, const FluidParticle& b)
+{
+	return a.Position.x < b.Position.x;
+}
+
+bool cmpY(const FluidParticle& a, const FluidParticle& b)
+{
+	return a.Position.y < b.Position.y;
+}
+
+bool cmpZ(const FluidParticle& a, const FluidParticle& b)
+{
+	return a.Position.z < b.Position.z;
+}
+
+
+struct KdNode
+{
+	FluidParticle* particle;
+	KdNode* left_child;
+	KdNode* right_child;
+};
+
+class Kdtree
+{
+private:
+	std::vector<FluidParticle> m_Particles;
+	KdNode* root;
+
+	KdNode* buildTree(const std::vector<FluidParticle>::iterator& begin, const std::vector<FluidParticle>::iterator& end, int depth)
+	{
+		if (begin == end)
+		{
+			KdNode* node = new KdNode;
+			node->particle = &(*begin);
+			node->left_child = nullptr;
+			node->right_child = nullptr;
+		}
+
+		int axis = depth % 3;
+
+		switch (axis)
+		{
+		case 0: { std::sort(begin, end, cmpX); break; }
+		case 1: { std::sort(begin, end, cmpY); break; }
+		case 2: { std::sort(begin, end, cmpZ); break; }
+		}
+
+		int median = (end - begin) / 2;
+		KdNode* node = new KdNode();
+		node->particle = &(*(begin + median));
+		node->left_child = buildTree(begin, begin + median, depth + 1);
+		node->right_child = buildTree(begin + median + 1, end, depth + 1);
+		return node;
+	}
+
+
+public:
+	Kdtree() = default;
+
+	Kdtree(std::vector<FluidParticle> particles)
+	{
+		m_Particles = particles;
+		root = buildTree(particles.begin(), particles.end(), 0);
+	}
+};
+
 class Grid
 {
 private:
@@ -54,6 +122,7 @@ private:
 	int m_filled_voxels;
 
 	Voxel* m_Grid;
+	//std::unordered_map<int, Kdtree*> m_SeededCells;
 	std::unordered_map<int, bool> m_SeededCells;
 
 	std::vector<float> surfaceParts;
@@ -827,54 +896,42 @@ public:
 	void SeedCell(const glm::vec3 partpos, std::vector<FluidParticle> & boundary, float deltaS, omp_lock_t * writelock)
 	{
 		glm::vec2 cell = { floor(partpos.x), floor(partpos.z) };
-		//out of grid
 		if (cell[0] < 0 || cell[0] >= m_Dim.x || cell[1] < 0 || cell[1] >= m_Dim.z)
 			return;
 
 		int mapIdx; 
 		mapIdx = cell[0] * 100 + cell[1]; // (34, 88) -> 3488;  (9, 2) -> 902;  (0, 0) -> 0
-		
+		std::vector<FluidParticle> boundaryParts;
+
 		omp_set_lock(writelock);
-		if (!m_SeededCells[mapIdx])
+		if (m_SeededCells.find(mapIdx) == m_SeededCells.end())
 		{
-			fillCell(cell, boundary, deltaS, writelock);
+			fillCell(cell, boundary, deltaS);
 			m_SeededCells[mapIdx] = true;
+			//m_SeededCells[mapIdx] = new Kdtree(boundaryParts);
 		}
 		omp_unset_lock(writelock);
-
-		//for (int z = cell[1]-1; z < cell[1]-1 + 3; z++)
-		//{
-		//	for (int x = cell[0]-1; x < cell[0]-1 + 3; x++)
-		//	{
-		//		if (x < 0 || x >= m_Dim.x || z < 0 || z >= m_Dim.z)
-		//			continue;
-
-		//		mapIdx = x * 100 + z; // (34, 88) -> 3488;  (9, 2) -> 902;  (0, 0) -> 0
-		//		if (!m_SeededCells[mapIdx])
-		//		{
-		//			fillCell(cell, boundary, deltaS, writelock);
-		//			m_SeededCells[mapIdx] = true;
-		//		}
-		//	}
-		//}
 	}
 
-	void fillCell(const glm::vec2& cell, std::vector<FluidParticle>& boundary, float deltaS, omp_lock_t * writelock)
+	void fillCell(const glm::vec2& cell, std::vector<FluidParticle>& boundary, float deltaS)
 	{
 		std::vector<Triangle> cellTriangles = getCellTriangles(cell);
 		Triangle ABC = cellTriangles[0];
 		Triangle AABC = cellTriangles[1];
-		float t = 0, u = 0;
-		
-		for (t = deltaS; t < 1; t += deltaS)
+
+		float num = glm::length(ABC.B - ABC.A) / deltaS;
+		float step = 1.0f / num;
+
+		float t;
+		for (t = step; t < 1; t += step)
 		{
 			glm::vec3 a = ABC.A + t * (ABC.B - ABC.A);
 			glm::vec3 b = ABC.A + t * (ABC.C - ABC.A);
 			glm::vec3 c = ABC.A + t * (AABC.A - AABC.C);
 			float n = glm::length(b - a) / deltaS;
-			float step = 1.0f / n;
+			float s = 1.0f / n;
 
-			for (u = step; u < 1; u += step)
+			for (float u = s; u < 1; u += s)
 			{
 				glm::vec3 d = a + u * (b - a);
 				glm::vec3 e = a + u * (c - a);
@@ -893,6 +950,10 @@ public:
 		}
 	}
 
+	/*glm::vec3 CalculateBoundaryForce(const FluidParticle& sphPart)
+	{
+
+	}*/
 
 
 	std::vector<unsigned int> GetIndices()

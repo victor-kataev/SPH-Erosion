@@ -333,11 +333,13 @@ private:
 			glm::vec3 F;
 			glm::vec3 fInternal;
 			glm::vec3 fExternal;
+			glm::vec3 fBoundary;
 			glm::vec3 velNext;
 			glm::vec3 posNext;
 
 			fInternal = currPart.PressureForce + currPart.ViscosityForce;
 			fExternal = currPart.GravityForce + currPart.SurfaceForce;
+
 			F = fInternal + fExternal;
 			glm::vec3 acc = F / currPart.Density;
 			currPart.Acceleration = acc; //for debug purposes
@@ -352,6 +354,7 @@ private:
 			posNext = currPart.Position + velNext * deltaT;
 
 			grid.SeedCell(currPart.Position, m_BParticles, deltaS, &writelock);
+			//fBoundary = grid.CalculateBoundaryForce(currPart);
 
 			glm::vec3 contactP;
 			glm::vec3 norm;
