@@ -75,12 +75,21 @@ private:
 
 	KdNode* buildTree(const std::vector<FluidParticle>::iterator& begin, const std::vector<FluidParticle>::iterator& end, int depth)
 	{
+		int diff = end - begin;
+		if (diff < 0)
+		{
+			int x = 0;
+			x--;
+			x = 5;
+		}
+
 		if (begin == end)
 		{
-			KdNode* node = new KdNode;
-			node->particle = &(*begin);
-			node->left_child = nullptr;
-			node->right_child = nullptr;
+			//KdNode* node = new KdNode;
+			//node->particle = &(*begin);
+			//node->left_child = nullptr;
+			//node->right_child = nullptr;
+			return nullptr;
 		}
 
 		int axis = depth % 3;
@@ -96,7 +105,7 @@ private:
 		KdNode* node = new KdNode();
 		node->particle = &(*(begin + median));
 		node->left_child = buildTree(begin, begin + median, depth + 1);
-		node->right_child = buildTree(begin + median + 1, end, depth + 1);
+		node->right_child = buildTree(begin + median+1, end, depth + 1);
 		return node;
 	}
 
@@ -107,7 +116,7 @@ public:
 	Kdtree(std::vector<FluidParticle> particles)
 	{
 		m_Particles = particles;
-		root = buildTree(particles.begin(), particles.end(), 0);
+		root = buildTree(m_Particles.begin(), m_Particles.end(), 0);
 	}
 };
 
@@ -122,8 +131,8 @@ private:
 	int m_filled_voxels;
 
 	Voxel* m_Grid;
-	//std::unordered_map<int, Kdtree*> m_SeededCells;
-	std::unordered_map<int, bool> m_SeededCells;
+	//std::unordered_map<int, bool> m_SeededCells;
+	std::unordered_map<int, Kdtree*> m_SeededCells;
 
 	std::vector<float> surfaceParts;
 	std::vector<float> fluidParts;
@@ -906,9 +915,9 @@ public:
 		omp_set_lock(writelock);
 		if (m_SeededCells.find(mapIdx) == m_SeededCells.end())
 		{
-			fillCell(cell, boundary, deltaS);
-			m_SeededCells[mapIdx] = true;
-			//m_SeededCells[mapIdx] = new Kdtree(boundaryParts);
+			fillCell(cell, boundaryParts, deltaS);
+			//m_SeededCells[mapIdx] = true;
+			m_SeededCells[mapIdx] = new Kdtree(boundaryParts);
 		}
 		omp_unset_lock(writelock);
 	}

@@ -155,7 +155,7 @@ int main()
    
     bool show_demo_window = true;
     bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.6f, 0.0f, 0.0f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.31f, 0.23f, 0.16f, 1.00f);
 
     //fluidsph.SetOrigin(glm::vec3(33.1, 125.5, 42.0));//video
     fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7)); //video

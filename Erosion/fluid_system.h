@@ -198,7 +198,7 @@ public:
 			if (i == selected_part)
 				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
 			else
-				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 1.0));
+				shader.setVec3("myColor", glm::vec3(0.0, 0.2, 0.5));
 				//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
 			m_Sphere->Draw();
 		}
@@ -326,7 +326,7 @@ private:
 	{
 		omp_lock_t writelock;
 		omp_init_lock(&writelock);
-#pragma omp parallel for
+//#pragma omp parallel for
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
