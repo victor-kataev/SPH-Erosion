@@ -75,22 +75,8 @@ private:
 
 	KdNode* buildTree(const std::vector<FluidParticle>::iterator& begin, const std::vector<FluidParticle>::iterator& end, int depth)
 	{
-		int diff = end - begin;
-		if (diff < 0)
-		{
-			int x = 0;
-			x--;
-			x = 5;
-		}
-
 		if (begin == end)
-		{
-			//KdNode* node = new KdNode;
-			//node->particle = &(*begin);
-			//node->left_child = nullptr;
-			//node->right_child = nullptr;
 			return nullptr;
-		}
 
 		int axis = depth % 3;
 
@@ -909,6 +895,7 @@ public:
 			return;
 
 		int mapIdx; 
+		//TODO grid dim can be bigger
 		mapIdx = cell[0] * 100 + cell[1]; // (34, 88) -> 3488;  (9, 2) -> 902;  (0, 0) -> 0
 		std::vector<FluidParticle> boundaryParts;
 
@@ -919,6 +906,7 @@ public:
 			//m_SeededCells[mapIdx] = true;
 			m_SeededCells[mapIdx] = new Kdtree(boundaryParts);
 		}
+		boundary.insert(boundary.end(), boundaryParts.begin(), boundaryParts.end());
 		omp_unset_lock(writelock);
 	}
 
@@ -928,30 +916,43 @@ public:
 		Triangle ABC = cellTriangles[0];
 		Triangle AABC = cellTriangles[1];
 
-		float num = glm::length(ABC.B - ABC.A) / deltaS;
+		float num = glm::length(ABC.C - ABC.A) / deltaS;
 		float step = 1.0f / num;
 
 		float t;
-		for (t = step; t < 1; t += step)
+		for (t = 0; t < 1; t += step)
 		{
 			glm::vec3 a = ABC.A + t * (ABC.B - ABC.A);
 			glm::vec3 b = ABC.A + t * (ABC.C - ABC.A);
-			glm::vec3 c = ABC.A + t * (AABC.A - AABC.C);
+			//glm::vec3 c = ABC.A + t * (AABC.A - AABC.C);
 			float n = glm::length(b - a) / deltaS;
 			float s = 1.0f / n;
 
-			for (float u = s; u < 1; u += s)
+			for (float u = 0; u <= 1.0f; u += s)
 			{
-				glm::vec3 d = a + u * (b - a);
-				glm::vec3 e = a + u * (c - a);
-
+				glm::vec3 d = b + u * (a - b);
+				//glm::vec3 d = a + u * (b - a);
 			
 				FluidParticle bp;
 				bp.Position = d;
 				bp.Velocity = glm::vec3(0.0);
-				bp.Acceleration = glm::vec3(0.0);
 				boundary.push_back(bp);
+			}
+		}
 
+		num = glm::length(AABC.A - AABC.C) / deltaS;
+		step = 1.0f / num;
+		for (t = step; t < 1; t += step)
+		{
+			glm::vec3 a = ABC.A + t * (ABC.B - ABC.A);
+			glm::vec3 c = ABC.A + t * (AABC.A - AABC.C);
+			float n = glm::length(c-a) / deltaS;
+			float s = 1.0f / n;
+			for (float u = 0; u < 1; u += s)
+			{
+				glm::vec3 e = c + u * (a - c);
+				//glm::vec3 e = a + u * (c - a);
+				FluidParticle bp;
 				bp.Position = e;
 				bp.Velocity = glm::vec3(0.0);
 				boundary.push_back(bp);

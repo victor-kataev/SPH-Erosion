@@ -210,7 +210,7 @@ public:
 			model = glm::translate(model, m_BParticles[i].Position);
 			model = glm::scale(model, glm::vec3(r));
 			shader.setMat4("model", model);
-			shader.setVec3("myColor", glm::vec3(1.0, 1.0, 1.0));
+			shader.setVec3("myColor", glm::vec3(0.8, 0.8, 0.8));
 			m_Sphere->Draw();
 		}
 	}
@@ -326,7 +326,7 @@ private:
 	{
 		omp_lock_t writelock;
 		omp_init_lock(&writelock);
-//#pragma omp parallel for
+#pragma omp parallel for
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
