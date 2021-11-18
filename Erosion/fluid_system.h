@@ -4,7 +4,6 @@
 
 #include "mesh.h"
 #include "sphere.h"
-#include "shader.h"
 #include "grid.h"
 
 
@@ -184,6 +183,13 @@ public:
 
 	void Draw(const Shader& shader, int selected_part)
 	{
+		shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.7, 0.2));
+		shader.setVec3("dirLight.color", glm::vec3(1.0));
+		shader.setVec3("material.ka", glm::vec3(0.2f));
+		shader.setVec3("material.kd", glm::vec3(0.7f));
+		shader.setVec3("material.ks", glm::vec3(1.0));
+		shader.setFloat("material.ksh", 4.0f);
+
 		if (!m_Sphere)
 			m_Sphere = std::make_unique<Sphere>(10, 10, 1, glm::vec3(0.0, 0.0, 0.0));
 

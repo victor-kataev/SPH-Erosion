@@ -9,12 +9,8 @@
 #include <math.h>
 #include <iostream>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 
 #include "grid.h"
-#include "shader.h"
 #include "camera.h"
 #include "fluid_system.h"
 #include "mesh.h"
@@ -44,6 +40,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void checkGLError(const char* where, int line);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+GLFWwindow* init();
 
 #define CHECK_GL_ERROR() do { checkGLError(__FUNCTION__, __LINE__); } while (0)
 
@@ -52,92 +49,16 @@ FluidSystemSPH fluidsph;
 
 int main()
 {
-    if (!glfwInit())
-        return -1;
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Erosion", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create glfw window\n";
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-
-
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-    bool err = glewInit() != GLEW_OK;
-    if (err)
-    {
-        fprintf(stderr, "Failed to initialize OpenGL loader!\n");
-        return 1;
-    }
+    GLFWwindow* window = init();
 
     Shader shader("vertex.glsl", "fragment.glsl");
-    //Shader surface_shader("vertex.glsl", "fragment_surface.glsl");
   
     char picture_path[100];
     strcpy_s(picture_path, "pumba_gray.png");
-
-    int width, height, channels;
-    unsigned char* img = stbi_load(picture_path, &width, &height, &channels, 1);
-    if (img == NULL)
-    {
-        printf("Error in loading the image\n");
-        exit(1);
-    }
-    printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
     
-    float dimensions[3] = { 50, 255, 50 };
-    Grid grid(dimensions[0], dimensions[1], dimensions[2]);
-    grid.LoadHeightfield(img);
-    stbi_image_free(img);
-
-    grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-
-    
-    std::vector<float> surface_verts = grid.GetSurfaceParts();
-    //size_t surface_size = grid.GetSurfacePartsSize();
-    std::vector<unsigned int> indices = grid.GetIndices();
-    //size_t indices_size = grid.GetIndicesSize();
-    //std::vector<float> fluid_verts = grid.GetFluidParts();
-    //size_t fluid_size = grid.GetFluidPartsSize();
-    
-    unsigned int surfaceVAO, surfaceVBO, surfaceEBO;
-    unsigned int fluidVAO, fluidVBO;
-
-    glGenVertexArrays(1, &surfaceVAO);
-    glGenBuffers(1, &surfaceVBO);
-    glGenBuffers(1, &surfaceEBO);
-    glBindVertexArray(surfaceVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-    glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-
-    
-   /* glGenVertexArrays(1, &fluidVAO);
-    glGenBuffers(1, &fluidVBO);
-    glBindVertexArray(fluidVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, fluidVBO);
-    glBufferData(GL_ARRAY_BUFFER, fluid_verts.size() * sizeof(float), &fluid_verts[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    glEnableVertexAttribArray(0);*/
-    
+    glm::vec3 dimensions = { 50, 255, 50 };
+    Grid grid(picture_path, dimensions);
+        
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -207,63 +128,63 @@ int main()
             ImGui::InputFloat3("Camera pos:", (float*)&camera.Position);
 
             ImGui::ColorEdit3("clear color", (float*)&clear_color);
-            ImGui::InputFloat3("dimensions", dimensions);
-            if (ImGui::Button("Update grid"))
-            {
-                grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-                surface_verts = grid.GetSurfaceParts();
-                //surface_size = grid.GetSurfacePartsSize();
-                indices = grid.GetIndices();
-                //indices_size = grid.GetIndicesSize();
+            ImGui::InputFloat3("dimensions", (float*)&dimensions);
+            //if (ImGui::Button("Update grid"))
+            //{
+            //    grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
+            //    surface_verts = grid.GetSurfaceParts();
+            //    //surface_size = grid.GetSurfacePartsSize();
+            //    indices = grid.GetIndices();
+            //    //indices_size = grid.GetIndicesSize();
 
-                glDeleteBuffers(1, &surfaceVBO);
-                glDeleteBuffers(1, &surfaceEBO);
+            //    glDeleteBuffers(1, &surfaceVBO);
+            //    glDeleteBuffers(1, &surfaceEBO);
 
-                glBindVertexArray(surfaceVAO);
-                glGenBuffers(1, &surfaceVBO);
-                glGenBuffers(1, &surfaceEBO);
-                glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-                glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-                glEnableVertexAttribArray(0);
-            }
-            ImGui::InputText("picture path", picture_path, 100);
-            if (ImGui::Button("Load picture"))
-            {
-                img = stbi_load(picture_path, &width, &height, &channels, 1);
-                if (img == NULL)
-                {
-                    printf("Error in loading the image\n");
-                    exit(1);
-                }
-                printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
+            //    glBindVertexArray(surfaceVAO);
+            //    glGenBuffers(1, &surfaceVBO);
+            //    glGenBuffers(1, &surfaceEBO);
+            //    glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
+            //    glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
+            //    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
+            //    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+            //    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+            //    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+            //    glEnableVertexAttribArray(0);
+            //}
+            //ImGui::InputText("picture path", picture_path, 100);
+            //if (ImGui::Button("Load picture"))
+            //{
+            //    img = stbi_load(picture_path, &width, &height, &channels, 1);
+            //    if (img == NULL)
+            //    {
+            //        printf("Error in loading the image\n");
+            //        exit(1);
+            //    }
+            //    printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
 
-                grid.LoadHeightfield(img);
-                stbi_image_free(img);
+            //    grid.LoadHeightfield(img);
+            //    stbi_image_free(img);
 
-                grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-                surface_verts = grid.GetSurfaceParts();
-                //surface_size = grid.GetSurfacePartsSize();
-                indices = grid.GetIndices();
-                //indices_size = grid.GetIndicesSize();
+            //    grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
+            //    surface_verts = grid.GetSurfaceParts();
+            //    //surface_size = grid.GetSurfacePartsSize();
+            //    indices = grid.GetIndices();
+            //    //indices_size = grid.GetIndicesSize();
 
-                glDeleteBuffers(1, &surfaceVBO);
-                glDeleteBuffers(1, &surfaceEBO);
+            //    glDeleteBuffers(1, &surfaceVBO);
+            //    glDeleteBuffers(1, &surfaceEBO);
 
-                glBindVertexArray(surfaceVAO);
-                glGenBuffers(1, &surfaceVBO);
-                glGenBuffers(1, &surfaceEBO);
-                glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-                glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-                glEnableVertexAttribArray(0);
-            }
+            //    glBindVertexArray(surfaceVAO);
+            //    glGenBuffers(1, &surfaceVBO);
+            //    glGenBuffers(1, &surfaceEBO);
+            //    glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
+            //    glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
+            //    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
+            //    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+            //    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+            //    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+            //    glEnableVertexAttribArray(0);
+            //}
 
             ImGui::NewLine();
             ImGui::InputFloat("Mass", fluidsph.GetMass(), 0.001f);
@@ -307,26 +228,14 @@ int main()
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 model = glm::mat4(1.0f);
-        
-
         shader.use();
-        shader.setMat4("projection", projection);
-        shader.setMat4("view", view);
-        shader.setMat4("model", model);
-        shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.7, 0.2));
-        shader.setVec3("dirLight.color", glm::vec3(1.0));
+        shader.SetProjection(projection);
+        shader.SetView(view);
         shader.setVec3("viewerPos", camera.Position);
-        shader.setVec3("material.ka", glm::vec3(0.2f));
-        shader.setVec3("material.kd", glm::vec3(0.7f));
-        shader.setVec3("material.ks", glm::vec3(1.0));
-        shader.setFloat("material.ksh", 4.0f);
 
 
-        shader.setVec3("myColor", glm::vec3(clear_color.x, clear_color.y, clear_color.z));
-        glBindVertexArray(surfaceVAO);
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
+        grid.Draw(shader);
 
         //shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
         //shape.DrawCube();
@@ -537,4 +446,39 @@ void checkGLError(const char* where, int line)
         std::cerr << "GL error occurred: " << errString << std::endl;
     else
         std::cerr << "GL error occurred in " << where << ":" << line << ":" << errString << std::endl;
+}
+
+GLFWwindow* init()
+{
+    if (!glfwInit())
+        exit(-1);
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Erosion", NULL, NULL);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create glfw window\n";
+        glfwTerminate();
+        exit(-1);
+    }
+
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    bool err = glewInit() != GLEW_OK;
+    if (err)
+    {
+        fprintf(stderr, "Failed to initialize OpenGL loader!\n");
+        exit(-1);
+    }
+
+    return window;
 }

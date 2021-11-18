@@ -1,158 +1,144 @@
 ﻿  main.cpp
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(90,14): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(148,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\shader.h(39,40): warning C4101: 'e': unreferenced local variable
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(93,14): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(164,40): warning C4244: 'initializing': conversion from 'T' to 'size_t', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(149,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(171,18): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(150,17): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
-          with
-          [
-              T=float
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(204,20): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
-          with
-          [
-              T=float
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(205,22): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
-          with
-          [
-              T=float
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(209,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
-          with
-          [
-              T=float
-          ]
-          and
-          [
-              _Ty=unsigned int
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(210,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
-          with
-          [
-              T=float
-          ]
-          and
-          [
-              _Ty=unsigned int
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(211,40): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
-          with
-          [
-              T=float
-          ]
-          and
-          [
-              _Ty=unsigned int
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(215,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
-          with
-          [
-              T=float
-          ]
-          and
-          [
-              _Ty=unsigned int
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(216,36): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
-          with
-          [
-              T=float
-          ]
-          and
-          [
-              _Ty=unsigned int
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(217,42): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
-          with
-          [
-              T=float
-          ]
-          and
-          [
-              _Ty=unsigned int
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(235,28): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(178,26): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
           with
           [
               _Ty=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(236,28): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(237,28): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
-          with
-          [
-              _Ty=float
-          ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(270,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(281,71): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(206,21): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(281,57): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(207,22): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(282,82): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(211,38): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(282,64): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          and
+          [
+              _Ty=unsigned int
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(212,38): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(283,79): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          and
+          [
+              _Ty=unsigned int
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(213,44): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(283,63): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          and
+          [
+              _Ty=unsigned int
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(217,38): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(284,73): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          and
+          [
+              _Ty=unsigned int
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(218,38): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(284,57): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          and
+          [
+              _Ty=unsigned int
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(219,44): warning C4244: 'argument': conversion from 'T' to '_Ty', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(899,26): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+          and
+          [
+              _Ty=unsigned int
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(232,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(316,71): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
           with
           [
               T=float
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\shader.h(42,40): warning C4101: 'e': unreferenced local variable
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(316,57): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(317,82): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(317,64): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(318,79): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(318,63): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(319,73): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(319,57): warning C4244: 'argument': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(934,26): warning C4244: '=': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\grid.h(1016,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
 C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\sphere.h(100,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(68,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(69,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
 C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(70,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(71,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(94,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(127,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(159,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(246,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(250,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(251,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(252,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(336,14): warning C4101: 'fBoundary': unreferenced local variable
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(93,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(126,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(158,9): warning C4849: OpenMP 'collapse' clause ignored in 'parallel for' directive
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(252,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(256,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(257,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(258,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(342,14): warning C4101: 'fBoundary': unreferenced local variable
 C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\shapes.h(75,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
 C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\shapes.h(92,35): warning C4244: 'argument': conversion from 'int' to '_Ty', possible loss of data
           with
@@ -165,34 +151,28 @@ C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\shapes.h(96,35): warning C4244:
               _Ty=float
           ]
 C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\shapes.h(159,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(101,57): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(101,42): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(101,27): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(190,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(195,40): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(328,72): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(116,18): warning C4101: 'fluidVAO': unreferenced local variable
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(116,28): warning C4101: 'fluidVBO': unreferenced local variable
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(370,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(371,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(375,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(376,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(378,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(379,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(400,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(408,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(416,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(424,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(432,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(440,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(111,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(116,40): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(279,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(280,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(284,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(285,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(287,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(288,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(309,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(317,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(325,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(333,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(341,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(349,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\include\memory(3416,56): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
           with
           [
               _Ty=int
           ]
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(188): message : see reference to function template instantiation 'std::unique_ptr<Sphere,std::default_delete<Sphere>> std::make_unique<Sphere,int,int,int,glm::vec3,0>(int &&,int &&,int &&,glm::vec3 &&)' being compiled
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(194): message : see reference to function template instantiation 'std::unique_ptr<Sphere,std::default_delete<Sphere>> std::make_unique<Sphere,int,int,int,glm::vec3,0>(int &&,int &&,int &&,glm::vec3 &&)' being compiled
   Generating code
-  8 of 2368 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
+  7 of 2332 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     28 functions had inline decision re-evaluated but remain unchanged
   Finished generating code

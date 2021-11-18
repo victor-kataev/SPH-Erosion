@@ -9,8 +9,11 @@
 #include <unordered_map>
 #include <algorithm>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include "voxel.h"
-//#include "fluid_sysem.h"
+#include "shader.h"
+
 
 struct FluidParticle
 {
@@ -109,20 +112,19 @@ public:
 class Grid
 {
 private:
-	int m_DimX;
-	int m_DimY;
-	int m_DimZ;
 	glm::vec3 m_Dim;
-	int m_empty_voxels;
-	int m_filled_voxels;
+	glm::vec2 m_CellSize;
+	ImVec4 m_Color;
+	
+	unsigned int VAO, VBO, EBO;
 
 	Voxel* m_Grid;
+	//float* m_Grid;
 	//std::unordered_map<int, bool> m_SeededCells;
 	std::unordered_map<int, Kdtree*> m_SeededCells;
 
-	std::vector<float> surfaceParts;
-	std::vector<float> fluidParts;
-	std::vector<unsigned int> indices;
+	std::vector<float> vertexData;
+	std::vector<unsigned int> indexData;
 
 	struct Heightfield
 	{
@@ -132,109 +134,49 @@ private:
 		unsigned char* map = nullptr;
 	};
 
-	Heightfield m_heightfield;
+	Heightfield m_Heightfield;
 
 	void destroyGrid()
 	{
-		delete[] m_Grid;
-		surfaceParts.clear();
-		fluidParts.clear();
+		if(m_Grid)
+			delete[] m_Grid;
+		vertexData.clear();
 	}
 
-	void createGrid(int dimx, int dimy, int dimz)
+	void setupGraphics()
 	{
-		m_Grid = new Voxel[dimx * dimy * dimz];
-		m_Dim = glm::vec3(dimx, dimy, dimz);
-		m_DimX = m_Dim.x;
-		m_DimY = m_Dim.y;
-		m_DimZ = m_Dim.z;
-		m_empty_voxels = 0;
-		m_filled_voxels = 0;
+		glGenVertexArrays(1, &VAO);
+		glGenBuffers(1, &VBO);
+		glGenBuffers(1, &EBO);
+		glBindVertexArray(VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), &vertexData[0], GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexData.size() * sizeof(unsigned int), &indexData[0], GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(0);
+		glEnableVertexAttribArray(1);
 	}
 
-public:
-	Grid(int dimX = 512, int dimY = 512, int dimZ = 512)
-		: m_DimX(dimX), m_DimY(dimY), m_DimZ(dimZ)
+	void createGrid()
 	{
-		m_Dim = glm::vec3(dimX, dimY, dimZ);
-		m_Grid = new Voxel[dimX * dimY * dimZ];
+		m_Grid = new Voxel[m_Dim.x * m_Dim.y * m_Dim.z];
 
-		m_heightfield.dimX = 512;
-		m_heightfield.dimY = 512;
-		m_heightfield.map = new unsigned char[512 * 512]; //hard coded
-		memset(m_heightfield.map, 0, 512 * 512);
-	}
-
-	Voxel GetVoxel(int x, int y, int z) const
-	{
-		return m_Grid[x + m_DimX * (y + m_DimY * z)];
-	}
-
-	void SetVoxel(int x, int y, int z, VoxelType type)
-	{
-		//m_Grid[x + m_DimX * (y + m_DimY * z)] = val;
-		m_Grid[x + m_DimX * (y + m_DimY * z)].type = type;
-		m_Grid[x + m_DimX * (y + m_DimY * z)].position = glm::vec3(x, y, z);
-
-		//todo
-	}
-
-	void LoadHeightfield(unsigned char* img)
-	{
-		memcpy(m_heightfield.map, img, (size_t)m_heightfield.dimX * m_heightfield.dimY);
-		HeightFieldMax();
-	}
-
-	unsigned char GetHeightfieldAt(int x, int y)
-	{
-		return m_heightfield.map[m_heightfield.dimY * x + y];
-	}
-
-	void HeightFieldMax() const
-	{
-		int max = 0;
-		for (int i = 0; i < m_heightfield.dimX * m_heightfield.dimY; i++)
-			if (m_heightfield.map[i] > max)
-				max = m_heightfield.map[i];
-		//std::cout << "Heightfield max = " << max << " " << __LINE__ << std::endl;
-	}
-
-	void genIndices()
-	{
-		for(int z = 0, j = m_Dim.z-1; z < m_Dim.z && j >= 0; z++, j--)
-			for (int x = 0, i = m_Dim.x-1; x < m_Dim.x && i >= 0; x++, i--)
-			{
-				if (x + 1 < m_Dim.x && z + 1 < m_Dim.z)
-				{
-					indices.push_back(z * m_Dim.x + x); //position in vertex buffer
-					indices.push_back(z * m_Dim.x + (x+1));
-					indices.push_back((z+1) * m_Dim.x + x);
-				}
-				if (j - 1 >= 0 && i - 1 >= 0)
-				{
-					indices.push_back(j * m_Dim.x + i);
-					indices.push_back(j * m_Dim.x + (i - 1));
-					indices.push_back((j - 1) * m_Dim.x + i);
-				}
-			}
-	}
-
-	void UpdateGrid(int dimx, int dimy, int dimz)
-	{
-		destroyGrid();
-		createGrid(dimx, dimy, dimz);
 		for (int z = 0; z < m_Dim.z; z++)
 			for (int x = 0; x < m_Dim.x; x++)
 			{
 				int y = GetHeightfieldAt(x, z);
-				if (dimy <= y)
-				{
-					y = dimy-1;
-				}
-				SetVoxel(x, y, z, VoxelType::VOXEL_MAT);
-				surfaceParts.push_back(x);
-				surfaceParts.push_back(y);
-				surfaceParts.push_back(z);
+				if (m_Dim.y <= y)
+					y = m_Dim.y - 1;
+
+				SetVoxel(x, y, z);
+				//m_Grid[x + m_DimX * (y + m_DimY * z) + 0] = x * m_CellSize[0];
+				//m_Grid[x + m_DimX * (y + m_DimY * z) + 1] = y;
+				//m_Grid[x + m_DimX * (y + m_DimY * z) + 2] = z * m_CellSize[1];
+				vertexData.push_back(x * m_CellSize[0]);
+				vertexData.push_back(y);
+				vertexData.push_back(z * m_CellSize[1]);
 
 				//normals
 				glm::vec3 u(0.0);
@@ -252,11 +194,31 @@ public:
 					d = glm::vec3(x - x, GetHeightfieldAt(x, z + 1) - y, (z + 1) - z);
 
 				glm::vec3 normal = glm::normalize(glm::cross(u, l) + glm::cross(u, r) + glm::cross(d, l) + glm::cross(d, r));
-				surfaceParts.push_back(normal.x);
-				surfaceParts.push_back(normal.y);
-				surfaceParts.push_back(normal.z);
+				vertexData.push_back(normal.x);
+				vertexData.push_back(normal.y);
+				vertexData.push_back(normal.z);
 			}
-		genIndices();
+		generateIndices();
+	}
+
+	void generateIndices()
+	{
+		for (int z = 0, j = m_Dim.z - 1; z < m_Dim.z && j >= 0; z++, j--)
+			for (int x = 0, i = m_Dim.x - 1; x < m_Dim.x && i >= 0; x++, i--)
+			{
+				if (x + 1 < m_Dim.x && z + 1 < m_Dim.z)
+				{
+					indexData.push_back(z * m_Dim.x + x); //position in vertex buffer
+					indexData.push_back(z * m_Dim.x + (x + 1));
+					indexData.push_back((z + 1) * m_Dim.x + x);
+				}
+				if (j - 1 >= 0 && i - 1 >= 0)
+				{
+					indexData.push_back(j * m_Dim.x + i);
+					indexData.push_back(j * m_Dim.x + (i - 1));
+					indexData.push_back((j - 1) * m_Dim.x + i);
+				}
+			}
 	}
 
 	bool rayIntersectsTriangle(const glm::vec3& pos, const glm::vec3& dir, const Triangle tri, float* t)
@@ -275,6 +237,79 @@ public:
 		*t = glm::dot(AO, N) * invdet;
 		return (abs(det) >= 1e-6 && *t >= 0.0 && u >= 0.0 && v >= 0.0 && (u + v) <= 1.0);
 	}
+
+
+public:
+	Grid(char* pic_path, glm::vec3 dim)
+		: m_Dim(dim), 
+		m_CellSize(1.0f, 1.0f), 
+		m_Color(0.31f, 0.23f, 0.16f, 1.00f)
+	{
+		int width, height, channels;
+		unsigned char* img = stbi_load(pic_path, &width, &height, &channels, 1);
+		if (img == NULL)
+		{
+			printf("Error in loading the image\n");
+			exit(1);
+		}
+		printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
+
+		m_Heightfield.dimX = width;
+		m_Heightfield.dimY = height;
+		m_Heightfield.map = new unsigned char[width * height];
+		memset(m_Heightfield.map, 0, width * height);
+		memcpy(m_Heightfield.map, img, (size_t)m_Heightfield.dimX * m_Heightfield.dimY);
+
+		stbi_image_free(img);
+
+		createGrid();
+		setupGraphics();
+	}
+
+	//Voxel GetVoxel(int x, int y, int z) const
+	//{
+	//	return m_Grid[x + m_DimX * (y + m_DimY * z)];
+	//}
+
+	void SetVoxel(int x, int y, int z)
+	{
+		//m_Grid[x + m_DimX * (y + m_DimY * z)] = val;
+		//m_Grid[x + m_DimX * (y + m_DimY * z)].type = type;
+		m_Grid[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].position = glm::vec3(x * m_CellSize[0], y, z * m_CellSize[1]);
+
+		//todo
+	}
+
+	void LoadHeightfield(unsigned char* img)
+	{
+		memcpy(m_Heightfield.map, img, (size_t)m_Heightfield.dimX * m_Heightfield.dimY);
+		HeightFieldMax();
+	}
+
+	unsigned char GetHeightfieldAt(int x, int y)
+	{
+		return m_Heightfield.map[m_Heightfield.dimY * x + y];
+	}
+
+	//for debug
+	void HeightFieldMax() const
+	{
+		int max = 0;
+		for (int i = 0; i < m_Heightfield.dimX * m_Heightfield.dimY; i++)
+			if (m_Heightfield.map[i] > max)
+				max = m_Heightfield.map[i];
+		//std::cout << "Heightfield max = " << max << " " << __LINE__ << std::endl;
+	}
+
+
+	void UpdateGrid(int dimx, int dimy, int dimz)
+	{
+		destroyGrid();
+		createGrid();
+
+		//TODO reallocate VBO, EBO here
+	}
+
 
 	std::vector<Triangle> getCellTriangles(glm::vec2 cellIndex)
 	{
@@ -346,7 +381,7 @@ public:
 				cellIndex[1]++;
 		}
 
-		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ)
+		if (cellIndex[0] < 0 || cellIndex[0] >= m_Dim.x || cellIndex[1] < 0 || cellIndex[1] >= m_Dim.z)
 			cellIndex = glm::vec2(-1, -1);
 
 		return cellIndex;
@@ -552,8 +587,8 @@ public:
 		////std::cout << posCurr.x << " " << posCurr.y << " " << posCurr.z << std::endl;
 		glm::vec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
 		glm::vec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
-		if (cellIndex[0] < 0 || cellIndex[0] >= m_DimX-1 || cellIndex[1] < 0 || cellIndex[1] >= m_DimZ-1
-			|| cellIndexNext[0] < 0 || cellIndexNext[0] >= m_DimX-1 || cellIndexNext[1] < 0 || cellIndexNext[1] >= m_DimZ-1)
+		if (cellIndex[0] < 0 || cellIndex[0] >= m_Dim.x-1 || cellIndex[1] < 0 || cellIndex[1] >= m_Dim.z-1
+			|| cellIndexNext[0] < 0 || cellIndexNext[0] >= m_Dim.x-1 || cellIndexNext[1] < 0 || cellIndexNext[1] >= m_Dim.z-1)
 			return false;
 		
 		//if in the same cell
@@ -965,40 +1000,26 @@ public:
 
 	}*/
 
-
-	std::vector<unsigned int> GetIndices()
+	void Draw(Shader& shader)
 	{
-		return indices;
+		glm::mat4 model = glm::mat4(1.0f);
+		shader.setMat4("model", model);
+		shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.7, 0.2));
+		shader.setVec3("dirLight.color", glm::vec3(1.0));
+		shader.setVec3("material.ka", glm::vec3(0.2f));
+		shader.setVec3("material.kd", glm::vec3(0.7f));
+		shader.setVec3("material.ks", glm::vec3(1.0));
+		shader.setFloat("material.ksh", 4.0f);
+
+		shader.setVec3("myColor", glm::vec3(m_Color.x, m_Color.y, m_Color.z));
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, indexData.size(), GL_UNSIGNED_INT, 0);
+
 	}
 
-	size_t GetIndicesSize() const
+	void SetColor(ImVec4& color)
 	{
-		return indices.size();
-	}
-
-	glm::vec3 GetDim() const
-	{
-		return m_Dim;
-	}
-
-	std::vector<float> GetSurfaceParts()
-	{
-		return surfaceParts;
-	}
-
-	size_t GetSurfacePartsSize() const
-	{
-		return surfaceParts.size();
-	}
-
-	std::vector<float> GetFluidParts()
-	{
-		return fluidParts;
-	}
-
-	size_t GetFluidPartsSize() const
-	{
-		return fluidParts.size();
+		m_Color = color;
 	}
 };
 
