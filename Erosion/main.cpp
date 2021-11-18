@@ -61,6 +61,7 @@ int main()
     Shader shader("vertex.glsl", "fragment.glsl");
   
     char picture_path[100];
+    //strcpy_s(picture_path, "lena_gray.png");
     strcpy_s(picture_path, "pumba_gray.png");
     
     glm::vec3 dimensions = { 50, 255, 50 };
@@ -69,6 +70,7 @@ int main()
     ImVec4 clear_color = grid.GetColor();
 
     fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7)); //video
+    //fluidsph.SetOrigin(glm::vec3(32.5, 160.5, 43.7)); //lena
     camera.PlaceTo(glm::vec3(32.9, 125.5, 44.2));
     fluidsph.Initialize(1000);
 

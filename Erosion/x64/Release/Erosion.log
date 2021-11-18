@@ -151,20 +151,20 @@ C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\shapes.h(96,35): warning C4244:
               _Ty=float
           ]
 C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\shapes.h(159,1): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(82,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(87,40): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(183,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(184,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(188,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(189,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(191,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(192,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(213,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(221,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(229,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(237,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(245,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(253,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(84,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(89,40): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(185,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(186,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(190,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(191,19): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(193,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(194,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(215,55): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(223,56): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(231,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(239,53): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(247,50): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\main.cpp(255,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
 C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\include\memory(3416,56): warning C4244: 'argument': conversion from '_Ty' to 'float', possible loss of data
           with
           [
@@ -174,6 +174,6 @@ C:\Users\victor\Desktop\porn\SPH-Erosion\Erosion\fluid_system.h(194): message : 
   Generating code
   8 of 2342 functions ( 0.3%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    32 functions had inline decision re-evaluated but remain unchanged
+    30 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Erosion.vcxproj -> C:\Users\victor\Desktop\porn\SPH-Erosion\x64\Release\Erosion.exe
