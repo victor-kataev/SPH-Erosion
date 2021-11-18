@@ -141,6 +141,7 @@ private:
 		if(m_Grid)
 			delete[] m_Grid;
 		vertexData.clear();
+		indexData.clear();
 	}
 
 	void setupGraphics()
@@ -238,12 +239,7 @@ private:
 		return (abs(det) >= 1e-6 && *t >= 0.0 && u >= 0.0 && v >= 0.0 && (u + v) <= 1.0);
 	}
 
-
-public:
-	Grid(char* pic_path, glm::vec3 dim)
-		: m_Dim(dim), 
-		m_CellSize(1.0f, 1.0f), 
-		m_Color(0.31f, 0.23f, 0.16f, 1.00f)
+	void loadHeightMapFromPicture(const char* pic_path)
 	{
 		int width, height, channels;
 		unsigned char* img = stbi_load(pic_path, &width, &height, &channels, 1);
@@ -261,7 +257,15 @@ public:
 		memcpy(m_Heightfield.map, img, (size_t)m_Heightfield.dimX * m_Heightfield.dimY);
 
 		stbi_image_free(img);
+	}
 
+public:
+	Grid(const char* pic_path, glm::vec3& dim)
+		: m_Dim(dim), 
+		m_CellSize(1.0f, 1.0f), 
+		m_Color(0.31f, 0.23f, 0.16f, 1.00f)
+	{
+		loadHeightMapFromPicture(pic_path);
 		createGrid();
 		setupGraphics();
 	}
@@ -280,12 +284,6 @@ public:
 		//todo
 	}
 
-	void LoadHeightfield(unsigned char* img)
-	{
-		memcpy(m_Heightfield.map, img, (size_t)m_Heightfield.dimX * m_Heightfield.dimY);
-		HeightFieldMax();
-	}
-
 	unsigned char GetHeightfieldAt(int x, int y)
 	{
 		return m_Heightfield.map[m_Heightfield.dimY * x + y];
@@ -302,14 +300,23 @@ public:
 	}
 
 
-	void UpdateGrid(int dimx, int dimy, int dimz)
+	void UpdateGrid(glm::vec3& dim)
 	{
+		m_Dim = dim;
 		destroyGrid();
 		createGrid();
 
-		//TODO reallocate VBO, EBO here
+		glDeleteBuffers(1, &VBO);
+		glDeleteBuffers(1, &EBO);
+		glDeleteVertexArrays(1, &VAO);
+		setupGraphics();
 	}
 
+	void UpdateHeightMap(const char* pic_path)
+	{
+		delete[] m_Heightfield.map;
+		loadHeightMapFromPicture(pic_path);
+	}
 
 	std::vector<Triangle> getCellTriangles(glm::vec2 cellIndex)
 	{
@@ -1020,6 +1027,11 @@ public:
 	void SetColor(ImVec4& color)
 	{
 		m_Color = color;
+	}
+
+	ImVec4 GetColor() const
+	{
+		return m_Color;
 	}
 };
 

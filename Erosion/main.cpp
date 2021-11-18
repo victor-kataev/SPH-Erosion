@@ -40,7 +40,14 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void checkGLError(const char* where, int line);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+
 GLFWwindow* init();
+void UIinit(GLFWwindow* window);
+void UIshutdown();
+void UIbegin();
+void UIend();
+
+
 
 #define CHECK_GL_ERROR() do { checkGLError(__FUNCTION__, __LINE__); } while (0)
 
@@ -59,49 +66,13 @@ int main()
     glm::vec3 dimensions = { 50, 255, 50 };
     Grid grid(picture_path, dimensions);
         
+    ImVec4 clear_color = grid.GetColor();
 
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-
-    // Setup Platform/Renderer backends
-    const char* glsl_version = "#version 330";
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-   
-    bool show_demo_window = true;
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.31f, 0.23f, 0.16f, 1.00f);
-
-    //fluidsph.SetOrigin(glm::vec3(33.1, 125.5, 42.0));//video
     fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7)); //video
-    //fluidsph.SetOrigin(glm::vec3(0.0));
-    //fluidsph.SetOrigin(glm::vec3(32.2, 124.5, 43.0)); //bug fixed
-    //fluidsph.SetOrigin(glm::vec3(7.2, 90.5, 9.0)); //pit
-    //fluidsph.SetOrigin(glm::vec3(34, 124.5, 43.2));
-    //fluidsph.SetOrigin(glm::vec3(32.19, 124.5, 42.16));//bug fixed
-    //fluidsph.SetOrigin(glm::vec3(33.20, 124.5, 41.16));//bug fixed
-    //fluidsph.SetOrigin(glm::vec3(32.89, 124.5, 41.8));
-    //fluidsph.SetOrigin(glm::vec3(32.5, 128.8, 43.7));//bug
     camera.PlaceTo(glm::vec3(32.9, 125.5, 44.2));
-    //fluidsph.SetOrigin(glm::vec3(27.7, 125.5, 42.7));
-    //camera.PlaceTo(glm::vec3(27.4, 125.5, 43.7));
-    //camera.PlaceTo(glm::vec3(0.0, 0.0, 2.0));
     fluidsph.Initialize(1000);
-    //Shape shape;
-    //shape.CreateCube();
-    //shape.CreateBowl();
 
-    //Hemisphere hsphere(30, 30, 1, glm::vec3(0.0, 0.0, 0.0));
-    //Mesh terrain(surface_verts, indices);
-    //Mesh mHsphere(hsphere.GetVertices(), hsphere.GetIndices());
-
-
+    UIinit(window);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -116,75 +87,27 @@ int main()
         glClearColor(0.3, 0.3, 0.3, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        UIbegin();
         
         if (!disabled)
         {
             ImGui::Begin("New window");
 
-
             ImGui::InputFloat3("Camera pos:", (float*)&camera.Position);
 
             ImGui::ColorEdit3("clear color", (float*)&clear_color);
+            grid.SetColor(clear_color);
             ImGui::InputFloat3("dimensions", (float*)&dimensions);
-            //if (ImGui::Button("Update grid"))
-            //{
-            //    grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-            //    surface_verts = grid.GetSurfaceParts();
-            //    //surface_size = grid.GetSurfacePartsSize();
-            //    indices = grid.GetIndices();
-            //    //indices_size = grid.GetIndicesSize();
-
-            //    glDeleteBuffers(1, &surfaceVBO);
-            //    glDeleteBuffers(1, &surfaceEBO);
-
-            //    glBindVertexArray(surfaceVAO);
-            //    glGenBuffers(1, &surfaceVBO);
-            //    glGenBuffers(1, &surfaceEBO);
-            //    glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-            //    glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
-            //    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
-            //    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-            //    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-            //    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-            //    glEnableVertexAttribArray(0);
-            //}
-            //ImGui::InputText("picture path", picture_path, 100);
-            //if (ImGui::Button("Load picture"))
-            //{
-            //    img = stbi_load(picture_path, &width, &height, &channels, 1);
-            //    if (img == NULL)
-            //    {
-            //        printf("Error in loading the image\n");
-            //        exit(1);
-            //    }
-            //    printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
-
-            //    grid.LoadHeightfield(img);
-            //    stbi_image_free(img);
-
-            //    grid.UpdateGrid((int)dimensions[0], (int)dimensions[1], (int)dimensions[2]);
-            //    surface_verts = grid.GetSurfaceParts();
-            //    //surface_size = grid.GetSurfacePartsSize();
-            //    indices = grid.GetIndices();
-            //    //indices_size = grid.GetIndicesSize();
-
-            //    glDeleteBuffers(1, &surfaceVBO);
-            //    glDeleteBuffers(1, &surfaceEBO);
-
-            //    glBindVertexArray(surfaceVAO);
-            //    glGenBuffers(1, &surfaceVBO);
-            //    glGenBuffers(1, &surfaceEBO);
-            //    glBindBuffer(GL_ARRAY_BUFFER, surfaceVBO);
-            //    glBufferData(GL_ARRAY_BUFFER, surface_verts.size() * sizeof(float), &surface_verts[0], GL_STATIC_DRAW);
-            //    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, surfaceEBO);
-            //    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-            //    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-            //    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-            //    glEnableVertexAttribArray(0);
-            //}
+            if (ImGui::Button("Update grid"))
+            {
+                grid.UpdateGrid(dimensions);
+            }
+            ImGui::InputText("picture path", picture_path, 100);
+            if (ImGui::Button("Load picture"))
+            {
+                grid.UpdateHeightMap(picture_path);
+                grid.UpdateGrid(dimensions);
+            }
 
             ImGui::NewLine();
             ImGui::InputFloat("Mass", fluidsph.GetMass(), 0.001f);
@@ -236,36 +159,17 @@ int main()
 
 
         grid.Draw(shader);
-
-        //shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
-        //shape.DrawCube();
-
-        //shader.setVec3("myColor", glm::vec3(0.7, 0.8, 0.5));
-        //shape.DrawBowl();
-
-        //shader.setVec3("myColor", glm::vec3(0.0, 1.0, 1.0));
-        //hsphere.Draw();
-
-
         fluidsph.Draw(shader, g_part_id);
         
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        UIend();
 
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    //glDeleteVertexArrays(1, &surfaceVAO);
-    //glDeleteBuffers(1, &surfaceVBO);
     
-    // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-    
+    UIshutdown();
     glfwTerminate();
 
 
@@ -481,4 +385,44 @@ GLFWwindow* init()
     }
 
     return window;
+}
+
+void UIinit(GLFWwindow* window)
+{
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+
+    // Setup Platform/Renderer backends
+    const char* glsl_version = "#version 330";
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+
+    bool show_demo_window = true;
+    bool show_another_window = false;
+}
+
+void UIshutdown()
+{
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
+void UIbegin()
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+}
+
+void UIend()
+{
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
