@@ -63,7 +63,6 @@ int main()
     char picture_path[100];
     //strcpy_s(picture_path, "lena_gray.png");
     strcpy_s(picture_path, "pumba_gray.png");
-    
     glm::vec3 dimensions = { 50, 255, 50 };
     Grid grid(picture_path, dimensions);
         
@@ -74,9 +73,9 @@ int main()
     camera.PlaceTo(glm::vec3(32.9, 125.5, 44.2));
     fluidsph.Initialize(1000);
 
-    UIinit(window);
 
     glEnable(GL_DEPTH_TEST);
+    UIinit(window);
 
     //render loop
     while (!glfwWindowShouldClose(window))

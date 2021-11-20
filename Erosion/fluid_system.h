@@ -360,6 +360,7 @@ private:
 			posNext = currPart.Position + velNext * deltaT;
 
 			grid.SeedCell(currPart.Position, m_BParticles, deltaS, &writelock);
+			grid.FindNearestBoundary(currPart.Position, smoothRadius, &writelock);
 			//fBoundary = grid.CalculateBoundaryForce(currPart);
 
 			glm::vec3 contactP;
@@ -522,6 +523,7 @@ private:
 private:
 	std::vector<FluidParticle> m_Particles;
 	std::vector<FluidParticle> m_BParticles;
+	std::vector<FluidParticle> m_NearestBParticles;
 	std::unique_ptr<Sphere> m_Sphere;
 	glm::vec3 m_Origin;
 };

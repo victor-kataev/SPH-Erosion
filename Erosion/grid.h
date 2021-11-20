@@ -98,6 +98,27 @@ private:
 		return node;
 	}
 
+	void nn(const glm::vec3& q, KdNode* node, int cd, std::vector<FluidParticle>& nearest, float sr)
+	{
+		if (node == nullptr)
+			return;
+
+		if (glm::length(q - node->particle->Position) <= sr)
+			nearest.push_back(*node->particle);
+
+		if (q[cd] < node->particle->Position[cd])
+		{
+			nn(q, node->left_child, (cd + 1) % 3, nearest, sr);
+			if(abs(q[cd] - node->particle->Position[cd]) <= sr)
+				nn(q, node->right_child, (cd + 1) % 3, nearest, sr);
+		}
+		else
+		{
+			nn(q, node->right_child, (cd + 1) % 3, nearest, sr);
+			if (abs(q[cd] - node->particle->Position[cd]) <= sr)
+				nn(q, node->left_child, (cd + 1) % 3, nearest, sr);
+		}
+	}
 
 public:
 	Kdtree() = default;
@@ -107,6 +128,12 @@ public:
 		m_Particles = particles;
 		root = buildTree(m_Particles.begin(), m_Particles.end(), 0);
 	}
+
+	std::vector<FluidParticle> NearestNeighbors(glm::vec3& point, float sr)
+	{
+		std::vector<FluidParticle> nearest;
+		nn(point, root, 0, nearest, sr);
+	}
 };
 
 class Grid
@@ -115,7 +142,7 @@ private:
 	glm::vec3 m_Dim;
 	glm::vec2 m_CellSize;
 	ImVec4 m_Color;
-	
+
 	unsigned int VAO, VBO, EBO;
 
 	Voxel* m_Grid;
@@ -138,7 +165,7 @@ private:
 
 	void destroyGrid()
 	{
-		if(m_Grid)
+		if (m_Grid)
 			delete[] m_Grid;
 		vertexData.clear();
 		indexData.clear();
@@ -261,8 +288,8 @@ private:
 
 public:
 	Grid(const char* pic_path, glm::vec3& dim)
-		: m_Dim(dim), 
-		m_CellSize(1.0f, 1.0f), 
+		: m_Dim(dim),
+		m_CellSize(1.0f, 1.0f),
 		m_Color(0.31f, 0.23f, 0.16f, 1.00f)
 	{
 		loadHeightMapFromPicture(pic_path);
@@ -324,7 +351,7 @@ public:
 		glm::vec3 AA(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1] + 1), cellIndex[1] + 1);
 		glm::vec3 B(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1]), cellIndex[1]);
 		glm::vec3 C(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1] + 1), cellIndex[1] + 1);
-		
+
 		std::vector<Triangle> ret;
 		ret.emplace_back(C, B, A); //ABC = normal is opposite
 		ret.emplace_back(AA, B, C);
@@ -408,7 +435,7 @@ public:
 		return false;
 	}
 
-	bool mappedBetweenTriangles(const Triangle & tri1, const Triangle & tri2, const glm::vec3 & pos, glm::vec3& cp, glm::vec3& norm)
+	bool mappedBetweenTriangles(const Triangle& tri1, const Triangle& tri2, const glm::vec3& pos, glm::vec3& cp, glm::vec3& norm)
 	{
 		float t;
 
@@ -565,7 +592,7 @@ public:
 		return false;
 	}
 
-	bool pointLaysOnTriangle(const glm::vec3 & p, Triangle & tri)
+	bool pointLaysOnTriangle(const glm::vec3& p, Triangle& tri)
 	{
 		float S = fabs(glm::dot(tri.B - tri.A, tri.C - tri.A)) / 2.0f;
 		float a = fabs(glm::dot(tri.B - p, tri.C - p)) / 2.0f / S;
@@ -585,7 +612,7 @@ public:
 		return false;
 	}
 
-	bool collision(const glm::vec3& posCurr, const glm::vec3& posNext, const glm::vec3& velNext, glm::vec3 & contactP, glm::vec3 & norm)
+	bool collision(const glm::vec3& posCurr, const glm::vec3& posNext, const glm::vec3& velNext, glm::vec3& contactP, glm::vec3& norm)
 	{
 		float t; //where t is R.Origin + t*R.Dir
 		glm::vec3 dir = glm::normalize(velNext);
@@ -594,10 +621,10 @@ public:
 		////std::cout << posCurr.x << " " << posCurr.y << " " << posCurr.z << std::endl;
 		glm::vec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
 		glm::vec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
-		if (cellIndex[0] < 0 || cellIndex[0] >= m_Dim.x-1 || cellIndex[1] < 0 || cellIndex[1] >= m_Dim.z-1
-			|| cellIndexNext[0] < 0 || cellIndexNext[0] >= m_Dim.x-1 || cellIndexNext[1] < 0 || cellIndexNext[1] >= m_Dim.z-1)
+		if (cellIndex[0] < 0 || cellIndex[0] >= m_Dim.x - 1 || cellIndex[1] < 0 || cellIndex[1] >= m_Dim.z - 1
+			|| cellIndexNext[0] < 0 || cellIndexNext[0] >= m_Dim.x - 1 || cellIndexNext[1] < 0 || cellIndexNext[1] >= m_Dim.z - 1)
 			return false;
-		
+
 		//if in the same cell
 		if (cellIndex == cellIndexNext)
 		{
@@ -624,7 +651,7 @@ public:
 				//std::cout << "true2\n";
 			}
 
-			
+
 			//the cell is built out of two triangles
 			//check intersection with both and try to map on appropriate one
 			if (dABC < dAABC || (fabs(dABC - dAABC) < FLT_EPSILON && dABC != INFINITY)) //or dABC == dAABC
@@ -769,7 +796,7 @@ public:
 						return true;
 					}
 				}
-				else if(cellDir.x + cellDir.y == 2)
+				else if (cellDir.x + cellDir.y == 2)
 				{
 					if (cornerCaseAABC(ABC_poscurr, AABC_poscurr, posCurr, posNext, cellIndex, contactP, norm))
 					{
@@ -930,13 +957,13 @@ public:
 		}
 	}
 
-	void SeedCell(const glm::vec3 partpos, std::vector<FluidParticle> & boundary, float deltaS, omp_lock_t * writelock)
+	void SeedCell(const glm::vec3 partpos, std::vector<FluidParticle>& boundary, float deltaS, omp_lock_t* writelock)
 	{
 		glm::vec2 cell = { floor(partpos.x), floor(partpos.z) };
 		if (cell[0] < 0 || cell[0] >= m_Dim.x || cell[1] < 0 || cell[1] >= m_Dim.z)
 			return;
 
-		int mapIdx; 
+		int mapIdx;
 		//TODO grid dim can be bigger
 		mapIdx = cell[0] * 100 + cell[1]; // (34, 88) -> 3488;  (9, 2) -> 902;  (0, 0) -> 0
 		std::vector<FluidParticle> boundaryParts;
@@ -974,7 +1001,7 @@ public:
 			{
 				glm::vec3 d = b + u * (a - b);
 				//glm::vec3 d = a + u * (b - a);
-			
+
 				FluidParticle bp;
 				bp.Position = d;
 				bp.Velocity = glm::vec3(0.0);
@@ -988,7 +1015,7 @@ public:
 		{
 			glm::vec3 a = ABC.A + t * (ABC.B - ABC.A);
 			glm::vec3 c = ABC.A + t * (AABC.A - AABC.C);
-			float n = glm::length(c-a) / deltaS;
+			float n = glm::length(c - a) / deltaS;
 			float s = 1.0f / n;
 			for (float u = 0; u < 1; u += s)
 			{
@@ -1000,6 +1027,23 @@ public:
 				boundary.push_back(bp);
 			}
 		}
+	}
+
+	void FindNearestBoundary(glm::vec3& pos, float smoothradius, omp_lock_t* writelock)
+	{
+		glm::vec2 cell = { floor(pos.x), floor(pos.z) };
+		if (cell[0] < 0 || cell[0] >= m_Dim.x || cell[1] < 0 || cell[1] >= m_Dim.z)
+			return;
+
+		int mapIdx = cell[0] * 100 + cell[1];
+		omp_set_lock(writelock);
+		if (m_SeededCells.find(mapIdx) != m_SeededCells.end())
+		{
+			std::vector<FluidParticle> nearestParticles = m_SeededCells[mapIdx]->NearestNeighbors(pos);
+			omp_unset_lock(writelock);
+			return 
+		}
+		omp_unset_lock(writelock);
 	}
 
 	/*glm::vec3 CalculateBoundaryForce(const FluidParticle& sphPart)
