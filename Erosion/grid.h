@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <float.h>
 #include <unordered_map>
+#include <unordered_set>
 #include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -17,7 +18,8 @@
 
 struct FluidParticle
 {
-	int Id;
+	unsigned long Id;
+	static unsigned long IdCount;
 	glm::vec3 Position;
 	glm::vec3 Velocity;
 	glm::vec3 Acceleration;
@@ -32,6 +34,27 @@ struct FluidParticle
 	int NeighbId;
 	int cnt;
 };
+
+unsigned long FluidParticle::IdCount = 0;
+
+struct FluidParticleHasher
+{
+	size_t operator() (const FluidParticle& obj) const
+	{
+		return std::hash<unsigned long>() (obj.Id);
+	}
+};
+
+struct FluidParticleComparator
+{
+	bool operator() (const FluidParticle& obj1, const FluidParticle& obj2) const
+	{
+		return obj1.Id == obj2.Id;
+	}
+};
+
+typedef std::unordered_set<FluidParticle, FluidParticleHasher, FluidParticleComparator> usetfp;
+
 
 struct Triangle
 {
@@ -98,13 +121,13 @@ private:
 		return node;
 	}
 
-	void nn(const glm::vec3& q, KdNode* node, int cd, std::vector<FluidParticle>& nearest, float sr)
+	void nn(const glm::vec3& q, KdNode* node, int cd, usetfp& nearest, float sr)
 	{
 		if (node == nullptr)
 			return;
 
 		if (glm::length(q - node->particle->Position) <= sr)
-			nearest.push_back(*node->particle);
+			nearest.insert(*node->particle);
 
 		if (q[cd] < node->particle->Position[cd])
 		{
@@ -129,10 +152,11 @@ public:
 		root = buildTree(m_Particles.begin(), m_Particles.end(), 0);
 	}
 
-	std::vector<FluidParticle> NearestNeighbors(glm::vec3& point, float sr)
+	usetfp NearestNeighbors(glm::vec3& point, float sr)
 	{
-		std::vector<FluidParticle> nearest;
+		usetfp nearest;
 		nn(point, root, 0, nearest, sr);
+		return nearest;
 	}
 };
 
@@ -957,7 +981,7 @@ public:
 		}
 	}
 
-	void SeedCell(const glm::vec3 partpos, std::vector<FluidParticle>& boundary, float deltaS, omp_lock_t* writelock)
+	void SeedCell(const glm::vec3 partpos, std::vector<FluidParticle>& boundary, float deltaS)
 	{
 		glm::vec2 cell = { floor(partpos.x), floor(partpos.z) };
 		if (cell[0] < 0 || cell[0] >= m_Dim.x || cell[1] < 0 || cell[1] >= m_Dim.z)
@@ -968,7 +992,7 @@ public:
 		mapIdx = cell[0] * 100 + cell[1]; // (34, 88) -> 3488;  (9, 2) -> 902;  (0, 0) -> 0
 		std::vector<FluidParticle> boundaryParts;
 
-		omp_set_lock(writelock);
+		//omp_set_lock(writelock);
 		if (m_SeededCells.find(mapIdx) == m_SeededCells.end())
 		{
 			fillCell(cell, boundaryParts, deltaS);
@@ -976,7 +1000,7 @@ public:
 			m_SeededCells[mapIdx] = new Kdtree(boundaryParts);
 		}
 		boundary.insert(boundary.end(), boundaryParts.begin(), boundaryParts.end());
-		omp_unset_lock(writelock);
+		//omp_unset_lock(writelock);
 	}
 
 	void fillCell(const glm::vec2& cell, std::vector<FluidParticle>& boundary, float deltaS)
@@ -1003,6 +1027,7 @@ public:
 				//glm::vec3 d = a + u * (b - a);
 
 				FluidParticle bp;
+				bp.Id = FluidParticle::IdCount++;
 				bp.Position = d;
 				bp.Velocity = glm::vec3(0.0);
 				boundary.push_back(bp);
@@ -1022,6 +1047,7 @@ public:
 				glm::vec3 e = c + u * (a - c);
 				//glm::vec3 e = a + u * (c - a);
 				FluidParticle bp;
+				bp.Id = FluidParticle::IdCount++;
 				bp.Position = e;
 				bp.Velocity = glm::vec3(0.0);
 				boundary.push_back(bp);
@@ -1029,21 +1055,21 @@ public:
 		}
 	}
 
-	void FindNearestBoundary(glm::vec3& pos, float smoothradius, omp_lock_t* writelock)
+	usetfp FindNearestBoundary(glm::vec3& pos, float sr)
 	{
 		glm::vec2 cell = { floor(pos.x), floor(pos.z) };
 		if (cell[0] < 0 || cell[0] >= m_Dim.x || cell[1] < 0 || cell[1] >= m_Dim.z)
-			return;
+			return {};
 
-		int mapIdx = cell[0] * 100 + cell[1];
-		omp_set_lock(writelock);
-		if (m_SeededCells.find(mapIdx) != m_SeededCells.end())
+		int cellIdx = cell[0] * 100 + cell[1];
+		//omp_set_lock(writelock);
+		if (m_SeededCells.find(cellIdx) != m_SeededCells.end())
 		{
-			std::vector<FluidParticle> nearestParticles = m_SeededCells[mapIdx]->NearestNeighbors(pos);
-			omp_unset_lock(writelock);
-			return 
+			usetfp nearestParticles = m_SeededCells[cellIdx]->NearestNeighbors(pos, sr);
+			//omp_unset_lock(writelock);
+			return nearestParticles;
 		}
-		omp_unset_lock(writelock);
+		//omp_unset_lock(writelock);
 	}
 
 	/*glm::vec3 CalculateBoundaryForce(const FluidParticle& sphPart)

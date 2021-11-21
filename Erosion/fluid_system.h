@@ -59,7 +59,7 @@ public:
 	{
 		num = nParts;
 		init_num = nParts;
-		id = 0;
+		//id = 0;
 
 		for (int i = 0; i < cbrt(num); i++)
 			for (int j = 0; j < cbrt(num); j++)
@@ -70,7 +70,7 @@ public:
 					float z = -0.15 + k * 0.025;
 
 					FluidParticle particle;
-					particle.Id = id++;
+					particle.Id = FluidParticle::IdCount++;
 					particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
 					particle.Velocity = glm::vec3(0.0, 0.0, 0.0);
 					particle.Acceleration = glm::vec3(0.0);
@@ -209,7 +209,8 @@ public:
 			m_Sphere->Draw();
 		}
 
-		for (int i = 0; i < m_BParticles.size(); i++)
+		//draw boundary particles
+		/*for (int i = 0; i < m_BParticles.size(); i++)
 		{
 			float r = 0.01f;
 			glm::mat4 model = glm::mat4(1.0);
@@ -218,7 +219,22 @@ public:
 			shader.setMat4("model", model);
 			shader.setVec3("myColor", glm::vec3(0.8, 0.8, 0.8));
 			m_Sphere->Draw();
+		}*/
+
+		//hightlight nearest boundary particles
+		for (const auto & bp : m_NearestBParticles)
+		{
+			float r = 0.01f;
+			glm::mat4 model = glm::mat4(1.0);
+			model = glm::translate(model, glm::vec3(bp.Position.x, bp.Position.y, bp.Position.z));
+			model = glm::scale(model, glm::vec3(r));
+			shader.setMat4("model", model);
+			shader.setVec3("myColor", glm::vec3(1.0, 0.0, 0.0));
+			m_Sphere->Draw();
 		}
+
+		m_NearestBParticles.clear();
+
 	}
 
 	void SetOrigin(const glm::vec3& o )
@@ -257,7 +273,7 @@ public:
 					float y = -0.05 + j * 0.025;
 					float z = -0.15 + k * 0.025;
 					FluidParticle tmp;
-					tmp.Id = id++;
+					tmp.Id = FluidParticle::IdCount++;
 					tmp.Position = glm::vec3(x+ m_Origin.x, y+ m_Origin.y, z+ m_Origin.z);
 					tmp.Velocity = glm::vec3(0.0, 0.0, 0.0);
 					tmp.Acceleration = glm::vec3(0.0);
@@ -273,8 +289,6 @@ public:
 	{
 		m_Particles.clear();
 		m_BParticles.clear();
-		num = 0;
-		id = 0;
 		AddParticles(init_num);
 	}
 
@@ -359,8 +373,10 @@ private:
 			velNext = currPart.Velocity + acc * deltaT;
 			posNext = currPart.Position + velNext * deltaT;
 
-			grid.SeedCell(currPart.Position, m_BParticles, deltaS, &writelock);
-			grid.FindNearestBoundary(currPart.Position, smoothRadius, &writelock);
+			omp_set_lock(&writelock);
+			grid.SeedCell(currPart.Position, m_BParticles, deltaS);
+			m_NearestBParticles.merge(grid.FindNearestBoundary(currPart.Position, smoothRadius));
+			omp_unset_lock(&writelock);
 			//fBoundary = grid.CalculateBoundaryForce(currPart);
 
 			glm::vec3 contactP;
@@ -516,14 +532,13 @@ private:
 		float smoothRadius;
 		float s = 1;
 		float len = 0.2f;
-		int id;
 		float damping = 0.1f;
 		float deltaS;
 
 private:
 	std::vector<FluidParticle> m_Particles;
 	std::vector<FluidParticle> m_BParticles;
-	std::vector<FluidParticle> m_NearestBParticles;
+	usetfp m_NearestBParticles;
 	std::unique_ptr<Sphere> m_Sphere;
 	glm::vec3 m_Origin;
 };
