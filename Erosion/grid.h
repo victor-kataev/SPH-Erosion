@@ -31,6 +31,7 @@ struct FluidParticle
 	glm::vec3 GravityForce;
 	glm::vec3 SurfaceForce;
 	glm::vec3 SurfaceNormal;
+	glm::vec3 BoundaryForce;
 	int NeighbId;
 	int cnt;
 };

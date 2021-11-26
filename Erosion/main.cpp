@@ -111,6 +111,8 @@ int main()
             }
 
             ImGui::NewLine();
+
+            ImGui::InputFloat("Friction", fluidsph.GetMu(), 0.01f);
             ImGui::InputFloat("Mass", fluidsph.GetMass(), 0.001f);
             ImGui::InputFloat("Visc", fluidsph.GetVisc(), 0.001f);
             ImGui::InputFloat("SurfTens", fluidsph.GetSurfTen(), 0.0001f, 0.0f, "%.4f");
@@ -128,6 +130,7 @@ int main()
             ImGui::NewLine();
             ImGui::InputInt("particle_id", &g_part_id);
             FluidParticle fp = fluidsph.GetParticle(g_part_id);
+            ImGui::InputFloat3("fBoundary", (float*)&fp.BoundaryForce);
             ImGui::InputFloat3("Pos", (float*)&fp.Position);
             ImGui::InputFloat3("Vel", (float*)&fp.Velocity);
             ImGui::InputFloat3("Acc", (float*)&fp.Acceleration);
