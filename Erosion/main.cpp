@@ -109,6 +109,7 @@ int main()
                 grid.UpdateHeightMap(picture_path);
                 grid.UpdateGrid(dimensions);
             }
+            ImGui::Checkbox("render boundary", fluidsph.GetRenderBoundary());
 
             ImGui::NewLine();
 
@@ -130,7 +131,6 @@ int main()
             ImGui::NewLine();
             ImGui::InputInt("particle_id", &g_part_id);
             FluidParticle fp = fluidsph.GetParticle(g_part_id);
-            ImGui::InputFloat3("fBoundary", (float*)&fp.BoundaryForce);
             ImGui::InputFloat3("Pos", (float*)&fp.Position);
             ImGui::InputFloat3("Vel", (float*)&fp.Velocity);
             ImGui::InputFloat3("Acc", (float*)&fp.Acceleration);

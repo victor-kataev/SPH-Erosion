@@ -222,16 +222,17 @@ public:
 		}*/
 
 		//hightlight nearest boundary particles
-		/*for (const auto& bp : m_NearestBParticles)
-		{
-			float r = 0.01f;
-			glm::mat4 model = glm::mat4(1.0);
-			model = glm::translate(model, glm::vec3(bp.Position.x, bp.Position.y, bp.Position.z));
-			model = glm::scale(model, glm::vec3(r));
-			shader.setMat4("model", model);
-			shader.setVec3("myColor", glm::vec3(1.0, 0.0, 0.0));
-			m_Sphere->Draw();
-		}*/
+		if(render_boundary)
+			for (const auto& bp : m_NearestBParticles)
+			{
+				float r = 0.01f;
+				glm::mat4 model = glm::mat4(1.0);
+				model = glm::translate(model, glm::vec3(bp.Position.x, bp.Position.y, bp.Position.z));
+				model = glm::scale(model, glm::vec3(r));
+				shader.setMat4("model", model);
+				shader.setVec3("myColor", glm::vec3(1.0, 0.0, 0.0));
+				m_Sphere->Draw();
+			}
 
 		m_NearestBParticles.clear();
 
@@ -327,6 +328,11 @@ public:
 		return &damping;
 	}
 
+	bool* GetRenderBoundary()
+	{
+		return &render_boundary;
+	}
+
 	FluidParticle GetParticle(int id)
 	{
 		return m_Particles[id];
@@ -365,12 +371,14 @@ private:
 			omp_set_lock(&writelock);
 			grid.SeedCell(currPart.Position, m_BParticles, deltaS);
 			usetfp nearest_boundary = grid.FindNearestBoundary(currPart.Position, smoothRadius);
-			m_NearestBParticles.merge(nearest_boundary);
 			omp_unset_lock(&writelock);
 
 			for(const auto & bp: nearest_boundary)
 				fBoundary += deltaS * deltaS * (-mu) * currPart.Velocity * laplVisc(currPart.Position - bp.Position);
-			currPart.BoundaryForce = fBoundary;//debug only
+
+			omp_set_lock(&writelock);
+			m_NearestBParticles.merge(nearest_boundary);
+			omp_unset_lock(&writelock);
 
 			fInternal = currPart.PressureForce + currPart.ViscosityForce;
 			fExternal = currPart.GravityForce + currPart.SurfaceForce + fBoundary;
@@ -526,6 +534,8 @@ private:
 		//Simulation parameters
 		//float m_Param[MAX_PARAM];
 		//FBufs m_Fluid;
+	bool render_boundary = false;
+
 		glm::vec3 g = glm::vec3(0.0, -9.82f, 0.0);
 		float deltaT = 0.0f;
 		float m_Time = 0.0f;
@@ -547,7 +557,7 @@ private:
 		float len = 0.2f;
 		float damping = 0.1f;
 		float deltaS;
-		float mu = 0.4f;
+		float mu = 0.27f;
 
 private:
 	std::vector<FluidParticle> m_Particles;
