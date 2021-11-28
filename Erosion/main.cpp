@@ -16,6 +16,7 @@
 #include "mesh.h"
 #include "shapes.h"
 
+
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
 #define GL_PI 3.1415f
@@ -71,7 +72,7 @@ int main()
     fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7)); //video
     //fluidsph.SetOrigin(glm::vec3(32.5, 160.5, 43.7)); //lena
     camera.PlaceTo(glm::vec3(32.9, 125.5, 44.2));
-    fluidsph.Initialize(1000);
+    fluidsph.Initialize(1);
 
 
     glEnable(GL_DEPTH_TEST);
@@ -114,6 +115,8 @@ int main()
             ImGui::NewLine();
 
             ImGui::InputFloat("Friction", fluidsph.GetMu(), 0.01f);
+            ImGui::InputFloat("Ks", fluidsph.GetKs(), 1000.0f);
+            ImGui::InputFloat("Kd", fluidsph.GetKd(), 1000.0f);
             ImGui::InputFloat("Mass", fluidsph.GetMass(), 0.001f);
             ImGui::InputFloat("Visc", fluidsph.GetVisc(), 0.001f);
             ImGui::InputFloat("SurfTens", fluidsph.GetSurfTen(), 0.0001f, 0.0f, "%.4f");
@@ -131,6 +134,8 @@ int main()
             ImGui::NewLine();
             ImGui::InputInt("particle_id", &g_part_id);
             FluidParticle fp = fluidsph.GetParticle(g_part_id);
+            ImGui::InputFloat3("fBoundary", (float*)&fp.fBoundary);
+            ImGui::InputFloat("d", &fp.shortest);
             ImGui::InputFloat3("Pos", (float*)&fp.Position);
             ImGui::InputFloat3("Vel", (float*)&fp.Velocity);
             ImGui::InputFloat3("Acc", (float*)&fp.Acceleration);

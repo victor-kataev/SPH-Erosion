@@ -230,7 +230,7 @@ public:
 				model = glm::translate(model, glm::vec3(bp.Position.x, bp.Position.y, bp.Position.z));
 				model = glm::scale(model, glm::vec3(r));
 				shader.setMat4("model", model);
-				shader.setVec3("myColor", glm::vec3(1.0, 0.0, 0.0));
+				shader.setVec3("myColor", glm::vec3(0.6, 0.0, 0.0));
 				m_Sphere->Draw();
 			}
 
@@ -333,6 +333,16 @@ public:
 		return &render_boundary;
 	}
 
+	float* GetKs()
+	{
+		return &Ks;
+	}
+
+	float* GetKd()
+	{
+		return &Kd;
+	}
+
 	FluidParticle GetParticle(int id)
 	{
 		return m_Particles[id];
@@ -373,8 +383,30 @@ private:
 			usetfp nearest_boundary = grid.FindNearestBoundary(currPart.Position, smoothRadius);
 			omp_unset_lock(&writelock);
 
-			for(const auto & bp: nearest_boundary)
-				fBoundary += deltaS * deltaS * (-mu) * currPart.Velocity * laplVisc(currPart.Position - bp.Position);
+			if (!nearest_boundary.empty())
+			{
+				float shortest_dist = UINT_MAX;
+				FluidParticle closestbp;
+				for (const auto& bp : nearest_boundary)
+				{
+					//no-slip
+					fBoundary += deltaS * deltaS * (-mu) * currPart.Velocity * laplVisc(currPart.Position - bp.Position);
+					float dist = glm::length(bp.Position - currPart.Position);
+					if (dist < shortest_dist)
+					{
+						shortest_dist = dist;
+						closestbp = bp;
+					}
+				}
+
+				//no penetration
+				if (glm::dot(glm::normalize(closestbp.Position - currPart.Position), closestbp.SurfaceNormal) >= 0)
+				{
+					fBoundary += (Ks * shortest_dist - glm::dot(currPart.Velocity, closestbp.SurfaceNormal) * Kd) * closestbp.SurfaceNormal;
+					currPart.shortest = shortest_dist;//debug only
+				}
+				currPart.fBoundary = fBoundary;//debug only
+			}
 
 			omp_set_lock(&writelock);
 			m_NearestBParticles.merge(nearest_boundary);
@@ -382,7 +414,6 @@ private:
 
 			fInternal = currPart.PressureForce + currPart.ViscosityForce;
 			fExternal = currPart.GravityForce + currPart.SurfaceForce + fBoundary;
-			//fExternal = currPart.GravityForce + fBoundary;
 
 			F = fInternal + fExternal;
 			glm::vec3 acc = F / currPart.Density;
@@ -402,7 +433,7 @@ private:
 
 			glm::vec3 contactP;
 			glm::vec3 norm;
-			if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
+			/*if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
 			{
 				float d = glm::length(posNext - contactP);
 				if(glm::length(velNext))
@@ -414,10 +445,10 @@ private:
 				glm::vec3 v_t = velNext + v_n;
 				glm::vec3 reflected = v_n + (-v_t);
 				velNext = velNext + damping* reflected;
-				glm::vec3 v = -velNext;*/
+				glm::vec3 v = -velNext;
 				//velNext = velNext + damping * v;
 				posNext = contactP;
-			}
+			}*/
 
 			/*if (collisionS(posNext, contactP, norm) && deltaT != 0)
 			{
@@ -558,6 +589,8 @@ private:
 		float damping = 0.1f;
 		float deltaS;
 		float mu = 0.27f;
+		float Ks = 1.0f;
+		float Kd = 1.0f;
 
 private:
 	std::vector<FluidParticle> m_Particles;
