@@ -8,6 +8,9 @@
 
 #include <math.h>
 #include <iostream>
+#include <stdio.h>
+#include <Windows.h>
+#include <sstream>
 
 
 #include "grid.h"
@@ -15,7 +18,8 @@
 #include "fluid_system.h"
 #include "mesh.h"
 #include "shapes.h"
-
+//#include "GLToMovie.h"
+//#include <Vfw.h>
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
@@ -41,6 +45,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void checkGLError(const char* where, int line);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void pixelsToBmp(const char* filename, const unsigned char* pixels);
 
 GLFWwindow* init();
 void UIinit(GLFWwindow* window);
@@ -69,14 +74,24 @@ int main()
         
     ImVec4 clear_color = grid.GetColor();
 
-    fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7)); //video
+    fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7));
     //fluidsph.SetOrigin(glm::vec3(32.5, 160.5, 43.7)); //lena
-    camera.PlaceTo(glm::vec3(32.9, 125.5, 44.2));
-    fluidsph.Initialize(1);
+    
+    //camera.PlaceTo(glm::vec3(37.366, 128.401, 41.44)); //video 1
+    camera.PlaceTo(glm::vec3(29.798, 126.626, 43.954)); //video 2
+    //camera.PlaceTo(glm::vec3(35.673, 124.497, 39.898)); //video 3
+    fluidsph.Initialize(1000);
 
 
     glEnable(GL_DEPTH_TEST);
+    glReadBuffer(GL_BACK);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     UIinit(window);
+
+    unsigned char* buff = new unsigned char[SCREEN_HEIGHT * SCREEN_WIDTH * 3];
+    char filename[50];
+    unsigned int framenum = 0;
+    std::stringstream ss_filename;
 
     //render loop
     while (!glfwWindowShouldClose(window))
@@ -156,7 +171,7 @@ int main()
 
         
         
-        fluidsph.Run(grid);//<------------------------
+        fluidsph.Run(grid);// simulation
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
@@ -165,13 +180,16 @@ int main()
         shader.SetView(view);
         shader.setVec3("viewerPos", camera.Position);
 
-
-
         grid.Draw(shader);
         fluidsph.Draw(shader, g_part_id);
         
         UIend();
 
+        glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
+        ss_filename << "render/frame_" << std::to_string(framenum) << ".bmp";
+        framenum++;
+        //pixelsToBmp(ss_filename.str().c_str(), buff);
+        ss_filename.str("");
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -434,4 +452,40 @@ void UIend()
 {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void pixelsToBmp(const char* filename, const unsigned char* pixels)
+{
+#pragma warning(suppress : 4996)
+    FILE* out = fopen(filename, "wb");
+    if (!out)
+    {
+        fprintf(stderr, "can't open file %s\n", filename);
+        exit(1);
+    }
+    BITMAPFILEHEADER bitmapFileHeader;
+    BITMAPINFOHEADER bitmapInfoHeader;
+
+    bitmapFileHeader.bfType = 0x4D42;
+    bitmapFileHeader.bfSize = SCREEN_WIDTH * SCREEN_HEIGHT * 3;
+    bitmapFileHeader.bfReserved1 = 0;
+    bitmapFileHeader.bfReserved2 = 0;
+    bitmapFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+    bitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bitmapInfoHeader.biWidth = SCREEN_WIDTH - 1;
+    bitmapInfoHeader.biHeight = SCREEN_HEIGHT - 1;
+    bitmapInfoHeader.biPlanes = 1;
+    bitmapInfoHeader.biBitCount = 24;
+    bitmapInfoHeader.biCompression = BI_RGB;
+    bitmapInfoHeader.biSizeImage = 0;
+    bitmapInfoHeader.biXPelsPerMeter = 0; // ?
+    bitmapInfoHeader.biYPelsPerMeter = 0; // ?
+    bitmapInfoHeader.biClrUsed = 0;
+    bitmapInfoHeader.biClrImportant = 0;
+
+    fwrite(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, out);
+    fwrite(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, out);
+    fwrite(pixels, SCREEN_WIDTH * SCREEN_HEIGHT * 3, 1, out);
+    fclose(out);
 }

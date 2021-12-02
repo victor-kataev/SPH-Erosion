@@ -204,7 +204,7 @@ public:
 			if (i == selected_part)
 				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
 			else
-				shader.setVec3("myColor", glm::vec3(0.0, 0.2, 0.5));
+				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.5));
 				//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
 			m_Sphere->Draw();
 		}
@@ -400,11 +400,12 @@ private:
 				}
 
 				//no penetration
-				if (glm::dot(glm::normalize(closestbp.Position - currPart.Position), closestbp.SurfaceNormal) >= 0)
+				/*if (glm::dot(glm::normalize(closestbp.Position - currPart.Position), closestbp.SurfaceNormal) >= 0)
 				{
 					fBoundary += (Ks * shortest_dist - glm::dot(currPart.Velocity, closestbp.SurfaceNormal) * Kd) * closestbp.SurfaceNormal;
 					currPart.shortest = shortest_dist;//debug only
 				}
+				*/
 				currPart.fBoundary = fBoundary;//debug only
 			}
 
@@ -433,7 +434,7 @@ private:
 
 			glm::vec3 contactP;
 			glm::vec3 norm;
-			/*if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
+			if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
 			{
 				float d = glm::length(posNext - contactP);
 				if(glm::length(velNext))
@@ -445,10 +446,10 @@ private:
 				glm::vec3 v_t = velNext + v_n;
 				glm::vec3 reflected = v_n + (-v_t);
 				velNext = velNext + damping* reflected;
-				glm::vec3 v = -velNext;
+				glm::vec3 v = -velNext;*/
 				//velNext = velNext + damping * v;
 				posNext = contactP;
-			}*/
+			}
 
 			/*if (collisionS(posNext, contactP, norm) && deltaT != 0)
 			{
@@ -568,7 +569,7 @@ private:
 	bool render_boundary = false;
 
 		glm::vec3 g = glm::vec3(0.0, -9.82f, 0.0);
-		float deltaT = 0.0f;
+		float deltaT = 0.01f;
 		float m_Time = 0.0f;
 		float p0 = 998.29f;
 		float MASS = 0.02f;
