@@ -75,11 +75,11 @@ int main()
     ImVec4 clear_color = grid.GetColor();
 
     fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7));
-    //fluidsph.SetOrigin(glm::vec3(32.5, 160.5, 43.7)); //lena
     
     //camera.PlaceTo(glm::vec3(37.366, 128.401, 41.44)); //video 1
-    camera.PlaceTo(glm::vec3(29.798, 126.626, 43.954)); //video 2
-    //camera.PlaceTo(glm::vec3(35.673, 124.497, 39.898)); //video 3
+    //camera.PlaceTo(glm::vec3(30.737, 125.863, 43.952)); //video 2
+    camera.PlaceTo(glm::vec3(35.222, 124.461, 40.622)); //video 3
+    
     fluidsph.Initialize(1000);
 
 
@@ -89,7 +89,6 @@ int main()
     UIinit(window);
 
     unsigned char* buff = new unsigned char[SCREEN_HEIGHT * SCREEN_WIDTH * 3];
-    char filename[50];
     unsigned int framenum = 0;
     std::stringstream ss_filename;
 
@@ -186,7 +185,7 @@ int main()
         UIend();
 
         glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
-        ss_filename << "render/frame_" << std::to_string(framenum) << ".bmp";
+        ss_filename << "render2/frame_" << std::to_string(framenum) << ".bmp";
         framenum++;
         //pixelsToBmp(ss_filename.str().c_str(), buff);
         ss_filename.str("");
@@ -473,8 +472,8 @@ void pixelsToBmp(const char* filename, const unsigned char* pixels)
     bitmapFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 
     bitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bitmapInfoHeader.biWidth = SCREEN_WIDTH - 1;
-    bitmapInfoHeader.biHeight = SCREEN_HEIGHT - 1;
+    bitmapInfoHeader.biWidth = SCREEN_WIDTH; //-1
+    bitmapInfoHeader.biHeight = SCREEN_HEIGHT; //-1
     bitmapInfoHeader.biPlanes = 1;
     bitmapInfoHeader.biBitCount = 24;
     bitmapInfoHeader.biCompression = BI_RGB;

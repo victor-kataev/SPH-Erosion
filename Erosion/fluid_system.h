@@ -46,7 +46,6 @@ struct FBufs
 
 
 
-
 class FluidSystemSPH
 {
 public:
@@ -59,7 +58,9 @@ public:
 	{
 		num = nParts;
 		init_num = nParts;
+		table_size = 2 * nParts;
 		//id = 0;
+		m_ParticlesTable.reserve(table_size);
 
 		for (int i = 0; i < cbrt(num); i++)
 			for (int j = 0; j < cbrt(num); j++)
@@ -76,6 +77,7 @@ public:
 					particle.Acceleration = glm::vec3(0.0);
 					//particle.Mass = MASS;
 					m_Particles.push_back(particle);
+					
 				}
 
 		vol = num * MASS / p0;
@@ -88,7 +90,7 @@ public:
 
 	void Run(Grid& grid)
 	{
-
+		rebuildTable();
 		//compute density and pressure
 #pragma omp parallel for collapse(2)
 		for (int i = 0; i < m_Particles.size(); i++)
@@ -561,6 +563,27 @@ private:
 		return (float)(45.0f / (PI * powf(h, 6.0f))) * (h - len);
 	}
 
+	int hash(const glm::vec3& pos)
+	{
+		static float cc = 1.0f / h;
+		int rx = floor(pos.x * cc);
+		int ry = floor(pos.y * cc);
+		int rz = floor(pos.z * cc);
+
+		return (rx * 73856093 ^ ry * 19349663 ^ rz * 83492791) % table_size;
+	}
+
+	void rebuildTable()
+	{
+		std::cout << m_ParticlesTable.capacity() << std::endl;
+		m_ParticlesTable.clear();
+		int h = 0;
+		for (int i = 0; i < m_Particles.size(); i++)
+		{
+			h = hash(m_Particles[i].Position);
+			m_ParticlesTable[h].push_back(i);
+		}
+	}
 
 private:
 		//Simulation parameters
@@ -592,9 +615,11 @@ private:
 		float mu = 0.27f;
 		float Ks = 1.0f;
 		float Kd = 1.0f;
+		int table_size;
 
 private:
 	std::vector<FluidParticle> m_Particles;
+	std::vector<std::vector<int>> m_ParticlesTable;
 	std::vector<FluidParticle> m_BParticles;
 	usetfp m_NearestBParticles;
 	std::unique_ptr<Sphere> m_Sphere;
