@@ -18,8 +18,6 @@
 #include "fluid_system.h"
 #include "mesh.h"
 #include "shapes.h"
-//#include "GLToMovie.h"
-//#include <Vfw.h>
 
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900

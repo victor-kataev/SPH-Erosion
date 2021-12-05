@@ -213,7 +213,7 @@ public:
 			if (i == selected_part)
 				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
 			else
-				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.6));
+				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.5));
 				//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
 			m_Sphere->Draw();
 		}
@@ -572,19 +572,13 @@ private:
 
 	size_t hash(const glm::vec3& pos)
 	{
-		glm::ivec3 r = r_unit(pos);
-		unsigned long res = (r.x * 73856093) ^ (r.y * 19349663) ^ (r.z * 83492791);
+		static float cc = 1.0f / h;
+		int rx = floor(pos.x * cc);
+		int ry = floor(pos.y * cc);
+		int rz = floor(pos.z * cc);
+		unsigned long res = (rx * 73856093) ^ (ry * 19349663) ^ (rz * 83492791);
 
 		return res % table_size;
-	}
-
-	glm::ivec3 r_unit(const glm::vec3 p)
-	{
-		static float cc = 1.0f / h;
-		int rx = floor(p.x * cc);
-		int ry = floor(p.y * cc);
-		int rz = floor(p.z * cc);
-		return glm::ivec3(rx, ry, rz);
 	}
 
 	void rebuildTable()
