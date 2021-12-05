@@ -1017,9 +1017,9 @@ public:
 
 	void SeedCell(const glm::vec3 partpos, std::vector<FluidParticle>& boundary, float deltaS)
 	{
-		/*glm::vec2 cell = {floor(partpos.x), floor(partpos.z)};
-		if (cell[0] < 0 || cell[0] >= m_Dim.x || cell[1] < 0 || cell[1] >= m_Dim.z)
-			return;*/
+		glm::vec2 ccell = {floor(partpos.x), floor(partpos.z)};
+		if (ccell[0] < 0 || ccell[0] >= m_Dim.x || ccell[1] < 0 || ccell[1] >= m_Dim.z)
+			return;
 
 		std::vector<glm::vec2> cellsWithinRadius = findCellsWithinRadius(partpos, deltaS*2);
 

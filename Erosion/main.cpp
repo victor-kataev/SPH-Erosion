@@ -77,10 +77,13 @@ int main()
     fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7));
     
     //camera.PlaceTo(glm::vec3(37.366, 128.401, 41.44)); //video 1
+    camera.PlaceTo(glm::vec3(37.013, 129.409, 36.193)); //video 4
     //camera.PlaceTo(glm::vec3(30.737, 125.863, 43.952)); //video 2
-    camera.PlaceTo(glm::vec3(35.222, 124.461, 40.622)); //video 3
+    //camera.PlaceTo(glm::vec3(35.222, 124.461, 40.622)); //video 3
     
+    //fluidsph.Initialize(103823);
     fluidsph.Initialize(1000);
+    //fluidsph.Initialize(1000000);
 
 
     glEnable(GL_DEPTH_TEST);
@@ -185,7 +188,7 @@ int main()
         UIend();
 
         glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
-        ss_filename << "render2/frame_" << std::to_string(framenum) << ".bmp";
+        ss_filename << "render3/frame_" << std::to_string(framenum) << ".bmp";
         framenum++;
         //pixelsToBmp(ss_filename.str().c_str(), buff);
         ss_filename.str("");

@@ -60,7 +60,8 @@ public:
 		init_num = nParts;
 		table_size = 2 * nParts;
 		//id = 0;
-		m_ParticlesTable.reserve(table_size);
+		m_ParticlesSpatialHash.resize(table_size);
+		m_ParticleNeighbors.resize(num);
 
 		for (int i = 0; i < cbrt(num); i++)
 			for (int j = 0; j < cbrt(num); j++)
@@ -80,7 +81,7 @@ public:
 					
 				}
 
-		vol = num * MASS / p0;
+		//vol = num * MASS / p0;
 		//smoothRadius = cbrt(3 * vol * x / (4 * PI * num));
 		smoothRadius = h;
 		deltaS = h / 2.0f;
@@ -99,9 +100,11 @@ public:
 
 			float density = 0;
 			int cnt = 0;
-			for (int j = 0; j < m_Particles.size(); j++)
+			//for (int j = 0; j < m_Particles.size(); j++)
+			for (int j = 0; j < m_ParticleNeighbors[i].size(); j++)
 			{
-				FluidParticle& neighbPart = m_Particles[j];
+				int idx = m_ParticleNeighbors[i][j];
+				FluidParticle& neighbPart = m_Particles[idx];
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
 				if (distance <= smoothRadius)
@@ -133,11 +136,13 @@ public:
 			glm::vec3 fPress(0.0);
 			glm::vec3 fVisc(0.0);
 			glm::vec3 n(0.0); //inward surface normal
-			for (int j = 0; j < m_Particles.size(); j++)
+			//for (int j = 0; j < m_Particles.size(); j++)
+			for (int j = 0; j < m_ParticleNeighbors[i].size(); j++)
 			{
-				FluidParticle& neighb = m_Particles[j];
+				int idx = m_ParticleNeighbors[i][j];
+				FluidParticle& neighb = m_Particles[idx];
 				float distance = glm::length(cur.Position - neighb.Position);
-				if (distance <= smoothRadius && i != j)
+				if (distance <= smoothRadius && i != idx)
 				{
 					cur.NeighbId = neighb.Id;
 					glm::vec3 grad = gradPressure(cur.Position - neighb.Position);
@@ -163,9 +168,11 @@ public:
 			FluidParticle& currPart = m_Particles[i];
 			currPart.GravityForce = currPart.Density * g;
 			float colorFieldLapl = 0.0;
-			for (int j = 0; j < m_Particles.size(); j++)
+			//for (int j = 0; j < m_Particles.size(); j++)
+			for (int j = 0; j < m_ParticleNeighbors[i].size(); j++)
 			{
-				FluidParticle& neighbPart = m_Particles[j];
+				int idx = m_ParticleNeighbors[i][j];
+				FluidParticle& neighbPart = m_Particles[idx];
 
 				float distance = glm::length(currPart.Position - neighbPart.Position);
 				if (distance <= smoothRadius)
@@ -206,7 +213,7 @@ public:
 			if (i == selected_part)
 				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
 			else
-				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.5));
+				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.6));
 				//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
 			m_Sphere->Draw();
 		}
@@ -563,25 +570,77 @@ private:
 		return (float)(45.0f / (PI * powf(h, 6.0f))) * (h - len);
 	}
 
-	int hash(const glm::vec3& pos)
+	size_t hash(const glm::vec3& pos)
+	{
+		glm::ivec3 r = r_unit(pos);
+		unsigned long res = (r.x * 73856093) ^ (r.y * 19349663) ^ (r.z * 83492791);
+
+		return res % table_size;
+	}
+
+	glm::ivec3 r_unit(const glm::vec3 p)
 	{
 		static float cc = 1.0f / h;
-		int rx = floor(pos.x * cc);
-		int ry = floor(pos.y * cc);
-		int rz = floor(pos.z * cc);
-
-		return (rx * 73856093 ^ ry * 19349663 ^ rz * 83492791) % table_size;
+		int rx = floor(p.x * cc);
+		int ry = floor(p.y * cc);
+		int rz = floor(p.z * cc);
+		return glm::ivec3(rx, ry, rz);
 	}
 
 	void rebuildTable()
 	{
-		std::cout << m_ParticlesTable.capacity() << std::endl;
-		m_ParticlesTable.clear();
-		int h = 0;
+		m_ParticlesSpatialHash.clear();
+		m_ParticleNeighbors.clear();
+		m_ParticlesSpatialHash.resize(table_size);
+		m_ParticleNeighbors.resize(num);
+
+		for (int i = 0; i < m_Particles.size(); i++)
+			m_ParticlesSpatialHash[hash(m_Particles[i].Position)].push_back(i);
+
+#pragma omp parallel for collapse(4)
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
-			h = hash(m_Particles[i].Position);
-			m_ParticlesTable[h].push_back(i);
+			glm::vec3& r_q = m_Particles[i].Position;
+			glm::vec3 bbmin = r_q - glm::vec3(h);
+			glm::vec3 bbmax = r_q + glm::vec3(h);
+
+			std::unordered_set<int> tmp;
+
+			float a, b, c;
+			for(int y = 0; y < 3; y++)
+				for(int z = 0; z < 3; z++)
+					for (int x = 0; x < 3; x++)
+					{
+						if (x == 0)
+							a = bbmin.x;
+						else if (x == 1)
+							a = bbmin.x + h;
+						else
+							a = bbmax.x;
+						
+						if (y == 0)
+							b = bbmin.y;
+						else if (y == 1)
+							b = bbmin.y + h;
+						else
+							b = bbmax.y;
+						
+						if (z == 0)
+							c = bbmin.z;
+						else if (z == 1)
+							c = bbmin.z + h;
+						else
+							c = bbmax.z;
+							
+						std::vector<int>& cellParts = m_ParticlesSpatialHash[hash(glm::vec3(a, b, c))];
+						for (const auto part_idx : cellParts)
+						{
+							glm::vec3& r_j = m_Particles[part_idx].Position;
+							if (glm::length(r_q - r_j) <= h)
+								tmp.insert(part_idx);
+						}
+					}
+			m_ParticleNeighbors[i].insert(m_ParticleNeighbors[i].begin(), tmp.begin(), tmp.end());
 		}
 	}
 
@@ -604,7 +663,7 @@ private:
 		float cR = 0.5f;
 		//const int x = 20;
 		float h = 0.0457f;
-		int num = 10;
+		int num;
 		int init_num;
 		float vol;
 		float smoothRadius;
@@ -619,7 +678,8 @@ private:
 
 private:
 	std::vector<FluidParticle> m_Particles;
-	std::vector<std::vector<int>> m_ParticlesTable;
+	std::vector<std::vector<int>> m_ParticlesSpatialHash;
+	std::vector<std::vector<int>> m_ParticleNeighbors;
 	std::vector<FluidParticle> m_BParticles;
 	usetfp m_NearestBParticles;
 	std::unique_ptr<Sphere> m_Sphere;
