@@ -14,37 +14,24 @@
 typedef unsigned int uint;
 
 
-#define MAX_PARAM  50
-#define MAX_BUF	   25
-#define M_PI 3.14159265358979323846
 
-#define FPOS 0
-#define FVEL 1
-#define FDENSITY 2
-#define FMASS 3
-#define FPRESS 4
-
-struct FBufs
-{
-	inline ~FBufs() {
-		for (int i = 0; i < MAX_BUF; i++) {
-			if (mcpu[i] != nullptr) {
-				free(mcpu[i]);
-			}
-		}
-	}
+#define SEDIMENT_MAX 0.7f
+#define SOLID_DENSITY 1842.0f
+#define DAMPING 110.0f
+#define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
+#define MASS_2_C (m*INV_MASS_C_COEFFICIENT)
 
 
-	//inline Vector3DF* bufVector3DF(int n) { return (Vector3DF*)mcpu[n]; }
-	//inline Float3* bufFloat3(int n) { return (Float3*)mcpu[n]; }
-	inline float* bufF(int n) { return (float*)mcpu[n]; }
-	inline uint* bufI(int n) { return (uint*)mcpu[n]; }
-	inline char* bufC(int n) { return (char*)mcpu[n]; }
+#define FLUID_MASS 0.02f
+#define FLUID_BASE_DENSITY 998.29f
 
-	char* mcpu[MAX_BUF] = { nullptr };
-};
+float MASS_C_COEFFICIENT = SOLID_DENSITY * FLUID_MASS / FLUID_BASE_DENSITY;
+float INV_MASS_C_COEFFICIENT = 1.0f / (SOLID_DENSITY * FLUID_MASS / FLUID_BASE_DENSITY);
+float SEDIMENT_MAX_MASS = C_2_MASS(SEDIMENT_MAX);
 
-
+#define PI 3.141592f
+float kd = 6.0f * PI * 1.78e-5;
+float ks = 1.119e6;
 
 class FluidSystemSPH
 {
@@ -76,6 +63,8 @@ public:
 					particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
 					particle.Velocity = glm::vec3(0.0, 0.0, 0.0);
 					particle.Acceleration = glm::vec3(0.0);
+					particle.sedim = 0.0f;
+					particle.sedim_delta = 0.0f;
 					//particle.Mass = MASS;
 					m_Particles.push_back(particle);
 					
@@ -166,7 +155,7 @@ public:
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
-			currPart.GravityForce = currPart.Density * g;
+			currPart.GravityForce = currPart.Density * gravityVector;
 			float colorFieldLapl = 0.0;
 			//for (int j = 0; j < m_Particles.size(); j++)
 			for (int j = 0; j < m_ParticleNeighbors[i].size(); j++)
@@ -185,6 +174,10 @@ public:
 			currPart.SurfaceForce = -surf_tens * colorFieldLapl * currPart.SurfaceNormal;
 		}
 
+		computeBoundaryForces(grid);
+		computeSedimentTransfer();
+		//computeErosion();
+		//computeDeposition();
 
 		advance(grid);
 		//m_Time += m_Dt;
@@ -192,8 +185,6 @@ public:
 
 	void Draw(const Shader& shader, int selected_part)
 	{
-		shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.7, 0.2));
-		shader.setVec3("dirLight.color", glm::vec3(1.0));
 		shader.setVec3("material.ka", glm::vec3(0.2f));
 		shader.setVec3("material.kd", glm::vec3(0.7f));
 		shader.setVec3("material.ks", glm::vec3(1.0));
@@ -213,7 +204,7 @@ public:
 			if (i == selected_part)
 				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
 			else
-				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.5));
+				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.8));
 				//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
 			m_Sphere->Draw();
 		}
@@ -329,7 +320,7 @@ public:
 
 	glm::vec3* GetGrav()
 	{
-		return &g;
+		return &gravityVector;
 	}
 
 	float* GetDamping()
@@ -371,25 +362,88 @@ private:
 		return output;
 	}
 
-	//leap-frog + collision handling
-	void advance(Grid & grid)
+	void computeErosion()
+	{
+
+	}
+
+	void computeDeposition()
+	{
+	
+	}
+
+	//advecton + diffustion
+	void computeSedimentTransfer()
+	{
+		for (int i = 0; i < m_Particles.size(); i++)
+		{
+			FluidParticle& currPart = m_Particles[i];
+
+			glm::vec3 vSettling = 2.0f / 9.0f * 0.001f * 0.001f * (float)((SOLID_DENSITY - currPart.Density) / visc) * gravityVector;
+			float dC = 0.0f;
+			float q = 0.0f;
+
+			for (const auto& j : m_ParticleNeighbors[i])
+			{
+				FluidParticle& neigh = m_Particles[j];
+				glm::vec3 rij = glm::normalize(currPart.Position - neigh.Position);
+				float rij_len = glm::length(currPart.Position - neigh.Position);
+				float v_r = glm::dot(vSettling, rij);
+
+
+				//donor-acceptor
+				if (v_r >= 0.0f)
+				{
+					//neighbor is donor
+					if (neigh.sedim > 0.0f && currPart.sedim < SEDIMENT_MAX)
+					{
+						v_r *= richardson_zaki(currPart.sedim);
+						q = MASS * neigh.sedim / neigh.Density;
+						q *= -v_r* gradCubicSpline(rij_len);
+						dC += q;
+					}
+				}
+				else
+				{
+					//current is donor
+					if (currPart.sedim > 0.0f && neigh.sedim < SEDIMENT_MAX)
+					{
+						v_r *= richardson_zaki(neigh.sedim);
+						q = MASS * currPart.sedim / currPart.Density;
+						q *= -v_r * gradCubicSpline(rij_len);
+						dC += q;
+					}
+				}
+			
+				//diffusion
+				dC += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * gradCubicSpline(rij_len);
+
+				if (dC <= 0.0f) 
+					currPart.sedim_delta += dC;
+				else
+					neigh.sedim_delta -= dC;
+				dC = 0.0f;
+
+			}
+		}
+	}
+
+	void computeBoundaryForces(Grid& grid)
 	{
 		omp_lock_t writelock;
 		omp_init_lock(&writelock);
+
 #pragma omp parallel for
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
-			glm::vec3 F;
-			glm::vec3 fInternal;
-			glm::vec3 fExternal;
-			glm::vec3 fBoundary(0.0);
-			glm::vec3 velNext;
-			glm::vec3 posNext;
+			usetfp nearest_boundary;
+			glm::vec3 fBoundary(0.0f);
+
 
 			omp_set_lock(&writelock);
 			grid.SeedCell(currPart.Position, m_BParticles, deltaS);
-			usetfp nearest_boundary = grid.FindNearestBoundary(currPart.Position, smoothRadius);
+			nearest_boundary = grid.FindNearestBoundary(currPart.Position, smoothRadius);
 			omp_unset_lock(&writelock);
 
 			if (!nearest_boundary.empty())
@@ -413,17 +467,61 @@ private:
 				{
 					fBoundary += (Ks * shortest_dist - glm::dot(currPart.Velocity, closestbp.SurfaceNormal) * Kd) * closestbp.SurfaceNormal;
 					currPart.shortest = shortest_dist;//debug only
+					currPart.underSurf = true;
+					currPart.lastDetectedBoundaryPos = closestbp.Position;
+					currPart.lastDetectedBoundaryNorm = closestbp.SurfaceNormal;
 				}
-				*/
-				currPart.fBoundary = fBoundary;//debug only
+				else
+				{
+					currPart.underSurf = false;
+				}*/
+
 			}
+			/*else if (nearest_boundary.empty() && currPart.underSurf)
+			{
+				nearest_boundary = grid.FindNearestBoundary(currPart.Position, smoothRadius*10);
+				FluidParticle closestbp;
+				float shortest_dist = UINT_MAX;
+				for (const auto& bp : nearest_boundary)
+				{
+					float dist = glm::length(bp.Position - currPart.Position);
+					if (dist < shortest_dist)
+					{
+						shortest_dist = dist;
+						closestbp = bp;
+					}
+				}
+				if(!nearest_boundary.empty())
+					fBoundary += (Ks * shortest_dist - glm::dot(currPart.Velocity, closestbp.SurfaceNormal) * Kd) * closestbp.SurfaceNormal;
+			}*/
+			currPart.fBoundary = fBoundary;//debug only
 
 			omp_set_lock(&writelock);
 			m_NearestBParticles.merge(nearest_boundary);
 			omp_unset_lock(&writelock);
+		}
+	}
+
+	//leap-frog + collision handling
+	void advance(Grid & grid)
+	{
+		omp_lock_t writelock;
+		omp_init_lock(&writelock);
+#pragma omp parallel for
+		for (int i = 0; i < m_Particles.size(); i++)
+		{
+			FluidParticle& currPart = m_Particles[i];
+			glm::vec3 F;
+			glm::vec3 fInternal;
+			glm::vec3 fExternal;
+			glm::vec3 velNext;
+			glm::vec3 posNext;
+
+
+
 
 			fInternal = currPart.PressureForce + currPart.ViscosityForce;
-			fExternal = currPart.GravityForce + currPart.SurfaceForce + fBoundary;
+			fExternal = currPart.GravityForce + currPart.SurfaceForce + currPart.fBoundary;
 
 			F = fInternal + fExternal;
 			glm::vec3 acc = F / currPart.Density;
@@ -439,8 +537,6 @@ private:
 			posNext = currPart.Position + velNext * deltaT;
 
 			
-			//fBoundary = grid.CalculateBoundaryForce(currPart);
-
 			glm::vec3 contactP;
 			glm::vec3 norm;
 			if (grid.collision(currPart.Position, posNext, velNext, contactP, norm) && deltaT != 0)
@@ -448,15 +544,6 @@ private:
 				float d = glm::length(posNext - contactP);
 				if(glm::length(velNext))
 					velNext = velNext - (float)(1 + cR * (d / (deltaT * glm::length(velNext)))) * glm::dot(velNext, norm) * norm;
-				/*glm::vec3 velNextRev = -velNext;
-				float k = glm::dot(glm::normalize(velNextRev), norm);
-				float v_n_len = k * glm::length(velNext);
-				glm::vec3 v_n = v_n_len * (norm);
-				glm::vec3 v_t = velNext + v_n;
-				glm::vec3 reflected = v_n + (-v_t);
-				velNext = velNext + damping* reflected;
-				glm::vec3 v = -velNext;*/
-				//velNext = velNext + damping * v;
 				posNext = contactP;
 			}
 
@@ -570,6 +657,28 @@ private:
 		return (float)(45.0f / (PI * powf(h, 6.0f))) * (h - len);
 	}
 
+	float gradCubicSpline(float rij)
+	{
+		float h1 = 1.0f / h;
+		float q = rij * h1;
+
+		//kernel normalizing factor
+		float factor = 1.0f / PI * h1 * h1 * h1;
+		float tmp2 = 2.0f - q;
+		float val;
+		if (rij > 1e-12)
+			if (q > 2.0f)
+				val = 0.0f;
+			else if (q > 1.0f)
+				val = -0.75f * tmp2 * tmp2;
+			else
+				val = -3.0f * q * (1 - 0.75 * q);
+		else
+			val = 0.0f;
+
+		return val * factor;
+	}
+
 	size_t hash(const glm::vec3& pos)
 	{
 		static float cc = 1.0f / h;
@@ -638,13 +747,21 @@ private:
 		}
 	}
 
+	float richardson_zaki(float C)
+	{
+		if (C > SEDIMENT_MAX)
+			return 0.0f;
+		float e = 4.5;
+		return (1 - powf(C / SEDIMENT_MAX, e));
+	}
+
 private:
 		//Simulation parameters
 		//float m_Param[MAX_PARAM];
 		//FBufs m_Fluid;
 	bool render_boundary = false;
 
-		glm::vec3 g = glm::vec3(0.0, -9.82f, 0.0);
+		glm::vec3 gravityVector = glm::vec3(0.0, -9.82f, 0.0);
 		float deltaT = 0.01f;
 		float m_Time = 0.0f;
 		float p0 = 998.29f;
@@ -666,8 +783,9 @@ private:
 		float damping = 0.1f;
 		float deltaS;
 		float mu = 0.27f;
-		float Ks = 1.0f;
-		float Kd = 1.0f;
+		float Ks = 1.119e6;
+		//float Ks = 45000;
+		float Kd = 300.0f;
 		int table_size;
 
 private:

@@ -67,20 +67,26 @@ int main()
     char picture_path[100];
     //strcpy_s(picture_path, "lena_gray.png");
     strcpy_s(picture_path, "pumba_gray.png");
-    glm::vec3 dimensions = { 50, 255, 50 };
+    glm::vec3 dimensions = { 80, 255, 80 };
     Grid grid(picture_path, dimensions);
         
     ImVec4 clear_color = grid.GetColor();
 
-    fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7));
+    //fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7));
+    //fluidsph.SetOrigin(glm::vec3(48.034, 126.0, 56.064));
+    fluidsph.SetOrigin(glm::vec3(47.034, 125.0, 57.064));
     
     //camera.PlaceTo(glm::vec3(37.366, 128.401, 41.44)); //video 1
-    camera.PlaceTo(glm::vec3(37.013, 129.409, 36.193)); //video 4
+    //camera.PlaceTo(glm::vec3(37.013, 129.409, 36.193)); //video 4
     //camera.PlaceTo(glm::vec3(30.737, 125.863, 43.952)); //video 2
-    //camera.PlaceTo(glm::vec3(35.222, 124.461, 40.622)); //video 3
+    //camera.PlaceTo(glm::vec3(36.122, 124.579, 39.674)); //video 3
+    //camera.PlaceTo(glm::vec3(51.450, 140.601, 76.509)); //video 5
+    //camera.PlaceTo(glm::vec3(43.005, 129.945, 64.629)); //video 6
+    //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
+    camera.PlaceTo(glm::vec3(54.462, 129.195, 63.645)); //video 8
     
     //fluidsph.Initialize(103823);
-    fluidsph.Initialize(1000);
+    fluidsph.Initialize(8000);
     //fluidsph.Initialize(1000000);
 
 
@@ -92,6 +98,7 @@ int main()
     unsigned char* buff = new unsigned char[SCREEN_HEIGHT * SCREEN_WIDTH * 3];
     unsigned int framenum = 0;
     std::stringstream ss_filename;
+    glm::vec3 dirlight(-0.4, -0.7, 0.2);
 
     //render loop
     while (!glfwWindowShouldClose(window))
@@ -111,6 +118,7 @@ int main()
             ImGui::Begin("New window");
 
             ImGui::InputFloat3("Camera pos:", (float*)&camera.Position);
+            ImGui::InputFloat3("dirlight:", (float*)&dirlight);
 
             ImGui::ColorEdit3("clear color", (float*)&clear_color);
             grid.SetColor(clear_color);
@@ -179,6 +187,8 @@ int main()
         shader.SetProjection(projection);
         shader.SetView(view);
         shader.setVec3("viewerPos", camera.Position);
+        shader.setVec3("dirLight.dir", dirlight);
+        shader.setVec3("dirLight.color", glm::vec3(1.0));
 
         grid.Draw(shader);
         fluidsph.Draw(shader, g_part_id);
@@ -186,7 +196,7 @@ int main()
         UIend();
 
         glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
-        ss_filename << "render3/frame_" << std::to_string(framenum) << ".bmp";
+        ss_filename << "sping/frame_" << std::to_string(framenum) << ".bmp";
         framenum++;
         //pixelsToBmp(ss_filename.str().c_str(), buff);
         ss_filename.str("");
@@ -311,7 +321,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE && pause)
     {
         if (fluidsph.GetDeltaTime() == 0)
-            fluidsph.SetDeltaTime(0.01f);
+            fluidsph.SetDeltaTime(0.001f);
         else
             fluidsph.SetDeltaTime(0.0f);
         pause = false;

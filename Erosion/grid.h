@@ -35,6 +35,11 @@ struct FluidParticle
 	float shortest;
 	int NeighbId;
 	int cnt;
+	bool underSurf = false;
+	glm::vec3 lastDetectedBoundaryPos;
+	glm::vec3 lastDetectedBoundaryNorm;
+	float sedim;
+	float sedim_delta;
 };
 
 unsigned long FluidParticle::IdCount = 0;
@@ -221,7 +226,7 @@ private:
 			for (int x = 0; x < m_Dim.x; x++)
 			{
 				int y = GetHeightfieldAt(x, z);
-				if (m_Dim.y <= y)
+				if (y >= m_Dim.y)
 					y = m_Dim.y - 1;
 
 				SetVoxel(x, y, z);
@@ -238,16 +243,63 @@ private:
 				glm::vec3 r(0.0);
 				glm::vec3 l(0.0);
 
-				if (x - 1 >= 0)
-					l = glm::vec3(x - (x - 1), y - GetHeightfieldAt(x - 1, z), z - z);
-				if (x + 1 < m_Dim.x)
-					r = glm::vec3((x + 1) - x, GetHeightfieldAt(x + 1, z) - y, z - z);
-				if (z - 1 >= 0)
-					u = glm::vec3(x - x, y - GetHeightfieldAt(x, z - 1), z - (z - 1));
-				if (z + 1 < m_Dim.y)
-					d = glm::vec3(x - x, GetHeightfieldAt(x, z + 1) - y, (z + 1) - z);
+				glm::vec3 n1(0.0);
+				glm::vec3 n2(0.0);
+				glm::vec3 n3(0.0);
+				glm::vec3 n4(0.0);
+				glm::vec3 n5(0.0);
+				glm::vec3 n6(0.0);
 
-				glm::vec3 normal = glm::normalize(glm::cross(u, l) + glm::cross(u, r) + glm::cross(d, l) + glm::cross(d, r));
+				if (x - 1 >= 0 && z - 1 >= 0)
+				{
+					l = glm::vec3(x - 1 - x, GetHeightfieldAt(x - 1, z) - y, z - z);
+					u = glm::vec3(x - x, GetHeightfieldAt(x, z - 1) - y, z - 1 - z);
+					//n1 = glm::cross(l, u);
+					n1 = glm::cross(u, l);
+				}
+
+				if (x + 1 < m_Dim.x && z - 1 >= 0)
+				{
+					u = glm::vec3(x - x, GetHeightfieldAt(x, z - 1)-y, z - 1 - z);
+					glm::vec3 ur = glm::vec3(x + 1 - x, GetHeightfieldAt(x + 1, z - 1) - y, z - 1 - z);
+					r = glm::vec3(x + 1 - x, GetHeightfieldAt(x + 1, z) - y, z - z);
+
+					//n2 = glm::cross(u, ur);
+					n2 = glm::cross(ur, u);
+					//n3 = glm::cross(ur, r);
+					n3 = glm::cross(r, ur);
+				}
+
+				if (x + 1 < m_Dim.x && z + 1 < m_Dim.z)
+				{
+					r = glm::vec3(x + 1 - x, GetHeightfieldAt(x + 1, z) - y, z - z);
+					d = glm::vec3(x - x, GetHeightfieldAt(x, z + 1) - y, z + 1 - z);
+					//n4 = glm::cross(r, d);
+					n4 = glm::cross(d, r);
+				}
+
+				if (x - 1 >= 0 && z + 1 < m_Dim.z)
+				{
+					d = glm::vec3(x - x, GetHeightfieldAt(x, z + 1) - y, z + 1 - z);
+					l = glm::vec3(x - 1 - x, GetHeightfieldAt(x - 1, z) - y, z - z);
+					glm::vec3 dl = glm::vec3(x - 1 - x, GetHeightfieldAt(x - 1, z + 1) - y, z + 1 - z);
+					//n5 = glm::cross(d, dl);
+					n5 = glm::cross(dl, d);
+					//n6 = glm::cross(dl, l);
+					n6 = glm::cross(l, dl);
+				}
+
+				//if (x - 1 >= 0)
+				//	l = glm::vec3(x - (x - 1), y - GetHeightfieldAt(x - 1, z), z - z);
+				//if (x + 1 < m_Dim.x)
+				//	r = glm::vec3((x + 1) - x, GetHeightfieldAt(x + 1, z) - y, z - z);
+				//if (z - 1 >= 0)
+				//	u = glm::vec3(x - x, y - GetHeightfieldAt(x, z - 1), z - (z - 1));
+				//if (z + 1 < m_Dim.y)
+				//	d = glm::vec3(x - x, GetHeightfieldAt(x, z + 1) - y, (z + 1) - z);
+
+				//glm::vec3 normal = glm::normalize(glm::cross(u, l) + glm::cross(u, r) + glm::cross(d, l) + glm::cross(d, r));
+				glm::vec3 normal = glm::normalize(n1 + n2 + n3 + n4 + n5 + n6);
 				vertexData.push_back(normal.x);
 				vertexData.push_back(normal.y);
 				vertexData.push_back(normal.z);
@@ -1027,7 +1079,7 @@ public:
 		std::vector<FluidParticle> boundaryParts;
 		for (const auto& cell : cellsWithinRadius)
 		{
-			cellIdx = cell[0] * 100 + cell[1];
+			cellIdx = cell[0] * 1000 + cell[1];
 
 			if (m_SeededCells.find(cellIdx) == m_SeededCells.end())
 			{
@@ -1105,7 +1157,7 @@ public:
 		usetfp nearestParticles;
 		for (const auto& cell : cellsWithinRadius)
 		{
-			cellIdx = cell[0] * 100 + cell[1];
+			cellIdx = cell[0] * 1000 + cell[1];
 
 			if (m_SeededCells.find(cellIdx) != m_SeededCells.end())
 				nearestParticles.merge(m_SeededCells[cellIdx]->NearestNeighbors(pos, sr));
@@ -1113,17 +1165,10 @@ public:
 		return nearestParticles;
 	}
 
-	/*glm::vec3 CalculateBoundaryForce(const FluidParticle& sphPart)
-	{
-
-	}*/
-
 	void Draw(Shader& shader)
 	{
 		glm::mat4 model = glm::mat4(1.0f);
 		shader.setMat4("model", model);
-		shader.setVec3("dirLight.dir", glm::vec3(-0.1, -0.7, 0.2));
-		shader.setVec3("dirLight.color", glm::vec3(1.0));
 		shader.setVec3("material.ka", glm::vec3(0.2f));
 		shader.setVec3("material.kd", glm::vec3(0.7f));
 		shader.setVec3("material.ks", glm::vec3(1.0));
