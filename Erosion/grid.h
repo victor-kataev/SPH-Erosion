@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
+#include <stdlib.h>
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -40,6 +42,7 @@ struct FluidParticle
 	glm::vec3 lastDetectedBoundaryNorm;
 	float sedim;
 	float sedim_delta;
+	float dM;
 };
 
 unsigned long FluidParticle::IdCount = 0;

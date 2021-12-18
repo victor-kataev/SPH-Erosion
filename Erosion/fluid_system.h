@@ -20,6 +20,9 @@ typedef unsigned int uint;
 #define DAMPING 110.0f
 #define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
 #define MASS_2_C (m*INV_MASS_C_COEFFICIENT)
+#define EROSION_SHEAR_STIFF 1.0f
+#define EROSION_TC 3.0f
+#define EROSION_RATE 0.1f
 
 
 #define FLUID_MASS 0.02f
@@ -176,7 +179,7 @@ public:
 
 		computeBoundaryForces(grid);
 		computeSedimentTransfer();
-		//computeErosion();
+		computeErosion();
 		//computeDeposition();
 
 		advance(grid);
@@ -364,7 +367,29 @@ private:
 
 	void computeErosion()
 	{
+		float dMi;
+		float v, t, E, m, vRel;
+		const float minVrel = pow(EROSION_TC / EROSION_SHEAR_STIFF, 2.0f);
+		float L2 = h * h;
 
+		for (auto bp : m_NearestBParticles)
+		{
+			dMi = 0.0f;
+			for (const auto& fp_idx : m_FluidsOfBoundary[bp.Id])
+			{
+				FluidParticle& fp = m_Particles[fp_idx];
+				v = glm::length(fp.Velocity);
+				float dist = glm::length(fp.Position - bp.Position);
+				vRel = std::max(0.0f, v - abs(glm::dot(fp.Velocity, bp.SurfaceNormal))) / dist;
+				if (minVrel > vRel)
+					continue;
+				t = EROSION_SHEAR_STIFF * pow(vRel, 0.5f);
+				E = EROSION_RATE * (t - EROSION_TC);
+				m = L2 * E;
+				dMi += m; //add sediment to sph particle
+				bp.dM -= m; //subtract sediment from boundary
+			}
+		}
 	}
 
 	void computeDeposition()
@@ -496,10 +521,14 @@ private:
 			}*/
 			currPart.fBoundary = fBoundary;//debug only
 
+			for (const auto& bp : nearest_boundary)
+				m_FluidsOfBoundary[bp.Id].push_back(i);
+
 			omp_set_lock(&writelock);
 			m_NearestBParticles.merge(nearest_boundary);
 			omp_unset_lock(&writelock);
 		}
+		omp_destroy_lock(&writelock);
 	}
 
 	//leap-frog + collision handling
@@ -516,8 +545,6 @@ private:
 			glm::vec3 fExternal;
 			glm::vec3 velNext;
 			glm::vec3 posNext;
-
-
 
 
 			fInternal = currPart.PressureForce + currPart.ViscosityForce;
@@ -556,9 +583,7 @@ private:
 
 			currPart.Velocity = velNext;
 			currPart.Position = posNext;
-			
 		}
-		omp_destroy_lock(&writelock);
 	}
 
 	bool collisionS(glm::vec3 pos, glm::vec3& contactP, glm::vec3& normal) {
@@ -794,6 +819,8 @@ private:
 	std::vector<std::vector<int>> m_ParticleNeighbors;
 	std::vector<FluidParticle> m_BParticles;
 	usetfp m_NearestBParticles;
+	std::unordered_map<int, std::vector<int>> m_FluidsOfBoundary;
+
 	std::unique_ptr<Sphere> m_Sphere;
 	glm::vec3 m_Origin;
 };
