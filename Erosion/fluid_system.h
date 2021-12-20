@@ -19,10 +19,11 @@ typedef unsigned int uint;
 #define SOLID_DENSITY 1842.0f
 #define DAMPING 110.0f
 #define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
-#define MASS_2_C (m*INV_MASS_C_COEFFICIENT)
+#define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
 #define EROSION_SHEAR_STIFF 1.0f
 #define EROSION_TC 3.0f
 #define EROSION_RATE 0.1f
+#define g_SEDIM_COEFF 10.0f
 
 
 #define FLUID_MASS 0.02f
@@ -70,7 +71,7 @@ public:
 					particle.sedim_delta = 0.0f;
 					//particle.Mass = MASS;
 					m_Particles.push_back(particle);
-					
+
 				}
 
 		//vol = num * MASS / p0;
@@ -83,7 +84,7 @@ public:
 
 	void Run(Grid& grid)
 	{
-		rebuildTable();
+		rebuildTables();
 		//compute density and pressure
 #pragma omp parallel for collapse(2)
 		for (int i = 0; i < m_Particles.size(); i++)
@@ -111,9 +112,9 @@ public:
 				density = 1005.0f;
 			else if (density < 1000 && cnt == 3)
 				density = 1020.0f;
-			else if(density < 1000)
+			else if (density < 1000)
 				density = 1002.0f;
-			
+
 			currPart.Density = density;
 			currPart.Pressure = k * (currPart.Density - p0);
 		}
@@ -147,7 +148,7 @@ public:
 				}
 
 			}
-			cur.PressureForce = -(fPress*cur.Density);
+			cur.PressureForce = -(fPress * cur.Density);
 			cur.ViscosityForce = fVisc * visc;
 			cur.SurfaceNormal = n;
 		}
@@ -177,10 +178,13 @@ public:
 			currPart.SurfaceForce = -surf_tens * colorFieldLapl * currPart.SurfaceNormal;
 		}
 
-		computeBoundaryForces(grid);
-		computeSedimentTransfer();
-		computeErosion();
-		//computeDeposition();
+		computeBoundaryForces(grid); //boudnary forces
+		computeSedimentTransfer(); //advecton + diffusion
+		computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
+		computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
+		computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
+		computeErosion(); //erosion
+		computeHFChange();
 
 		advance(grid);
 		//m_Time += m_Dt;
@@ -208,7 +212,7 @@ public:
 				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
 			else
 				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.8));
-				//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
+			//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
 			m_Sphere->Draw();
 		}
 
@@ -225,7 +229,7 @@ public:
 		}*/
 
 		//hightlight nearest boundary particles
-		if(render_boundary)
+		if (render_boundary)
 			for (const auto& bp : m_NearestBParticles)
 			{
 				float r = 0.01f;
@@ -241,7 +245,7 @@ public:
 
 	}
 
-	void SetOrigin(const glm::vec3& o )
+	void SetOrigin(const glm::vec3& o)
 	{
 		m_Origin = o;
 	}
@@ -278,7 +282,7 @@ public:
 					float z = -0.15 + k * 0.025;
 					FluidParticle tmp;
 					tmp.Id = FluidParticle::IdCount++;
-					tmp.Position = glm::vec3(x+ m_Origin.x, y+ m_Origin.y, z+ m_Origin.z);
+					tmp.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
 					tmp.Velocity = glm::vec3(0.0, 0.0, 0.0);
 					tmp.Acceleration = glm::vec3(0.0);
 					//tmp.Mass = MASS;
@@ -388,24 +392,113 @@ private:
 				m = L2 * E;
 				dMi += m; //add sediment to sph particle
 				bp.dM -= m; //subtract sediment from boundary
+				fp.sedim_delta += MASS_2_C(dMi);
 			}
 		}
 	}
 
 	void computeDeposition()
 	{
-	
+		glm::vec3 vSettling = 2.0f / 9.0f * 0.001f * 0.001f * g_SEDIM_COEFF * (SOLID_DENSITY - FLUID_BASE_DENSITY) * gravityVector / visc;
+		glm::vec3 rbj;
+		const float inv2Smooth = 2.0f / h;
+		float v = 0.0f, q = 0.0f, fGradCubic = 0.0f;
+		const float fNormalCubic = 1.0f / (4.0f * PI * pow(h, 3));
+		int ij = 0;
+
+		for (auto bp : m_NearestBParticles)
+		{
+			for (const auto& fp_idx : m_FluidsOfBoundary[bp.Id])
+			{
+				FluidParticle& fp = m_Particles[fp_idx];
+				if (fp.sedim <= 0.0f)
+					continue;
+				rbj = glm::normalize(fp.Position - bp.Position); //normalize???
+				float dist = glm::length(rbj);
+				if ((v = glm::dot(vSettling, rbj)) < 0.0f)
+				{
+					//Cubic spline - Monaghan 2005
+					if (q < 1.0f)
+						fGradCubic = fNormalCubic * (12.0f * pow(1.0f - q, 2.0f) - 3.0f * pow(2.0f - q, 2.0f));
+					else
+						fGradCubic = -fNormalCubic * 3.0f * pow(2.0f - q, 2.0f);
+
+					//advection donor-acceptor
+					dC_BP[ij] = MASS * fp.sedim / fp.Density;
+					dC_BP[ij] *= -v * fGradCubic;
+					fp.sedim_delta += dC_BP[ij];
+					assert(dC_BP[ij] <= 0.0f);
+					ij++;
+				}
+			}
+		}
+	}
+
+	void computeSedimOutputRatios()
+	{
+		const float epsilon = 1.001f;
+#pragma omp parallel for
+		for (int i = 0; i < m_Particles.size(); i++)
+		{
+			FluidParticle& fp = m_Particles[i];
+			if (fp.sedim_delta >= 0.0f)
+				fp.sedim_ratio = 1.0f;
+			else {
+				fp.sedim_ratio = -fp.sedim / (epsilon * fp.sedim_delta * deltaT);
+				if (fp.sedim_ratio >= 1.0f)
+					fp.sedim_ratio = 1.0f;
+			}
+			fp.sedim_delta = 0.0f;
+		}
+	}
+
+	void computeSedimentFlow()
+	{
+		int ij = 0;
+		for (int i = 0; i < m_Particles.size(); i++)
+		{
+			for (const auto& j : m_ParticleNeighbors[i])
+			{
+				FluidParticle& fp = m_Particles[i];
+				FluidParticle& neigh = m_Particles[j];
+
+				if (dC[ij] > 0.0f)
+					dC[ij] *= neigh.sedim_ratio;
+				else
+					dC[ij] *= fp.sedim_ratio;
+				
+				fp.sedim_delta += dC[ij];
+				neigh.sedim_delta -= dC[ij];
+			}
+		}
+
+		ij = 0;
+		for (auto bp : m_NearestBParticles)
+		{
+			for (const auto& fp_idx : m_FluidsOfBoundary[bp.Id])
+			{
+				FluidParticle& fp = m_Particles[fp_idx];
+				if (dC_BP[ij] < 0.0f)
+				{
+					assert(fp.sedim);
+					dC_BP[ij] *= fp.sedim_ratio;
+					fp.sedim_delta += dC_BP[ij];
+					bp.dM -= C_2_MASS(dC_BP[ij]);
+				}
+			}
+		}
 	}
 
 	//advecton + diffustion
 	void computeSedimentTransfer()
 	{
+		int ij = 0;
+
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 
 			glm::vec3 vSettling = 2.0f / 9.0f * 0.001f * 0.001f * (float)((SOLID_DENSITY - currPart.Density) / visc) * gravityVector;
-			float dC = 0.0f;
 			float q = 0.0f;
 
 			for (const auto& j : m_ParticleNeighbors[i])
@@ -425,7 +518,7 @@ private:
 						v_r *= richardson_zaki(currPart.sedim);
 						q = MASS * neigh.sedim / neigh.Density;
 						q *= -v_r* gradCubicSpline(rij_len);
-						dC += q;
+						dC[ij] = q;
 					}
 				}
 				else
@@ -436,19 +529,18 @@ private:
 						v_r *= richardson_zaki(neigh.sedim);
 						q = MASS * currPart.sedim / currPart.Density;
 						q *= -v_r * gradCubicSpline(rij_len);
-						dC += q;
+						dC[ij] = q;
 					}
 				}
 			
 				//diffusion
-				dC += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * gradCubicSpline(rij_len);
+				dC[ij] += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * gradCubicSpline(rij_len);
 
-				if (dC <= 0.0f) 
-					currPart.sedim_delta += dC;
+				if (dC[ij] <= 0.0f) 
+					currPart.sedim_delta += dC[ij];
 				else
-					neigh.sedim_delta -= dC;
-				dC = 0.0f;
-
+					neigh.sedim_delta -= dC[ij];
+				ij++;
 			}
 		}
 	}
@@ -521,14 +613,19 @@ private:
 			}*/
 			currPart.fBoundary = fBoundary;//debug only
 
+			omp_set_lock(&writelock);
 			for (const auto& bp : nearest_boundary)
 				m_FluidsOfBoundary[bp.Id].push_back(i);
 
-			omp_set_lock(&writelock);
 			m_NearestBParticles.merge(nearest_boundary);
 			omp_unset_lock(&writelock);
 		}
 		omp_destroy_lock(&writelock);
+
+		int size = 0;
+		for (const auto& fparts : m_FluidsOfBoundary)
+			size += fparts.second.size();
+		dC_BP.resize(size);
 	}
 
 	//leap-frog + collision handling
@@ -552,7 +649,7 @@ private:
 
 			F = fInternal + fExternal;
 			glm::vec3 acc = F / currPart.Density;
-			currPart.Acceleration = acc; //for debug purposes
+			currPart.Acceleration = acc; //for debug
 
 			//if initial velocity offset is not initialized
 			//if (m_Time == 0.0)
@@ -715,7 +812,7 @@ private:
 		return res % table_size;
 	}
 
-	void rebuildTable()
+	void rebuildTables()
 	{
 		m_ParticlesSpatialHash.clear();
 		m_ParticleNeighbors.clear();
@@ -770,6 +867,12 @@ private:
 					}
 			m_ParticleNeighbors[i].insert(m_ParticleNeighbors[i].begin(), tmp.begin(), tmp.end());
 		}
+
+		int all_neighb_cnt = 0;
+		for (const auto& p_neighbors : m_ParticleNeighbors)
+			if(!p_neighbors.empty())
+				all_neighb_cnt += p_neighbors.size();
+		dC.resize(all_neighb_cnt);
 	}
 
 	float richardson_zaki(float C)
@@ -813,11 +916,15 @@ private:
 		float Kd = 300.0f;
 		int table_size;
 
+		std::vector<float> dC;
+		std::vector<float> dC_BP;
+
 private:
 	std::vector<FluidParticle> m_Particles;
 	std::vector<std::vector<int>> m_ParticlesSpatialHash;
 	std::vector<std::vector<int>> m_ParticleNeighbors;
 	std::vector<FluidParticle> m_BParticles;
+	std::vector<int> m_ParticlesWithBoundaries;
 	usetfp m_NearestBParticles;
 	std::unordered_map<int, std::vector<int>> m_FluidsOfBoundary;
 

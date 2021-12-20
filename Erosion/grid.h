@@ -43,6 +43,7 @@ struct FluidParticle
 	float sedim;
 	float sedim_delta;
 	float dM;
+	float sedim_ratio;
 };
 
 unsigned long FluidParticle::IdCount = 0;
