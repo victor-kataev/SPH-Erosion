@@ -16,7 +16,6 @@ typedef unsigned int uint;
 
 
 #define SEDIMENT_MAX 0.7f
-#define SOLID_DENSITY 1842.0f
 #define DAMPING 110.0f
 #define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
 #define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
@@ -179,14 +178,15 @@ public:
 		}
 
 		computeBoundaryForces(grid); //boudnary forces
-		computeSedimentTransfer(); //advecton + diffusion
-		computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
-		computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
-		computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
-		computeErosion(); //erosion
-		computeHFChange();
+		//computeSedimentTransfer(); //advecton + diffusion
+		//computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
+		//computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
+		//computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
+		//computeErosion(); //erosion
+		grid.HFUpdate(m_NearestBParticles);
 
 		advance(grid);
+		clearBuffers();
 		//m_Time += m_Dt;
 	}
 
@@ -369,6 +369,18 @@ private:
 		return output;
 	}
 
+	void clearBuffers()
+	{
+		m_FluidsOfBoundary.clear();
+		dC.clear();
+		dC_BP.clear();
+	}
+
+	void computeHFChange()
+	{
+		
+	}
+
 	void computeErosion()
 	{
 		float dMi;
@@ -406,7 +418,7 @@ private:
 		const float fNormalCubic = 1.0f / (4.0f * PI * pow(h, 3));
 		int ij = 0;
 
-		for (auto bp : m_NearestBParticles)
+		for (auto &bp : m_NearestBParticles)
 		{
 			for (const auto& fp_idx : m_FluidsOfBoundary[bp.Id])
 			{
@@ -493,13 +505,15 @@ private:
 	void computeSedimentTransfer()
 	{
 		int ij = 0;
+		const float fNormalCubic = 1.0f / (4.0f * PI * pow(h, 3));
+		const float inv2Smooth = 2.0f / h;
+		float q = 0.0f, fGradCubic = 0.0f;
 
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 
 			glm::vec3 vSettling = 2.0f / 9.0f * 0.001f * 0.001f * (float)((SOLID_DENSITY - currPart.Density) / visc) * gravityVector;
-			float q = 0.0f;
 
 			for (const auto& j : m_ParticleNeighbors[i])
 			{
@@ -507,7 +521,12 @@ private:
 				glm::vec3 rij = glm::normalize(currPart.Position - neigh.Position);
 				float rij_len = glm::length(currPart.Position - neigh.Position);
 				float v_r = glm::dot(vSettling, rij);
+				q = rij_len * inv2Smooth;
 
+				if (q < 1.0f)
+					fGradCubic = fNormalCubic * (12.0f * pow(1.0f - q, 2.0f) - 3.0f * pow(2.0f - q, 2.0f));
+				else
+					fGradCubic = -fNormalCubic * 3.0f * pow(2.0f - q, 2.0f);
 
 				//donor-acceptor
 				if (v_r >= 0.0f)
@@ -517,7 +536,7 @@ private:
 					{
 						v_r *= richardson_zaki(currPart.sedim);
 						q = MASS * neigh.sedim / neigh.Density;
-						q *= -v_r* gradCubicSpline(rij_len);
+						q *= -v_r* fGradCubic;
 						dC[ij] = q;
 					}
 				}
@@ -528,13 +547,13 @@ private:
 					{
 						v_r *= richardson_zaki(neigh.sedim);
 						q = MASS * currPart.sedim / currPart.Density;
-						q *= -v_r * gradCubicSpline(rij_len);
+						q *= -v_r * fGradCubic;
 						dC[ij] = q;
 					}
 				}
 			
 				//diffusion
-				dC[ij] += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * gradCubicSpline(rij_len);
+				dC[ij] += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * fGradCubic;
 
 				if (dC[ij] <= 0.0f) 
 					currPart.sedim_delta += dC[ij];
@@ -779,27 +798,27 @@ private:
 		return (float)(45.0f / (PI * powf(h, 6.0f))) * (h - len);
 	}
 
-	float gradCubicSpline(float rij)
-	{
-		float h1 = 1.0f / h;
-		float q = rij * h1;
+	//float gradCubicSpline(float rij)
+	//{
+	//	float h1 = 1.0f / h;
+	//	float q = rij * h1;
 
-		//kernel normalizing factor
-		float factor = 1.0f / PI * h1 * h1 * h1;
-		float tmp2 = 2.0f - q;
-		float val;
-		if (rij > 1e-12)
-			if (q > 2.0f)
-				val = 0.0f;
-			else if (q > 1.0f)
-				val = -0.75f * tmp2 * tmp2;
-			else
-				val = -3.0f * q * (1 - 0.75 * q);
-		else
-			val = 0.0f;
+	//	//kernel normalizing factor
+	//	float factor = 1.0f / PI * h1 * h1 * h1;
+	//	float tmp2 = 2.0f - q;
+	//	float val;
+	//	if (rij > 1e-12)
+	//		if (q > 2.0f)
+	//			val = 0.0f;
+	//		else if (q > 1.0f)
+	//			val = -0.75f * tmp2 * tmp2;
+	//		else
+	//			val = -3.0f * q * (1 - 0.75 * q);
+	//	else
+	//		val = 0.0f;
 
-		return val * factor;
-	}
+	//	return val * factor;
+	//}
 
 	size_t hash(const glm::vec3& pos)
 	{
@@ -924,7 +943,6 @@ private:
 	std::vector<std::vector<int>> m_ParticlesSpatialHash;
 	std::vector<std::vector<int>> m_ParticleNeighbors;
 	std::vector<FluidParticle> m_BParticles;
-	std::vector<int> m_ParticlesWithBoundaries;
 	usetfp m_NearestBParticles;
 	std::unordered_map<int, std::vector<int>> m_FluidsOfBoundary;
 

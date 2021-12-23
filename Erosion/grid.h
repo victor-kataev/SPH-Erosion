@@ -18,6 +18,12 @@
 #include "shader.h"
 
 
+#define FLUID_SCALE 1.0f //40.0f
+#define SOLID_DENSITY 1842.0f
+
+
+
+
 struct FluidParticle
 {
 	unsigned long Id;
@@ -44,6 +50,7 @@ struct FluidParticle
 	float sedim_delta;
 	float dM;
 	float sedim_ratio;
+	char triangle; // 'A' - ABC, 'B' - AABC
 };
 
 unsigned long FluidParticle::IdCount = 0;
@@ -177,6 +184,8 @@ private:
 	glm::vec3 m_Dim;
 	glm::vec2 m_CellSize;
 	ImVec4 m_Color;
+	float INV_TRI_AREA;
+	float fQuadLen;
 
 	unsigned int VAO, VBO, EBO;
 
@@ -188,15 +197,15 @@ private:
 	std::vector<float> vertexData;
 	std::vector<unsigned int> indexData;
 
+	std::unordered_map<int, std::pair<int, int>> m_CellsToChange;
+
 	struct Heightfield
 	{
 		size_t dimX = 0;
 		size_t dimY = 0;
 
 		unsigned char* map = nullptr;
-	};
-
-	Heightfield m_Heightfield;
+	} m_Heightfield;
 
 	void destroyGrid()
 	{
@@ -409,6 +418,9 @@ public:
 		loadHeightMapFromPicture(pic_path);
 		createGrid();
 		setupGraphics();
+
+		fQuadLen = 0.2f / FLUID_SCALE;
+		INV_TRI_AREA = 1.0f / (0.5f * pow(fQuadLen, 2));
 	}
 
 	//Voxel GetVoxel(int x, int y, int z) const
@@ -457,6 +469,61 @@ public:
 	{
 		delete[] m_Heightfield.map;
 		loadHeightMapFromPicture(pic_path);
+	}
+
+	void HFUpdate(usetfp& bParticles)
+	{
+		int mapIdx = 0;
+		std::vector<glm::vec2> cells;
+		float H;
+
+
+		//compute mass for each triangle that the boundary particles sit on
+		for (const auto& bp : bParticles)
+		{
+			glm::vec2 cell = { floor(bp.Position.x), floor(bp.Position.z) };
+
+			mapIdx = cell[0] * 1000 + cell[1];
+			if (m_CellsToChange.find(mapIdx) == m_CellsToChange.end())
+			{
+				m_CellsToChange[mapIdx] = std::make_pair<int, int>(0, 0);
+				cells.push_back(cell);
+			}
+
+			if (bp.triangle == 'A')
+				m_CellsToChange[mapIdx].first += bp.dM;
+			else
+				m_CellsToChange[mapIdx].second += bp.dM;
+		}
+
+		for(const auto& cell: cells)
+		{
+			mapIdx = cell[0] * 1000 + cell[1];
+			std::vector<Triangle> cellTriangles = getCellTriangles(cell);
+			Triangle ABC = cellTriangles[0];
+			Triangle AABC = cellTriangles[1];
+
+			H = mass_2_height(m_CellsToChange[mapIdx].first);
+			//change vertices
+
+
+
+
+
+
+			H = mass_2_height(m_CellsToChange[mapIdx].first);
+			//change vertices
+
+
+
+
+
+		}
+	}
+
+	float mass_2_height(float mass)
+	{
+		return 0.5f * mass / SOLID_DENSITY * INV_TRI_AREA;
 	}
 
 	std::vector<Triangle> getCellTriangles(glm::vec2 cellIndex)
@@ -1122,6 +1189,7 @@ public:
 				bp.Position = d;
 				bp.Velocity = glm::vec3(0.0);
 				bp.SurfaceNormal = ABC.norm;
+				bp.triangle = 'A';
 				boundary.push_back(bp);
 			}
 		}
@@ -1143,6 +1211,7 @@ public:
 				bp.Position = e;
 				bp.Velocity = glm::vec3(0.0);
 				bp.SurfaceNormal = AABC.norm;
+				bp.triangle = 'B';
 				boundary.push_back(bp);
 			}
 		}
