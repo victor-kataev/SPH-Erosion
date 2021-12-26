@@ -234,6 +234,7 @@ private:
 	void createGrid()
 	{
 		m_Grid = new Voxel[m_Dim.x * m_Dim.y * m_Dim.z];
+		memset(m_Grid, 0, m_Dim.x * m_Dim.y * m_Dim.z * sizeof(Voxel));
 
 		for (int z = 0; z < m_Dim.z; z++)
 			for (int x = 0; x < m_Dim.x; x++)
@@ -442,6 +443,11 @@ public:
 		return m_Heightfield.map[m_Heightfield.dimY * x + y];
 	}
 
+	void SetHeightfieldAt(int x, int y, float val)
+	{
+		m_Heightfield.map[m_Heightfield.dimY * x + y] = val;
+	}
+
 	//for debug
 	void HeightFieldMax() const
 	{
@@ -486,7 +492,7 @@ public:
 			mapIdx = cell[0] * 1000 + cell[1];
 			if (m_CellsToChange.find(mapIdx) == m_CellsToChange.end())
 			{
-				m_CellsToChange[mapIdx] = std::make_pair<int, int>(0, 0);
+				m_CellsToChange[mapIdx] = std::make_pair<int, int>(0, 0);// dM of each triangle is 0 at the beginning
 				cells.push_back(cell);
 			}
 
@@ -500,30 +506,173 @@ public:
 		{
 			mapIdx = cell[0] * 1000 + cell[1];
 			std::vector<Triangle> cellTriangles = getCellTriangles(cell);
-			Triangle ABC = cellTriangles[0];
-			Triangle AABC = cellTriangles[1];
+			Triangle triABC = cellTriangles[0]; //C B A (A and C swapped)
+			Triangle triAABC = cellTriangles[1]; //AA B C
 
-			H = mass_2_height(m_CellsToChange[mapIdx].first);
-			//change vertices
+			updateVertices(triABC, m_CellsToChange[mapIdx].first);
+			updateVertices(triAABC, m_CellsToChange[mapIdx].second);
 
+		}
+	}
+	
 
+	//updates vertices in heightfield 
+	void updateVertices(Triangle& tri, float mass)
+	{
+		glm::vec3 v0, v1, v2;
+		float d0, d1, d2, H3, H;
 
+		H = mass_2_height(mass);
 
+		//erosion
+		if (H < 0.0f)
+		{
+			sortedVertsOfTriangle(tri, v0, v1, v2); //v0.y > v1.y > v2.y
+			if (v0.y == v1.y && v1.y == v2.y)
+			{
+				//subtract uniformly
+				H3 = H / 3.0f;
+				d0 = v0.y + H3;
+				d1 = v1.y + H3;
+				d2 = v2.y + H3;
+			}
+			else
+			{
+				//v0 is the heighest
+				d0 = v0.y + H;
 
+				if (d0 < v2.y)
+				{
+					d0 = v2.y;
+					H += v0.y - v2.y;
+					d1 = v1.y + H;
+					if (d1 < v2.y)
+					{
+						d1 = v2.y;
+						H += v1.y - v2.y;
+						H3 = H / 3.0f;
+						d0 += H3;
+						d1 += H3;
+						d2 += H3;
+					}
+					else
+					{
+						d2 = v2.y;
+					}
+				}
+				else
+				{
+					d1 = v1.y;
+					d2 = v2.y;
+				}
+			}
+			SetHeightfieldAt(v0.x, v0.z, d0);
+			SetHeightfieldAt(v1.x, v1.z, d1);
+			SetHeightfieldAt(v2.x, v2.z, d2);
+		}
+		//deposition
+		else if (H > 0.0f)
+		{
+			sortedVertsOfTriangle(tri, v0, v1, v2);
+			if (v0.y == v1.y && v1.y == v2.y)
+			{
+				//add uniformly
+				H3 = H / 3.0f;
+				d0 = v0.y + H3;
+				d1 = v1.y + H3;
+				d2 = v2.y + H3;
+			}
+			else
+			{
+				//v2 is the lowest
+				d2 = v2.y + H;
 
-			H = mass_2_height(m_CellsToChange[mapIdx].first);
-			//change vertices
-
-
-
-
-
+				if (d2 > v0.y)
+				{
+					d2 = v0.y;
+					H -= abs(v0.y - v2.y);
+					d1 = v1.y + H;
+					if (d1 > v0.y)
+					{
+						d1 = v0.y;
+						H -= abs(v0.y - v1.y);
+						H3 = H / 3.0f;
+						d0 += H3;
+						d1 += H3;
+						d2 += H3;
+					}
+					else
+					{
+						d0 = v0.y;
+					}
+				}
+				else
+				{
+					d1 = v1.y;
+					d0 = v0.y;
+				}
+			}
+			SetHeightfieldAt(v0.x, v0.z, d0);
+			SetHeightfieldAt(v1.x, v1.z, d1);
+			SetHeightfieldAt(v2.x, v2.z, d2);
 		}
 	}
 
 	float mass_2_height(float mass)
 	{
 		return 0.5f * mass / SOLID_DENSITY * INV_TRI_AREA;
+	}
+
+	//v0 > v1 > v2
+	void sortedVertsOfTriangle(Triangle& tri, glm::vec3& v0, glm::vec3& v1, glm::vec3& v2)
+	{
+		if (tri.A.y > tri.B.y)
+		{
+			if (tri.A.y > tri.C.y)
+			{
+				v0 = tri.A;
+				if (tri.C.y > tri.B.y)
+				{
+					v1 = tri.C;
+					v2 = tri.B;
+				}
+				else
+				{
+					v1 = tri.B;
+					v2 = tri.C;
+				}
+			}
+			else
+			{
+				v0 = tri.C;
+				v1 = tri.A;
+				v2 = tri.B;
+			}
+
+		}
+		else
+		{
+			if (tri.B.y > tri.C.y)
+			{
+				v0 = tri.B;
+				if (tri.A.y > tri.C.y)
+				{
+					v1 = tri.A;
+					v2 = tri.C;
+				}
+				else
+				{
+					v1 = tri.C;
+					v2 = tri.A;
+				}
+			}
+			else
+			{
+				v0 = tri.C;
+				v1 = tri.B;
+				v2 = tri.A;
+			}
+		}
 	}
 
 	std::vector<Triangle> getCellTriangles(glm::vec2 cellIndex)
