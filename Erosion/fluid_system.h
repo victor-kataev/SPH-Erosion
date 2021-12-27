@@ -17,8 +17,6 @@ typedef unsigned int uint;
 
 #define SEDIMENT_MAX 0.7f
 #define DAMPING 110.0f
-#define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
-#define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
 #define EROSION_SHEAR_STIFF 1.0f
 #define EROSION_TC 3.0f
 #define EROSION_RATE 0.1f
@@ -30,9 +28,14 @@ typedef unsigned int uint;
 
 float MASS_C_COEFFICIENT = SOLID_DENSITY * FLUID_MASS / FLUID_BASE_DENSITY;
 float INV_MASS_C_COEFFICIENT = 1.0f / (SOLID_DENSITY * FLUID_MASS / FLUID_BASE_DENSITY);
+
+#define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
+#define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
 float SEDIMENT_MAX_MASS = C_2_MASS(SEDIMENT_MAX);
 
+
 #define PI 3.141592f
+
 float kd = 6.0f * PI * 1.78e-5;
 float ks = 1.119e6;
 
@@ -68,6 +71,7 @@ public:
 					particle.Acceleration = glm::vec3(0.0);
 					particle.sedim = 0.0f;
 					particle.sedim_delta = 0.0f;
+					particle.sedim_ratio = 0.0f;
 					//particle.Mass = MASS;
 					m_Particles.push_back(particle);
 
@@ -177,12 +181,13 @@ public:
 			currPart.SurfaceForce = -surf_tens * colorFieldLapl * currPart.SurfaceNormal;
 		}
 
+
 		computeBoundaryForces(grid); //boudnary forces
-		//computeSedimentTransfer(); //advecton + diffusion
-		//computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
-		//computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
-		//computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
-		//computeErosion(); //erosion
+		computeSedimentTransfer(); //advecton + diffusion
+		computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
+		computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
+		computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
+		computeErosion(); //erosion
 		grid.HFUpdate(m_NearestBParticles);
 
 		advance(grid);
@@ -376,11 +381,6 @@ private:
 		dC_BP.clear();
 	}
 
-	void computeHFChange()
-	{
-		
-	}
-
 	void computeErosion()
 	{
 		float dMi;
@@ -390,9 +390,9 @@ private:
 
 		for (auto bp : m_NearestBParticles)
 		{
-			dMi = 0.0f;
 			for (const auto& fp_idx : m_FluidsOfBoundary[bp.Id])
 			{
+				dMi = 0.0f;
 				FluidParticle& fp = m_Particles[fp_idx];
 				v = glm::length(fp.Velocity);
 				float dist = glm::length(fp.Position - bp.Position);
@@ -402,9 +402,10 @@ private:
 				t = EROSION_SHEAR_STIFF * pow(vRel, 0.5f);
 				E = EROSION_RATE * (t - EROSION_TC);
 				m = L2 * E;
-				dMi += m; //add sediment to sph particle
-				bp.dM -= m; //subtract sediment from boundary
-				fp.sedim_delta += MASS_2_C(dMi);
+				dMi += m; 
+				bp.dM -= m; //subtract sediment from a boundary
+				fp.sedim_delta += MASS_2_C(dMi); //add sediment to a sph particle
+				assert(!isnan(fp.sedim_delta));
 			}
 		}
 	}
@@ -427,6 +428,8 @@ private:
 					continue;
 				rbj = glm::normalize(fp.Position - bp.Position); //normalize???
 				float dist = glm::length(rbj);
+
+				//sph is donot boundary is acceptor
 				if ((v = glm::dot(vSettling, rbj)) < 0.0f)
 				{
 					//Cubic spline - Monaghan 2005
@@ -471,6 +474,13 @@ private:
 		{
 			for (const auto& j : m_ParticleNeighbors[i])
 			{
+				//don't count sedimentation with yourself
+				if (i == j)
+				{
+					ij++;
+					continue;
+				}
+
 				FluidParticle& fp = m_Particles[i];
 				FluidParticle& neigh = m_Particles[j];
 
@@ -481,6 +491,7 @@ private:
 				
 				fp.sedim_delta += dC[ij];
 				neigh.sedim_delta -= dC[ij];
+				ij++;
 			}
 		}
 
@@ -497,6 +508,7 @@ private:
 					fp.sedim_delta += dC_BP[ij];
 					bp.dM -= C_2_MASS(dC_BP[ij]);
 				}
+				ij++;
 			}
 		}
 	}
@@ -517,6 +529,13 @@ private:
 
 			for (const auto& j : m_ParticleNeighbors[i])
 			{
+				//don't count sedimentation with yourself
+				if (i == j)
+				{
+					ij++;
+					continue;
+				}
+
 				FluidParticle& neigh = m_Particles[j];
 				glm::vec3 rij = glm::normalize(currPart.Position - neigh.Position);
 				float rij_len = glm::length(currPart.Position - neigh.Position);
@@ -538,6 +557,7 @@ private:
 						q = MASS * neigh.sedim / neigh.Density;
 						q *= -v_r* fGradCubic;
 						dC[ij] = q;
+						//std::cout << i << ": " << q << std::endl;
 					}
 				}
 				else
@@ -549,6 +569,7 @@ private:
 						q = MASS * currPart.sedim / currPart.Density;
 						q *= -v_r * fGradCubic;
 						dC[ij] = q;
+						//std::cout << i << ": " << q << std::endl;
 					}
 				}
 			
@@ -560,10 +581,13 @@ private:
 				else
 					neigh.sedim_delta -= dC[ij];
 				ij++;
+				assert(!isnan(currPart.sedim_delta));
+				assert(!isnan(neigh.sedim_delta));
 			}
 		}
 	}
 
+	//seed the cell if needed, extract nearest boundaries and compute no-slip, no-penetration
 	void computeBoundaryForces(Grid& grid)
 	{
 		omp_lock_t writelock;
@@ -699,6 +723,20 @@ private:
 
 			currPart.Velocity = velNext;
 			currPart.Position = posNext;
+
+
+			if (currPart.sedim < 0.0f)
+				currPart.sedim = 0.0f;
+			
+			currPart.sedim += deltaT * currPart.sedim_delta;
+			//std::cout << deltaT << " * " << currPart.sedim_delta << " = " << deltaT * currPart.sedim_delta << std::endl;
+			
+			if (currPart.sedim < 0.0f)
+				currPart.sedim = 0.0f;
+
+			currPart.sedim_delta = 0.0f;
+			assert(!isnan(currPart.sedim_delta));
+			assert(!isnan(currPart.sedim));
 		}
 	}
 

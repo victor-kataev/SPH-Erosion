@@ -83,10 +83,10 @@ int main()
     //camera.PlaceTo(glm::vec3(51.450, 140.601, 76.509)); //video 5
     //camera.PlaceTo(glm::vec3(43.005, 129.945, 64.629)); //video 6
     //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
-    camera.PlaceTo(glm::vec3(54.462, 129.195, 63.645)); //video 8
+    camera.PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
     
     //fluidsph.Initialize(103823);
-    fluidsph.Initialize(8000);
+    fluidsph.Initialize(1000);
     //fluidsph.Initialize(1000000);
 
 
@@ -157,6 +157,9 @@ int main()
             ImGui::NewLine();
             ImGui::InputInt("particle_id", &g_part_id);
             FluidParticle fp = fluidsph.GetParticle(g_part_id);
+
+            ImGui::InputFloat("sedim", &fp.sedim);
+            ImGui::InputFloat("sedim_delta", &fp.sedim_delta);
             ImGui::InputFloat3("fBoundary", (float*)&fp.fBoundary);
             ImGui::InputFloat("d", &fp.shortest);
             ImGui::InputFloat3("Pos", (float*)&fp.Position);
@@ -321,7 +324,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE && pause)
     {
         if (fluidsph.GetDeltaTime() == 0)
-            fluidsph.SetDeltaTime(0.001f);
+            fluidsph.SetDeltaTime(0.01f);
         else
             fluidsph.SetDeltaTime(0.0f);
         pause = false;

@@ -20,7 +20,7 @@
 
 #define FLUID_SCALE 1.0f //40.0f
 #define SOLID_DENSITY 1842.0f
-
+#define FLUID_TIME_STEP 0.01f
 
 
 
@@ -161,6 +161,16 @@ private:
 		}
 	}
 
+	void deleteNode(KdNode* node)
+	{
+		if (node->left_child)
+			deleteNode(node->left_child);
+		if (node->right_child)
+			deleteNode(node->right_child);
+
+		delete node;
+	}
+
 public:
 	Kdtree() = default;
 
@@ -168,6 +178,11 @@ public:
 	{
 		m_Particles = particles;
 		root = buildTree(m_Particles.begin(), m_Particles.end(), 0);
+	}
+
+	~Kdtree()
+	{
+		deleteNode(root);
 	}
 
 	usetfp NearestNeighbors(glm::vec3& point, float sr)
@@ -189,7 +204,7 @@ private:
 
 	unsigned int VAO, VBO, EBO;
 
-	Voxel* m_Grid;
+	//Voxel* m_Grid;
 	//float* m_Grid;
 	//std::unordered_map<int, bool> m_SeededCells;
 	std::unordered_map<int, Kdtree*> m_SeededCells;
@@ -197,7 +212,7 @@ private:
 	std::vector<float> vertexData;
 	std::vector<unsigned int> indexData;
 
-	std::unordered_map<int, std::pair<int, int>> m_CellsToChange;
+	std::unordered_map<int, std::pair<int, int>> m_TriangleMass;
 
 	struct Heightfield
 	{
@@ -209,13 +224,13 @@ private:
 
 	void destroyGrid()
 	{
-		if (m_Grid)
-			delete[] m_Grid;
+		//if (m_Grid)
+			//delete[] m_Grid;
 		vertexData.clear();
 		indexData.clear();
 	}
 
-	void setupGraphics()
+	void setUpGraphics()
 	{
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO);
@@ -233,8 +248,8 @@ private:
 
 	void createGrid()
 	{
-		m_Grid = new Voxel[m_Dim.x * m_Dim.y * m_Dim.z];
-		memset(m_Grid, 0, m_Dim.x * m_Dim.y * m_Dim.z * sizeof(Voxel));
+		//m_Grid = new Voxel[m_Dim.x * m_Dim.y * m_Dim.z];
+		//memset(m_Grid, 0, m_Dim.x * m_Dim.y * m_Dim.z * sizeof(Voxel));
 
 		for (int z = 0; z < m_Dim.z; z++)
 			for (int x = 0; x < m_Dim.x; x++)
@@ -243,7 +258,7 @@ private:
 				if (y >= m_Dim.y)
 					y = m_Dim.y - 1;
 
-				SetVoxel(x, y, z);
+				//SetVoxel(x, y, z);
 				//m_Grid[x + m_DimX * (y + m_DimY * z) + 0] = x * m_CellSize[0];
 				//m_Grid[x + m_DimX * (y + m_DimY * z) + 1] = y;
 				//m_Grid[x + m_DimX * (y + m_DimY * z) + 2] = z * m_CellSize[1];
@@ -418,7 +433,7 @@ public:
 	{
 		loadHeightMapFromPicture(pic_path);
 		createGrid();
-		setupGraphics();
+		setUpGraphics();
 
 		fQuadLen = 0.2f / FLUID_SCALE;
 		INV_TRI_AREA = 1.0f / (0.5f * pow(fQuadLen, 2));
@@ -429,14 +444,14 @@ public:
 	//	return m_Grid[x + m_DimX * (y + m_DimY * z)];
 	//}
 
-	void SetVoxel(int x, int y, int z)
-	{
+	//void SetVoxel(int x, int y, int z)
+	//{
 		//m_Grid[x + m_DimX * (y + m_DimY * z)] = val;
 		//m_Grid[x + m_DimX * (y + m_DimY * z)].type = type;
-		m_Grid[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].position = glm::vec3(x * m_CellSize[0], y, z * m_CellSize[1]);
+		//m_Grid[x + (int)m_Dim.x * (y + (int)m_Dim.y * z)].position = glm::vec3(x * m_CellSize[0], y, z * m_CellSize[1]);
 
 		//todo
-	}
+	//}
 
 	unsigned char GetHeightfieldAt(int x, int y)
 	{
@@ -468,7 +483,7 @@ public:
 		glDeleteBuffers(1, &VBO);
 		glDeleteBuffers(1, &EBO);
 		glDeleteVertexArrays(1, &VAO);
-		setupGraphics();
+		setUpGraphics();
 	}
 
 	void UpdateHeightMap(const char* pic_path)
@@ -479,8 +494,8 @@ public:
 
 	void HFUpdate(usetfp& bParticles)
 	{
-		int mapIdx = 0;
-		std::vector<glm::vec2> cells;
+		int cellIdx = 0;
+		std::vector<glm::vec2> cellsToUpdate;
 		float H;
 
 
@@ -489,40 +504,46 @@ public:
 		{
 			glm::vec2 cell = { floor(bp.Position.x), floor(bp.Position.z) };
 
-			mapIdx = cell[0] * 1000 + cell[1];
-			if (m_CellsToChange.find(mapIdx) == m_CellsToChange.end())
+			cellIdx = cell[0] * 1000 + cell[1];
+			if (m_TriangleMass.find(cellIdx) == m_TriangleMass.end())
 			{
-				m_CellsToChange[mapIdx] = std::make_pair<int, int>(0, 0);// dM of each triangle is 0 at the beginning
-				cells.push_back(cell);
+				m_TriangleMass[cellIdx] = std::make_pair<int, int>(0, 0);// dM of each triangle is 0 at the beginning
+				cellsToUpdate.push_back(cell);
 			}
 
 			if (bp.triangle == 'A')
-				m_CellsToChange[mapIdx].first += bp.dM;
+				m_TriangleMass[cellIdx].first += bp.dM;
 			else
-				m_CellsToChange[mapIdx].second += bp.dM;
+				m_TriangleMass[cellIdx].second += bp.dM;
 		}
 
-		for(const auto& cell: cells)
+		//udpate geometry of correspondng cells
+		for(const auto& cell: cellsToUpdate)
 		{
-			mapIdx = cell[0] * 1000 + cell[1];
+			cellIdx = cell[0] * 1000 + cell[1];
 			std::vector<Triangle> cellTriangles = getCellTriangles(cell);
 			Triangle triABC = cellTriangles[0]; //C B A (A and C swapped)
 			Triangle triAABC = cellTriangles[1]; //AA B C
 
-			updateVertices(triABC, m_CellsToChange[mapIdx].first);
-			updateVertices(triAABC, m_CellsToChange[mapIdx].second);
+			updateVerticesInHF(triABC, m_TriangleMass[cellIdx].first);
+			updateVerticesInHF(triAABC, m_TriangleMass[cellIdx].second);
 
+			//erase old boundary particles in the cell they will be seeded in next iteration of fluid run
+			delete m_SeededCells[cellIdx];
+			m_SeededCells.erase(cellIdx);
 		}
+
+		UpdateGrid(m_Dim);
 	}
 	
 
 	//updates vertices in heightfield 
-	void updateVertices(Triangle& tri, float mass)
+	void updateVerticesInHF(Triangle& tri, float mass)
 	{
 		glm::vec3 v0, v1, v2;
 		float d0, d1, d2, H3, H;
 
-		H = mass_2_height(mass);
+		H = mass_2_height(mass * FLUID_TIME_STEP);
 
 		//erosion
 		if (H < 0.0f)
@@ -544,12 +565,13 @@ public:
 				if (d0 < v2.y)
 				{
 					d0 = v2.y;
-					H += v0.y - v2.y;
+					H += abs(v0.y - v2.y);
 					d1 = v1.y + H;
 					if (d1 < v2.y)
 					{
 						d1 = v2.y;
-						H += v1.y - v2.y;
+						d2 = v2.y;
+						H += abs(v1.y - v2.y);
 						H3 = H / 3.0f;
 						d0 += H3;
 						d1 += H3;
@@ -595,6 +617,7 @@ public:
 					if (d1 > v0.y)
 					{
 						d1 = v0.y;
+						d0 = v0.y;
 						H -= abs(v0.y - v1.y);
 						H3 = H / 3.0f;
 						d0 += H3;
