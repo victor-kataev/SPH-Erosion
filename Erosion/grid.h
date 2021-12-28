@@ -534,10 +534,7 @@ public:
 		}
 
 		if (!cellsToUpdate.empty())
-		{
 			UpdateGrid(m_Dim);
-			std::cout << "!!!!!\n";
-		}
 
 		m_TriangleMass.clear();
 	}
@@ -601,6 +598,7 @@ public:
 		//deposition
 		else if (H > 0.0f)
 		{
+			std::cout << "my v pluse brat\n";
 			sortedVertsOfTriangle(tri, v0, v1, v2);
 			if (v0.y == v1.y && v1.y == v2.y)
 			{

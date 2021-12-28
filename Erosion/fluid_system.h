@@ -425,13 +425,18 @@ private:
 			{
 				FluidParticle& fp = m_Particles[fp_idx];
 				if (fp.sedim <= 0.0f)
+				{
+					ij++;
 					continue;
+				}
 				rbj = glm::normalize(fp.Position - bp.Position); //normalize???
 				float dist = glm::length(rbj);
 
-				//sph is donot boundary is acceptor
+				//sph is donor boundary is acceptor
 				if ((v = glm::dot(vSettling, rbj)) < 0.0f)
 				{
+					q = dist * inv2Smooth;
+
 					//Cubic spline - Monaghan 2005
 					if (q < 1.0f)
 						fGradCubic = fNormalCubic * (12.0f * pow(1.0f - q, 2.0f) - 3.0f * pow(2.0f - q, 2.0f));
@@ -439,7 +444,7 @@ private:
 						fGradCubic = -fNormalCubic * 3.0f * pow(2.0f - q, 2.0f);
 
 					//advection donor-acceptor
-					dC_BP[ij] = MASS * fp.sedim / fp.Density;
+					dC_BP[ij] = MASS * fp.sedim * fp.Density;
 					dC_BP[ij] *= -v * fGradCubic;
 					fp.sedim_delta += dC_BP[ij];
 					assert(dC_BP[ij] <= 0.0f);
@@ -469,6 +474,7 @@ private:
 
 	void computeSedimentFlow()
 	{
+		//sph - sph
 		int ij = 0;
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
@@ -495,6 +501,7 @@ private:
 			}
 		}
 
+		//sph - boundary
 		ij = 0;
 		for (auto &bp : m_NearestBParticles)
 		{
@@ -554,10 +561,9 @@ private:
 					if (neigh.sedim > 0.0f && currPart.sedim < SEDIMENT_MAX)
 					{
 						v_r *= richardson_zaki(currPart.sedim);
-						q = MASS * neigh.sedim / neigh.Density;
+						q = MASS * neigh.sedim * neigh.Density;
 						q *= -v_r* fGradCubic;
 						dC[ij] = q;
-						//std::cout << i << ": " << q << std::endl;
 					}
 				}
 				else
@@ -566,10 +572,9 @@ private:
 					if (currPart.sedim > 0.0f && neigh.sedim < SEDIMENT_MAX)
 					{
 						v_r *= richardson_zaki(neigh.sedim);
-						q = MASS * currPart.sedim / currPart.Density;
+						q = MASS * currPart.sedim * currPart.Density;
 						q *= -v_r * fGradCubic;
 						dC[ij] = q;
-						//std::cout << i << ": " << q << std::endl;
 					}
 				}
 			

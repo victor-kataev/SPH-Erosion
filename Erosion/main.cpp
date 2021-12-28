@@ -199,9 +199,9 @@ int main()
         UIend();
 
         glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
-        ss_filename << "sping/frame_" << std::to_string(framenum) << ".bmp";
+        ss_filename << "render/frame_" << std::to_string(framenum) << ".bmp";
         framenum++;
-        //pixelsToBmp(ss_filename.str().c_str(), buff);
+        pixelsToBmp(ss_filename.str().c_str(), buff);
         ss_filename.str("");
 
         glfwSwapBuffers(window);
