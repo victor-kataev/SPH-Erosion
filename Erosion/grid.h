@@ -48,7 +48,7 @@ struct FluidParticle
 	glm::vec3 lastDetectedBoundaryNorm;
 	float sedim;
 	float sedim_delta;
-	float dM;
+	mutable float dM;
 	float sedim_ratio;
 	char triangle; // 'A' - ABC, 'B' - AABC
 };
@@ -212,7 +212,7 @@ private:
 	std::vector<float> vertexData;
 	std::vector<unsigned int> indexData;
 
-	std::unordered_map<int, std::pair<int, int>> m_TriangleMass;
+	std::unordered_map<int, std::pair<float, float>> m_TriangleMass;
 
 	struct Heightfield
 	{
@@ -507,7 +507,7 @@ public:
 			cellIdx = cell[0] * 1000 + cell[1];
 			if (m_TriangleMass.find(cellIdx) == m_TriangleMass.end())
 			{
-				m_TriangleMass[cellIdx] = std::make_pair<int, int>(0, 0);// dM of each triangle is 0 at the beginning
+				m_TriangleMass[cellIdx] = std::make_pair<float, float>(0.0f, 0.0f);// dM of each triangle is 0 at the beginning
 				cellsToUpdate.push_back(cell);
 			}
 
@@ -533,7 +533,13 @@ public:
 			m_SeededCells.erase(cellIdx);
 		}
 
-		UpdateGrid(m_Dim);
+		if (!cellsToUpdate.empty())
+		{
+			UpdateGrid(m_Dim);
+			std::cout << "!!!!!\n";
+		}
+
+		m_TriangleMass.clear();
 	}
 	
 
@@ -1362,6 +1368,7 @@ public:
 				bp.Velocity = glm::vec3(0.0);
 				bp.SurfaceNormal = ABC.norm;
 				bp.triangle = 'A';
+				bp.dM = 0.0f;
 				boundary.push_back(bp);
 			}
 		}
@@ -1384,6 +1391,7 @@ public:
 				bp.Velocity = glm::vec3(0.0);
 				bp.SurfaceNormal = AABC.norm;
 				bp.triangle = 'B';
+				bp.dM = 0.0f;
 				boundary.push_back(bp);
 			}
 		}

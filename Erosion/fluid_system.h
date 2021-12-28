@@ -388,7 +388,7 @@ private:
 		const float minVrel = pow(EROSION_TC / EROSION_SHEAR_STIFF, 2.0f);
 		float L2 = h * h;
 
-		for (auto bp : m_NearestBParticles)
+		for (auto& bp : m_NearestBParticles)
 		{
 			for (const auto& fp_idx : m_FluidsOfBoundary[bp.Id])
 			{
@@ -496,7 +496,7 @@ private:
 		}
 
 		ij = 0;
-		for (auto bp : m_NearestBParticles)
+		for (auto &bp : m_NearestBParticles)
 		{
 			for (const auto& fp_idx : m_FluidsOfBoundary[bp.Id])
 			{
