@@ -168,6 +168,7 @@ private:
 		if (node->right_child)
 			deleteNode(node->right_child);
 
+		node->particle = NULL;
 		delete node;
 	}
 
@@ -183,6 +184,8 @@ public:
 	~Kdtree()
 	{
 		deleteNode(root);
+		root = NULL;
+		m_Particles.clear();
 	}
 
 	usetfp NearestNeighbors(glm::vec3& point, float sr)
@@ -496,7 +499,6 @@ public:
 	{
 		int cellIdx = 0;
 		std::vector<glm::vec2> cellsToUpdate;
-		float H;
 
 
 		//compute mass for each triangle that the boundary particles sit on
@@ -521,11 +523,11 @@ public:
 		for(const auto& cell: cellsToUpdate)
 		{
 			cellIdx = cell[0] * 1000 + cell[1];
-			std::vector<Triangle> cellTriangles = getCellTriangles(cell);
-			Triangle triABC = cellTriangles[0]; //C B A (A and C swapped)
-			Triangle triAABC = cellTriangles[1]; //AA B C
 
+			Triangle triABC = getCellTriangles(cell)[0];
 			updateVerticesInHF(triABC, m_TriangleMass[cellIdx].first);
+
+			Triangle triAABC = getCellTriangles(cell)[1];
 			updateVerticesInHF(triAABC, m_TriangleMass[cellIdx].second);
 
 			//erase old boundary particles in the cell they will be seeded in next iteration of fluid run
@@ -993,7 +995,7 @@ public:
 			Triangle AABC = cellTriangles[1];
 
 			glm::vec3 CPtmp;
-			float dABC = INFINITY, dAABC = INFINITY;
+			float dABC = INFINITY, dAABC = INFINITY; //pen depth
 			if (rayIntersectsTriangle(posNext, dirOpposite, ABC, &t))
 			{
 				CPtmp = posNext + t * dirOpposite;
@@ -1333,6 +1335,7 @@ public:
 				fillCell(cell, boundaryParts, deltaS);
 				m_SeededCells[cellIdx] = new Kdtree(boundaryParts);
 				boundary.insert(boundary.end(), boundaryParts.begin(), boundaryParts.end());
+				//std::cout << "seeded\n";
 			}
 		}
 	}

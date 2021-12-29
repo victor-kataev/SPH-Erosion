@@ -182,13 +182,13 @@ public:
 		}
 
 
-		computeBoundaryForces(grid); //boudnary forces
-		computeSedimentTransfer(); //advecton + diffusion
-		computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
-		computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
-		computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
-		computeErosion(); //erosion
-		grid.HFUpdate(m_NearestBParticles);
+		//computeBoundaryForces(grid); //boudnary forces
+		//computeSedimentTransfer(); //advecton + diffusion
+		//computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
+		//computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
+		//computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
+		//computeErosion(); //erosion
+		//grid.HFUpdate(m_NearestBParticles);
 
 		advance(grid);
 		clearBuffers();
@@ -377,6 +377,7 @@ private:
 	void clearBuffers()
 	{
 		m_FluidsOfBoundary.clear();
+		m_BParticles.clear();
 		dC.clear();
 		dC_BP.clear();
 	}
