@@ -29,9 +29,9 @@ typedef unsigned int uint;
 float MASS_C_COEFFICIENT = SOLID_DENSITY * FLUID_MASS / FLUID_BASE_DENSITY;
 float INV_MASS_C_COEFFICIENT = 1.0f / (SOLID_DENSITY * FLUID_MASS / FLUID_BASE_DENSITY);
 
-#define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
-#define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
-float SEDIMENT_MAX_MASS = C_2_MASS(SEDIMENT_MAX);
+//#define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
+//#define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
+//float SEDIMENT_MAX_MASS = C_2_MASS(SEDIMENT_MAX);
 
 
 #define PI 3.141592f
@@ -182,13 +182,13 @@ public:
 		}
 
 
-		//computeBoundaryForces(grid); //boudnary forces
-		//computeSedimentTransfer(); //advecton + diffusion
-		//computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
-		//computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
-		//computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
-		//computeErosion(); //erosion
-		//grid.HFUpdate(m_NearestBParticles);
+		computeBoundaryForces(grid); //boudnary forces
+		computeSedimentTransfer(); //advecton + diffusion
+		computeDeposition(); //deposition prt1  fluid-boundary advection (fluid - donor, boundary - acceptor) dC_BP
+		computeSedimOutputRatios(); //copmputes SEDIM_RATIO zeros out SEDIM_DELTA
+		computeSedimentFlow(); //deposition prt2  C to mass conversion (dM)
+		computeErosion(); //erosion
+		grid.HFUpdate(m_NearestBParticles);
 
 		advance(grid);
 		clearBuffers();
@@ -405,7 +405,8 @@ private:
 				m = L2 * E;
 				dMi += m; 
 				bp.dM -= m; //subtract sediment from a boundary
-				fp.sedim_delta += MASS_2_C(dMi); //add sediment to a sph particle
+				//fp.sedim_delta += MASS_2_C(dMi); //add sediment to a sph particle
+				fp.sedim_delta += 1.0f / (SOLID_DENSITY * FLUID_MASS / fp.Density) * dMi; //add sediment to a sph particle
 				assert(!isnan(fp.sedim_delta));
 			}
 		}
@@ -430,6 +431,7 @@ private:
 					ij++;
 					continue;
 				}
+
 				rbj = glm::normalize(fp.Position - bp.Position); //normalize???
 				float dist = glm::length(rbj);
 
@@ -449,8 +451,8 @@ private:
 					dC_BP[ij] *= -v * fGradCubic;
 					fp.sedim_delta += dC_BP[ij];
 					assert(dC_BP[ij] <= 0.0f);
-					ij++;
 				}
+				ij++;
 			}
 		}
 	}
@@ -458,7 +460,7 @@ private:
 	void computeSedimOutputRatios()
 	{
 		const float epsilon = 1.001f;
-#pragma omp parallel for
+//#pragma omp parallel for
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& fp = m_Particles[i];
@@ -514,7 +516,8 @@ private:
 					assert(fp.sedim);
 					dC_BP[ij] *= fp.sedim_ratio;
 					fp.sedim_delta += dC_BP[ij];
-					bp.dM -= C_2_MASS(dC_BP[ij]);
+					//bp.dM -= C_2_MASS(dC_BP[ij]);
+					bp.dM -= SOLID_DENSITY * FLUID_MASS / fp.Density * dC_BP[ij];
 				}
 				ij++;
 			}
