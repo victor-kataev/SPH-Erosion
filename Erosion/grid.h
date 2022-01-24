@@ -222,7 +222,8 @@ private:
 		size_t dimX = 0;
 		size_t dimY = 0;
 
-		unsigned char* map = nullptr;
+		//unsigned char* map = nullptr;
+		float* map = nullptr;
 	} m_Heightfield;
 
 	void destroyGrid()
@@ -257,7 +258,7 @@ private:
 		for (int z = 0; z < m_Dim.z; z++)
 			for (int x = 0; x < m_Dim.x; x++)
 			{
-				int y = GetHeightfieldAt(x, z);
+				float y = GetHeightfieldAt(x, z);
 				if (y >= m_Dim.y)
 					y = m_Dim.y - 1;
 
@@ -389,9 +390,17 @@ private:
 
 		m_Heightfield.dimX = width;
 		m_Heightfield.dimY = height;
-		m_Heightfield.map = new unsigned char[width * height];
+		//m_Heightfield.map = new unsigned char[width * height];
+		m_Heightfield.map = new float[width * height];
 		memset(m_Heightfield.map, 0, width * height);
-		memcpy(m_Heightfield.map, img, (size_t)m_Heightfield.dimX * m_Heightfield.dimY);
+		//memcpy(m_Heightfield.map, (float*)img, (size_t)m_Heightfield.dimX * m_Heightfield.dimY);
+		for (int i = 0; i < width * height; i++)
+		{
+			if(img[i] > m_Dim.y)
+				m_Heightfield.map[i] = m_Dim.y;
+			else
+				m_Heightfield.map[i] = (float)img[i];
+		}
 
 		stbi_image_free(img);
 	}
@@ -456,7 +465,7 @@ public:
 		//todo
 	//}
 
-	unsigned char GetHeightfieldAt(int x, int y)
+	float GetHeightfieldAt(int x, int y)
 	{
 		return m_Heightfield.map[m_Heightfield.dimY * x + y];
 	}
@@ -547,8 +556,13 @@ public:
 	{
 		glm::vec3 v0, v1, v2;
 		float d0, d1, d2, H3, H;
+		const float epsilon = 1e-4;
 
 		H = mass_2_height(mass * FLUID_TIME_STEP);
+		if(H < 0)
+			H = std::min(H, -epsilon);
+		else
+			H = std::max(H, epsilon);
 
 		//erosion
 		if (H < 0.0f)
@@ -557,7 +571,7 @@ public:
 			if (v0.y == v1.y && v1.y == v2.y)
 			{
 				//subtract uniformly
-				H3 = H / 3.0f;
+				H3 = std::max(H / 3.0f, epsilon);
 				d0 = v0.y + H3;
 				d1 = v1.y + H3;
 				d2 = v2.y + H3;
@@ -577,7 +591,7 @@ public:
 						d1 = v2.y;
 						d2 = v2.y;
 						H += abs(v1.y - v2.y);
-						H3 = H / 3.0f;
+						H3 = std::max(H / 3.0f, epsilon);
 						d0 += H3;
 						d1 += H3;
 						d2 += H3;
@@ -604,7 +618,7 @@ public:
 			if (v0.y == v1.y && v1.y == v2.y)
 			{
 				//add uniformly
-				H3 = H / 3.0f;
+				H3 = std::max(H / 3.0f, epsilon);
 				d0 = v0.y + H3;
 				d1 = v1.y + H3;
 				d2 = v2.y + H3;
@@ -624,7 +638,7 @@ public:
 						d1 = v0.y;
 						d0 = v0.y;
 						H -= abs(v0.y - v1.y);
-						H3 = H / 3.0f;
+						H3 = std::max(H / 3.0f, epsilon);
 						d0 += H3;
 						d1 += H3;
 						d2 += H3;

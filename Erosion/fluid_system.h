@@ -406,7 +406,7 @@ private:
 				dMi += m; 
 				bp.dM -= m; //subtract sediment from a boundary
 				//fp.sedim_delta += MASS_2_C(dMi); //add sediment to a sph particle
-				fp.sedim_delta += 1.0f / (SOLID_DENSITY * FLUID_MASS / fp.Density) * dMi; //add sediment to a sph particle
+				fp.sedim_delta += 1.0f / (SOLID_DENSITY * FLUID_MASS / fp.Density) * dMi; //add sediment to  sph particle
 				assert(!isnan(fp.sedim_delta));
 			}
 		}
@@ -425,6 +425,7 @@ private:
 		{
 			for (const auto& fp_idx : m_FluidsOfBoundary[bp.Id])
 			{
+
 				FluidParticle& fp = m_Particles[fp_idx];
 				if (fp.sedim <= 0.0f)
 				{
@@ -432,7 +433,7 @@ private:
 					continue;
 				}
 
-				rbj = glm::normalize(fp.Position - bp.Position); //normalize???
+				rbj = fp.Position - bp.Position; //normalize???
 				float dist = glm::length(rbj);
 
 				//sph is donor boundary is acceptor
@@ -602,7 +603,7 @@ private:
 		omp_lock_t writelock;
 		omp_init_lock(&writelock);
 
-#pragma omp parallel for
+//#pragma omp parallel for
 		for (int i = 0; i < m_Particles.size(); i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
