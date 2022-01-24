@@ -67,15 +67,17 @@ int main()
     char picture_path[100];
     //strcpy_s(picture_path, "lena_gray.png");
     strcpy_s(picture_path, "pumba_gray.png");
-    glm::vec3 dimensions = { 80.0f, 126.0f, 80.0f };
-    Grid grid(picture_path, dimensions);
+    glm::vec3 dimensions = { 512.0f, 30.0f, 512.0f };
+    glm::vec2 cellSize = { 0.2f, 0.2f };
+    Grid grid(picture_path, dimensions, cellSize);
         
     ImVec4 clear_color = grid.GetColor();
 
     //fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7));
     //fluidsph.SetOrigin(glm::vec3(48.034, 126.0, 56.064));
     
-    fluidsph.SetOrigin(glm::vec3(46.834, 125.3, 57.064));
+    //fluidsph.SetOrigin(glm::vec3(46.834, 30.4, 57.064));
+    fluidsph.SetOrigin(glm::vec3(55.99, 27.584, 24.140));
     //fluidsph.SetOrigin(glm::vec3(20.034, 255.0, 20.064));
     
     //camera.PlaceTo(glm::vec3(37.366, 128.401, 41.44)); //video 1
@@ -86,7 +88,7 @@ int main()
     //camera.PlaceTo(glm::vec3(43.005, 129.945, 64.629)); //video 6
     //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
     //camera.PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
-    camera.PlaceTo(glm::vec3(39.746, 128.037, 54.353)); //video 9 erosion
+    camera.PlaceTo(glm::vec3(56.99, 27.584, 24.140)); //video 9 erosion
     
     //fluidsph.Initialize(103823);
     fluidsph.Initialize(1000);
@@ -204,7 +206,7 @@ int main()
         glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
         ss_filename << "render2/frame_" << std::to_string(framenum) << ".bmp";
         framenum++;
-        pixelsToBmp(ss_filename.str().c_str(), buff);
+        //pixelsToBmp(ss_filename.str().c_str(), buff);
         ss_filename.str("");
 
         glfwSwapBuffers(window);

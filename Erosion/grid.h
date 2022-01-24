@@ -259,8 +259,8 @@ private:
 			for (int x = 0; x < m_Dim.x; x++)
 			{
 				float y = GetHeightfieldAt(x, z);
-				if (y >= m_Dim.y)
-					y = m_Dim.y - 1;
+				//if (y > m_Dim.y)
+				//	y = m_Dim.y - 1;
 
 				//SetVoxel(x, y, z);
 				//m_Grid[x + m_DimX * (y + m_DimY * z) + 0] = x * m_CellSize[0];
@@ -409,38 +409,55 @@ private:
 	{
 		float x_min, x_max, z_min, z_max;
 		std::vector<glm::vec2> output;
-		output.emplace_back(floor(pos.x), floor(pos.z));
-		x_min = floor(pos.x - r);
+		glm::vec2 currCell = posToCell(pos.x, pos.z);
+		//output.emplace_back(floor(pos.x), floor(pos.z));
+		output.push_back(currCell);
+		/*x_min = floor(pos.x - r);
 		x_max = floor(pos.x + r);
 		z_min = floor(pos.z - r);
-		z_max = floor(pos.z + r);
+		z_max = floor(pos.z + r);*/
 
-		for (int x = x_min; x <= x_max; x++)
-			for (int z = z_min; z <= z_max; z++)
+		//cell indices
+		x_min = floor((pos.x - r) / m_CellSize[0]);
+		x_max = floor((pos.x + r) / m_CellSize[0]);
+		z_min = floor((pos.z - r) / m_CellSize[1]);
+		z_max = floor((pos.z + r) / m_CellSize[1]);
+
+		//here we need actuall points positions of a cell to compare it with the poisition of a particle
+		for (float x = x_min * m_CellSize[0]; x <= x_max * m_CellSize[0]; x += m_CellSize[0])
+			for (float z = z_min * m_CellSize[1]; z <= z_max * m_CellSize[1]; z += m_CellSize[1])
 				if (
 					(x < m_Dim.x && z < m_Dim.z && x >= 0 && z >= 0)
 					&&
 					(glm::length(glm::vec2(x, z) - glm::vec2(pos.x, pos.z)) <= r
-					|| glm::length(glm::vec2(x + 1, z) - glm::vec2(pos.x, pos.z)) <= r
-					|| glm::length(glm::vec2(x, z + 1) - glm::vec2(pos.x, pos.z)) <= r
-					|| glm::length(glm::vec2(x + 1, z + 1) - glm::vec2(pos.x, pos.z)) <= r
+					|| glm::length(glm::vec2(x + m_CellSize[0], z) - glm::vec2(pos.x, pos.z)) <= r
+					|| glm::length(glm::vec2(x, z + m_CellSize[1]) - glm::vec2(pos.x, pos.z)) <= r
+					|| glm::length(glm::vec2(x + m_CellSize[0], z + m_CellSize[1]) - glm::vec2(pos.x, pos.z)) <= r
 
 					|| glm::length(glm::vec2(x, pos.z) - glm::vec2(pos.x, pos.z)) <= r//???
 					|| glm::length(glm::vec2(pos.x, z) - glm::vec2(pos.x, pos.z)) <= r//???
-					|| glm::length(glm::vec2(x + 1, pos.z) - glm::vec2(pos.x, pos.z)) <= r//???
-					|| glm::length(glm::vec2(pos.x, z + 1) - glm::vec2(pos.x, pos.z)) <= r)//???
+					|| glm::length(glm::vec2(x + m_CellSize[0], pos.z) - glm::vec2(pos.x, pos.z)) <= r//???
+					|| glm::length(glm::vec2(pos.x, z + m_CellSize[1]) - glm::vec2(pos.x, pos.z)) <= r)//???
 					)
 				{
-					if(glm::vec2(x, z) != glm::vec2(floor(pos.x), floor(pos.z)))
-						output.emplace_back(x, z);
+					//here we must push back the cell index of (x, z) point
+					//if(glm::vec2(x, z) != glm::vec2(floor(pos.x), floor(pos.z)))
+					glm::vec2 cell = posToCell(x, z);
+					if(cell != currCell)
+						output.push_back(cell);
 				}
 		return output;
 	}
 
+	glm::vec2 posToCell(float x, float z) const
+	{
+		return { floor(x / m_CellSize.x), floor(z / m_CellSize.y) };
+	}
+
 public:
-	Grid(const char* pic_path, glm::vec3& dim)
+	Grid(const char* pic_path, const glm::vec3& dim, const glm::vec2 &cellSize)
 		: m_Dim(dim),
-		m_CellSize(1.0f, 1.0f),
+		m_CellSize(cellSize),
 		m_Color(0.31f, 0.23f, 0.16f, 1.00f)
 	{
 		loadHeightMapFromPicture(pic_path);
@@ -513,7 +530,8 @@ public:
 		//compute mass for each triangle that the boundary particles sit on
 		for (const auto& bp : bParticles)
 		{
-			glm::vec2 cell = { floor(bp.Position.x), floor(bp.Position.z) };
+			//glm::vec2 cell = { floor(bp.Position.x), floor(bp.Position.z) };
+			glm::vec2 cell = posToCell(bp.Position.x, bp.Position.z);
 
 			cellIdx = cell[0] * 1000 + cell[1];
 			if (m_TriangleMass.find(cellIdx) == m_TriangleMass.end())
@@ -717,12 +735,14 @@ public:
 		}
 	}
 
-	std::vector<Triangle> getCellTriangles(glm::vec2 cellIndex)
+	std::vector<Triangle> getCellTriangles(const glm::vec2& cellIndex)
 	{
-		glm::vec3 A(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1]), cellIndex[1]);
-		glm::vec3 AA(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1] + 1), cellIndex[1] + 1);
-		glm::vec3 B(cellIndex[0] + 1, GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1]), cellIndex[1]);
-		glm::vec3 C(cellIndex[0], GetHeightfieldAt(cellIndex[0], cellIndex[1] + 1), cellIndex[1] + 1);
+		float x = cellIndex[0] * m_CellSize[0];
+		float z = cellIndex[1] * m_CellSize[1];
+		glm::vec3 A(x, GetHeightfieldAt(cellIndex[0], cellIndex[1]), z);
+		glm::vec3 AA(x + m_CellSize[0], GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1] + 1), z + m_CellSize[1]);
+		glm::vec3 B(x + m_CellSize[0], GetHeightfieldAt(cellIndex[0] + 1, cellIndex[1]), z);
+		glm::vec3 C(x, GetHeightfieldAt(cellIndex[0], cellIndex[1] + 1), z + m_CellSize[1]);
 
 		std::vector<Triangle> ret;
 		ret.emplace_back(C, B, A); //ABC = normal is opposite
@@ -736,7 +756,7 @@ public:
 	{
 		float t_x, t_z;
 		glm::vec2 deltaT;
-		glm::vec2 cellDim(1, 1);
+		glm::vec2 cellDim = m_CellSize;
 		glm::vec2 rayOrigin(pos.x, pos.z);
 		glm::vec2 dir2D(dir.x, dir.z);
 
@@ -845,9 +865,11 @@ public:
 	bool cornerCaseABC(const Triangle ABC, const Triangle AABC, const glm::vec3& posCurr, const glm::vec3& posNext, glm::vec2 cellIndex, glm::vec3& cp, glm::vec3& norm)
 	{
 		glm::vec2 posCurr2D = { posCurr.x, posCurr.z };
-		glm::vec2 origin = { floor(posCurr.x), floor(posCurr.z) };
-		glm::vec2 right = { origin.x + 1, origin.y };
-		glm::vec2 down = { origin.x, origin.y + 1 };
+		//glm::vec2 origin = { floor(posCurr.x), floor(posCurr.z) };
+		glm::vec2 origin = { ABC.C.x, ABC.C.z };
+		//glm::vec2 right = { origin.x + 1, origin.y };
+		glm::vec2 right = { origin[0] + m_CellSize[0], origin[1] };
+		glm::vec2 down = { origin[0], origin[1] + m_CellSize[1] };
 		float dorigin = glm::length(origin - posCurr2D);
 		float dright = glm::length(right - posCurr2D);
 		float ddown = glm::length(down - posCurr2D);
@@ -905,9 +927,10 @@ public:
 	bool cornerCaseAABC(const Triangle ABC, const Triangle AABC, const glm::vec3& posCurr, const glm::vec3& posNext, glm::vec2 cellIndex, glm::vec3& cp, glm::vec3& norm)
 	{
 		glm::vec2 posCurr2D = { posCurr.x, posCurr.z };
-		glm::vec2 origin = { floor(posCurr.x) + 1, floor(posCurr.z) + 1 };
-		glm::vec2 left = { origin.x - 1, origin.y };
-		glm::vec2 up = { origin.x, origin.y - 1 };
+		//glm::vec2 origin = { floor(posCurr.x) + 1, floor(posCurr.z) + 1 };
+		glm::vec2 origin = { AABC.A.x, AABC.A.z };
+		glm::vec2 left = { origin[0] - m_CellSize[0], origin[1] };
+		glm::vec2 up = { origin[0], origin[1] - m_CellSize[1] };
 		float dorigin = glm::length(origin - posCurr2D);
 		float dleft = glm::length(left - posCurr2D);
 		float dup = glm::length(up - posCurr2D);
@@ -991,8 +1014,8 @@ public:
 		glm::vec3 dirOpposite = -dir;
 
 		////std::cout << posCurr.x << " " << posCurr.y << " " << posCurr.z << std::endl;
-		glm::vec2 cellIndex(floor(posCurr.x), floor(posCurr.z));
-		glm::vec2 cellIndexNext(floor(posNext.x), floor(posNext.z));
+		glm::vec2 cellIndex = posToCell(posCurr.x, posCurr.z);
+		glm::vec2 cellIndexNext = posToCell(posNext.x, posNext.z);
 		if (cellIndex[0] < 0 || cellIndex[0] >= m_Dim.x - 1 || cellIndex[1] < 0 || cellIndex[1] >= m_Dim.z - 1
 			|| cellIndexNext[0] < 0 || cellIndexNext[0] >= m_Dim.x - 1 || cellIndexNext[1] < 0 || cellIndexNext[1] >= m_Dim.z - 1)
 			return false;
@@ -1331,8 +1354,9 @@ public:
 
 	void SeedCell(const glm::vec3 partpos, std::vector<FluidParticle>& boundary, float deltaS)
 	{
-		glm::vec2 ccell = {floor(partpos.x), floor(partpos.z)};
-		if (ccell[0] < 0 || ccell[0] >= m_Dim.x || ccell[1] < 0 || ccell[1] >= m_Dim.z)
+		//glm::vec2 ccell = {floor(partpos.x), floor(partpos.z)};
+		glm::vec2 cell = posToCell(partpos.x, partpos.z);
+		if (cell[0] < 0 || cell[0] >= m_Dim.x || cell[1] < 0 || cell[1] >= m_Dim.z)
 			return;
 
 		std::vector<glm::vec2> cellsWithinRadius = findCellsWithinRadius(partpos, deltaS*2);
