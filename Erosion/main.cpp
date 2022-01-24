@@ -77,7 +77,10 @@ int main()
     //fluidsph.SetOrigin(glm::vec3(48.034, 126.0, 56.064));
     
     //fluidsph.SetOrigin(glm::vec3(46.834, 30.4, 57.064));
-    fluidsph.SetOrigin(glm::vec3(55.99, 27.584, 24.140));
+    
+    //fluidsph.SetOrigin(glm::vec3(55.99, 27.584, 24.140));
+    fluidsph.SetOrigin(glm::vec3(5.99, 30.584, 4.140));
+    
     //fluidsph.SetOrigin(glm::vec3(20.034, 255.0, 20.064));
     
     //camera.PlaceTo(glm::vec3(37.366, 128.401, 41.44)); //video 1
@@ -88,10 +91,10 @@ int main()
     //camera.PlaceTo(glm::vec3(43.005, 129.945, 64.629)); //video 6
     //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
     //camera.PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
-    camera.PlaceTo(glm::vec3(56.99, 27.584, 24.140)); //video 9 erosion
+    camera.PlaceTo(glm::vec3(2.99, 31.584, 4.140)); //video 9 erosion
     
     //fluidsph.Initialize(103823);
-    fluidsph.Initialize(1000);
+    fluidsph.Initialize(3000);
     //fluidsph.Initialize(1000000);
 
 

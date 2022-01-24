@@ -489,6 +489,7 @@ public:
 
 	void SetHeightfieldAt(int x, int y, float val)
 	{
+		//std::cout << "updated at: " << x << ", " << y << std::endl;
 		m_Heightfield.map[m_Heightfield.dimY * x + y] = val;
 	}
 
@@ -625,9 +626,9 @@ public:
 					d2 = v2.y;
 				}
 			}
-			SetHeightfieldAt(v0.x, v0.z, d0);
-			SetHeightfieldAt(v1.x, v1.z, d1);
-			SetHeightfieldAt(v2.x, v2.z, d2);
+			SetHeightfieldAt(floor(v0.x / m_CellSize[0]), floor(v0.z / m_CellSize[1]), d0);
+			SetHeightfieldAt(floor(v1.x / m_CellSize[0]), floor(v1.z / m_CellSize[1]), d1);
+			SetHeightfieldAt(floor(v2.x / m_CellSize[0]), floor(v2.z / m_CellSize[1]), d2);
 		}
 		//deposition
 		else if (H > 0.0f)
@@ -672,9 +673,9 @@ public:
 					d0 = v0.y;
 				}
 			}
-			SetHeightfieldAt(v0.x, v0.z, d0);
-			SetHeightfieldAt(v1.x, v1.z, d1);
-			SetHeightfieldAt(v2.x, v2.z, d2);
+			SetHeightfieldAt(floor(v0.x / m_CellSize[0]), floor(v0.z / m_CellSize[1]), d0);
+			SetHeightfieldAt(floor(v1.x / m_CellSize[0]), floor(v1.z / m_CellSize[1]), d1);
+			SetHeightfieldAt(floor(v2.x / m_CellSize[0]), floor(v2.z / m_CellSize[1]), d2);
 		}
 	}
 

@@ -56,26 +56,53 @@ public:
 		m_ParticlesSpatialHash.resize(table_size);
 		m_ParticleNeighbors.resize(num);
 
-		for (int i = 0; i < cbrt(num); i++)
-			for (int j = 0; j < cbrt(num); j++)
-				for (int k = 0; k < cbrt(num); k++)
-				{
-					float x = -0.2 + i * 0.025;
-					float y = -0.05 + j * 0.025;
-					float z = -0.15 + k * 0.025;
+		//for (int i = 0; i < cbrt(num); i++)
+		//	for (int j = 0; j < cbrt(num); j++)
+		//		for (int k = 0; k < cbrt(num); k++)
+		//		{
+		//			float x = -0.2 + i * 0.025;
+		//			float y = -0.05 + j * 0.025;
+		//			float z = -0.15 + k * 0.025;
 
-					FluidParticle particle;
-					particle.Id = FluidParticle::IdCount++;
-					particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
-					particle.Velocity = glm::vec3(0.0, 0.0, 0.0);
-					particle.Acceleration = glm::vec3(0.0);
-					particle.sedim = 0.0f;
-					particle.sedim_delta = 0.0f;
-					particle.sedim_ratio = 0.0f;
-					//particle.Mass = MASS;
-					m_Particles.push_back(particle);
+		//			FluidParticle particle;
+		//			particle.Id = FluidParticle::IdCount++;
+		//			particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
+		//			particle.Velocity = glm::vec3(0.0, 0.0, 0.0);
+		//			particle.Acceleration = glm::vec3(0.0);
+		//			particle.sedim = 0.0f;
+		//			particle.sedim_delta = 0.0f;
+		//			particle.sedim_ratio = 0.0f;
+		//			//particle.Mass = MASS;
+		//			m_Particles.push_back(particle);
 
-				}
+		//		}
+
+		sqrside = 8;
+		int j = -1;
+		for (int i = 0; i < num; i++)
+		{
+			if (i % sqrside == 0)
+				j++;
+			j = j % sqrside;
+			
+			float x = -0.2f + (i % 8) * 0.025f;
+			float y = -0.05f + j * 0.025f;
+			float z = -0.15f;
+
+
+			FluidParticle particle;
+			particle.Id = FluidParticle::IdCount++;
+			particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
+			particle.Velocity = glm::vec3(0.0, 0.0, 3.0);
+			particle.Acceleration = glm::vec3(0.0);
+			particle.sedim = 0.0f;
+			particle.sedim_delta = 0.0f;
+			particle.sedim_ratio = 0.0f;
+			//particle.Mass = MASS;
+			m_Particles.push_back(particle);
+
+		}
+		visible_num = sqrside * sqrside;
 
 		//vol = num * MASS / p0;
 		//smoothRadius = cbrt(3 * vol * x / (4 * PI * num));
@@ -90,13 +117,13 @@ public:
 		rebuildTables();
 		//compute density and pressure
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 
 			float density = 0;
 			int cnt = 0;
-			//for (int j = 0; j < m_Particles.size(); j++)
+			//for (int j = 0; j < visible_num; j++)
 			for (int j = 0; j < m_ParticleNeighbors[i].size(); j++)
 			{
 				int idx = m_ParticleNeighbors[i][j];
@@ -125,14 +152,14 @@ public:
 
 		//internal forces
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& cur = m_Particles[i];
 
 			glm::vec3 fPress(0.0);
 			glm::vec3 fVisc(0.0);
 			glm::vec3 n(0.0); //inward surface normal
-			//for (int j = 0; j < m_Particles.size(); j++)
+			//for (int j = 0; j < visible_num; j++)
 			for (int j = 0; j < m_ParticleNeighbors[i].size(); j++)
 			{
 				int idx = m_ParticleNeighbors[i][j];
@@ -159,12 +186,12 @@ public:
 
 		//external forces
 #pragma omp parallel for collapse(2)
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			currPart.GravityForce = currPart.Density * gravityVector;
 			float colorFieldLapl = 0.0;
-			//for (int j = 0; j < m_Particles.size(); j++)
+			//for (int j = 0; j < visible_num; j++)
 			for (int j = 0; j < m_ParticleNeighbors[i].size(); j++)
 			{
 				int idx = m_ParticleNeighbors[i][j];
@@ -205,7 +232,7 @@ public:
 		if (!m_Sphere)
 			m_Sphere = std::make_unique<Sphere>(10, 10, 1, glm::vec3(0.0, 0.0, 0.0));
 
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			float r = s * cbrt(3 * MASS / (4 * PI * m_Particles[i].Density));
 			r = 0.01f;
@@ -233,6 +260,9 @@ public:
 			m_Sphere->Draw();
 		}*/
 
+		m_BParticles.clear();
+
+
 		//hightlight nearest boundary particles
 		if (render_boundary)
 			for (const auto& bp : m_NearestBParticles)
@@ -247,7 +277,7 @@ public:
 			}
 
 		m_NearestBParticles.clear();
-
+		visible_num = std::min(visible_num + sqrside * sqrside, num);
 	}
 
 	void SetOrigin(const glm::vec3& o)
@@ -302,7 +332,33 @@ public:
 	{
 		m_Particles.clear();
 		m_BParticles.clear();
-		AddParticles(init_num);
+
+		int j = -1;
+		for (int i = 0; i < num; i++)
+		{
+			if (i % sqrside == 0)
+				j++;
+			j = j % sqrside;
+
+			float x = -0.2f + (i % 8) * 0.025f;
+			float y = -0.05f + j * 0.025f;
+			float z = -0.15f;
+
+
+			FluidParticle particle;
+			particle.Id = FluidParticle::IdCount++;
+			particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
+			particle.Velocity = glm::vec3(0.0, 0.0, 3.0);
+			particle.Acceleration = glm::vec3(0.0);
+			particle.sedim = 0.0f;
+			particle.sedim_delta = 0.0f;
+			particle.sedim_ratio = 0.0f;
+			//particle.Mass = MASS;
+			m_Particles.push_back(particle);
+		}
+		visible_num = sqrside * sqrside;
+
+		//AddParticles(init_num);
 	}
 
 	float* GetMu()
@@ -377,7 +433,7 @@ private:
 	void clearBuffers()
 	{
 		m_FluidsOfBoundary.clear();
-		m_BParticles.clear();
+		//m_BParticles.clear();
 		dC.clear();
 		dC_BP.clear();
 	}
@@ -462,7 +518,7 @@ private:
 	{
 		const float epsilon = 1.001f;
 //#pragma omp parallel for
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& fp = m_Particles[i];
 			if (fp.sedim_delta >= 0.0f)
@@ -480,7 +536,7 @@ private:
 	{
 		//sph - sph
 		int ij = 0;
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			for (const auto& j : m_ParticleNeighbors[i])
 			{
@@ -533,7 +589,7 @@ private:
 		const float inv2Smooth = 2.0f / h;
 		float q = 0.0f, fGradCubic = 0.0f;
 
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 
@@ -603,8 +659,8 @@ private:
 		omp_lock_t writelock;
 		omp_init_lock(&writelock);
 
-//#pragma omp parallel for
-		for (int i = 0; i < m_Particles.size(); i++)
+#pragma omp parallel for
+		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			usetfp nearest_boundary;
@@ -687,7 +743,7 @@ private:
 		omp_lock_t writelock;
 		omp_init_lock(&writelock);
 #pragma omp parallel for
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
 			glm::vec3 F;
@@ -886,11 +942,11 @@ private:
 		m_ParticlesSpatialHash.resize(table_size);
 		m_ParticleNeighbors.resize(num);
 
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 			m_ParticlesSpatialHash[hash(m_Particles[i].Position)].push_back(i);
 
 #pragma omp parallel for collapse(4)
-		for (int i = 0; i < m_Particles.size(); i++)
+		for (int i = 0; i < visible_num; i++)
 		{
 			glm::vec3& r_q = m_Particles[i].Position;
 			glm::vec3 bbmin = r_q - glm::vec3(h);
@@ -971,6 +1027,7 @@ private:
 		float h = 0.0457f;
 		int num;
 		int init_num;
+		int visible_num;
 		float vol;
 		float smoothRadius;
 		float s = 1;
@@ -982,6 +1039,7 @@ private:
 		//float Ks = 45000;
 		float Kd = 300.0f;
 		int table_size;
+		int sqrside;
 
 		std::vector<float> dC;
 		std::vector<float> dC_BP;
