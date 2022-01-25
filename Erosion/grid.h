@@ -51,6 +51,7 @@ struct FluidParticle
 	mutable float dM;
 	float sedim_ratio;
 	char triangle; // 'A' - ABC, 'B' - AABC
+	double lifetime;
 };
 
 unsigned long FluidParticle::IdCount = 0;
@@ -386,7 +387,7 @@ private:
 			printf("Error in loading the image\n");
 			exit(1);
 		}
-		printf("Loaded image with a width of %dpx, a height of %dpx and %d channels\n", width, height, channels);
+		printf("Loaded image with width of %dpx, height of %dpx and %d channels\n", width, height, channels);
 
 		m_Heightfield.dimX = width;
 		m_Heightfield.dimY = height;
@@ -394,12 +395,14 @@ private:
 		m_Heightfield.map = new float[width * height];
 		memset(m_Heightfield.map, 0, width * height);
 		//memcpy(m_Heightfield.map, (float*)img, (size_t)m_Heightfield.dimX * m_Heightfield.dimY);
+		std::cout << "heightfield values:\n";
 		for (int i = 0; i < width * height; i++)
 		{
+			//std::cout << "img[" << i << "]: " << (int)img[i] << std::endl;
 			if(img[i] > m_Dim.y)
 				m_Heightfield.map[i] = m_Dim.y;
 			else
-				m_Heightfield.map[i] = (float)img[i];
+				m_Heightfield.map[i] = (float)img[i] * 0.3f;
 		}
 
 		stbi_image_free(img);
@@ -738,6 +741,9 @@ public:
 
 	std::vector<Triangle> getCellTriangles(const glm::vec2& cellIndex)
 	{
+		if (cellIndex[0] < 0 || cellIndex[0] >= m_Dim.x || cellIndex[1] < 0 || cellIndex[1] >= m_Dim.z)
+			return {};
+
 		float x = cellIndex[0] * m_CellSize[0];
 		float z = cellIndex[1] * m_CellSize[1];
 		glm::vec3 A(x, GetHeightfieldAt(cellIndex[0], cellIndex[1]), z);

@@ -77,7 +77,7 @@ public:
 
 		//		}
 
-		sqrside = 8;
+		sqrside = 25;
 		int j = -1;
 		for (int i = 0; i < num; i++)
 		{
@@ -85,7 +85,7 @@ public:
 				j++;
 			j = j % sqrside;
 			
-			float x = -0.2f + (i % 8) * 0.025f;
+			float x = -0.2f + (i % sqrside) * 0.025f;
 			float y = -0.05f + j * 0.025f;
 			float z = -0.15f;
 
@@ -98,6 +98,7 @@ public:
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
+			particle.lifetime = 1100;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 
@@ -120,6 +121,8 @@ public:
 		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
+			if (currPart.lifetime <= 0)
+				continue;
 
 			float density = 0;
 			int cnt = 0;
@@ -155,6 +158,9 @@ public:
 		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& cur = m_Particles[i];
+			if (cur.lifetime == 0)
+				continue;
+
 
 			glm::vec3 fPress(0.0);
 			glm::vec3 fVisc(0.0);
@@ -189,6 +195,10 @@ public:
 		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
+			if (currPart.lifetime <= 0)
+				continue;
+
+
 			currPart.GravityForce = currPart.Density * gravityVector;
 			float colorFieldLapl = 0.0;
 			//for (int j = 0; j < visible_num; j++)
@@ -234,6 +244,8 @@ public:
 
 		for (int i = 0; i < visible_num; i++)
 		{
+			if (m_Particles[i].lifetime <= 0)
+				continue;
 			float r = s * cbrt(3 * MASS / (4 * PI * m_Particles[i].Density));
 			r = 0.01f;
 			glm::mat4 model = glm::mat4(1.0);
@@ -278,6 +290,13 @@ public:
 
 		m_NearestBParticles.clear();
 		visible_num = std::min(visible_num + sqrside * sqrside, num);
+	}
+
+	void AdvanceTime()
+	{
+		for (int i = 0; i < visible_num; i++)
+			if(m_Particles[i].lifetime != 0)
+				m_Particles[i].lifetime--;
 	}
 
 	void SetOrigin(const glm::vec3& o)
@@ -340,7 +359,7 @@ public:
 				j++;
 			j = j % sqrside;
 
-			float x = -0.2f + (i % 8) * 0.025f;
+			float x = -0.2f + (i % sqrside) * 0.025f;
 			float y = -0.05f + j * 0.025f;
 			float z = -0.15f;
 
@@ -353,6 +372,7 @@ public:
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
+			particle.lifetime = 1000000;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 		}
@@ -517,10 +537,14 @@ private:
 	void computeSedimOutputRatios()
 	{
 		const float epsilon = 1.001f;
-//#pragma omp parallel for
+#pragma omp parallel for
 		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& fp = m_Particles[i];
+			if (fp.lifetime <= 0)
+				continue;
+
+
 			if (fp.sedim_delta >= 0.0f)
 				fp.sedim_ratio = 1.0f;
 			else {
@@ -538,6 +562,9 @@ private:
 		int ij = 0;
 		for (int i = 0; i < visible_num; i++)
 		{
+			if (m_Particles[i].lifetime <= 0)
+				continue;
+
 			for (const auto& j : m_ParticleNeighbors[i])
 			{
 				//don't count sedimentation with yourself
@@ -592,6 +619,9 @@ private:
 		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
+			if (currPart.lifetime <= 0)
+				continue;
+
 
 			glm::vec3 vSettling = 2.0f / 9.0f * 0.001f * 0.001f * (float)((SOLID_DENSITY - currPart.Density) / visc) * gravityVector;
 
@@ -663,6 +693,10 @@ private:
 		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
+			if (currPart.lifetime <= 0)
+				continue;
+
+
 			usetfp nearest_boundary;
 			glm::vec3 fBoundary(0.0f);
 
@@ -746,6 +780,8 @@ private:
 		for (int i = 0; i < visible_num; i++)
 		{
 			FluidParticle& currPart = m_Particles[i];
+			if (currPart.lifetime <= 0)
+				continue;
 			glm::vec3 F;
 			glm::vec3 fInternal;
 			glm::vec3 fExternal;
@@ -1034,7 +1070,7 @@ private:
 		float len = 0.2f;
 		float damping = 0.1f;
 		float deltaS;
-		float mu = 0.27f;
+		float mu = 0.11f;
 		float Ks = 1.119e6;
 		//float Ks = 45000;
 		float Kd = 300.0f;

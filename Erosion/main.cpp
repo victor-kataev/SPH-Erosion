@@ -66,8 +66,9 @@ int main()
   
     char picture_path[100];
     //strcpy_s(picture_path, "lena_gray.png");
-    strcpy_s(picture_path, "pumba_gray.png");
-    glm::vec3 dimensions = { 512.0f, 30.0f, 512.0f };
+    //strcpy_s(picture_path, "pumba_gray.png");
+    strcpy_s(picture_path, "meander.png");
+    glm::vec3 dimensions = { 512.0f, 200.0f, 512.0f};
     glm::vec2 cellSize = { 0.2f, 0.2f };
     Grid grid(picture_path, dimensions, cellSize);
         
@@ -79,7 +80,7 @@ int main()
     //fluidsph.SetOrigin(glm::vec3(46.834, 30.4, 57.064));
     
     //fluidsph.SetOrigin(glm::vec3(55.99, 27.584, 24.140));
-    fluidsph.SetOrigin(glm::vec3(5.99, 30.584, 4.140));
+    fluidsph.SetOrigin(glm::vec3(13.894, 30.55, 14.228));
     
     //fluidsph.SetOrigin(glm::vec3(20.034, 255.0, 20.064));
     
@@ -91,22 +92,23 @@ int main()
     //camera.PlaceTo(glm::vec3(43.005, 129.945, 64.629)); //video 6
     //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
     //camera.PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
-    camera.PlaceTo(glm::vec3(2.99, 31.584, 4.140)); //video 9 erosion
+    camera.PlaceTo(glm::vec3(11.867, 32.842, 12.818)); //video 9 erosion
     
     //fluidsph.Initialize(103823);
-    fluidsph.Initialize(3000);
+    fluidsph.Initialize(200000);
+    //fluidsph.Initialize(1000);
     //fluidsph.Initialize(1000000);
 
 
     glEnable(GL_DEPTH_TEST);
     glReadBuffer(GL_BACK);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     UIinit(window);
 
     unsigned char* buff = new unsigned char[SCREEN_HEIGHT * SCREEN_WIDTH * 3];
     unsigned int framenum = 0;
     std::stringstream ss_filename;
-    glm::vec3 dirlight(-0.4, -0.7, 0.2);
+    glm::vec3 dirlight(-0.4, -0.7, -0.2);
 
     //render loop
     while (!glfwWindowShouldClose(window))
@@ -166,6 +168,7 @@ int main()
             ImGui::InputInt("particle_id", &g_part_id);
             FluidParticle fp = fluidsph.GetParticle(g_part_id);
 
+            ImGui::InputDouble("lifetime", &fp.lifetime);
             ImGui::InputFloat("sedim", &fp.sedim);
             ImGui::InputFloat("sedim_delta", &fp.sedim_delta);
             ImGui::InputFloat3("fBoundary", (float*)&fp.fBoundary);
@@ -203,13 +206,14 @@ int main()
 
         grid.Draw(shader);
         fluidsph.Draw(shader, g_part_id);
+        fluidsph.AdvanceTime();
         
         UIend();
 
         glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
-        ss_filename << "render2/frame_" << std::to_string(framenum) << ".bmp";
+        ss_filename << "render/frame_" << std::to_string(framenum) << ".bmp";
         framenum++;
-        //pixelsToBmp(ss_filename.str().c_str(), buff);
+        pixelsToBmp(ss_filename.str().c_str(), buff);
         ss_filename.str("");
 
         glfwSwapBuffers(window);
