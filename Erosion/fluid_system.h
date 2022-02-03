@@ -14,6 +14,9 @@
 typedef unsigned int uint;
 
 
+#define UI_DEBUG
+
+
 
 #define SEDIMENT_MAX 0.7f
 #define DAMPING 110.0f
@@ -77,7 +80,7 @@ public:
 
 		//		}
 
-		sqrside = 25;
+		sqrside = 10;
 		int j = -1;
 		for (int i = 0; i < num; i++)
 		{
@@ -98,7 +101,7 @@ public:
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
-			particle.lifetime = 1100;
+			particle.lifetime = 110000;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 
@@ -524,7 +527,7 @@ private:
 						fGradCubic = -fNormalCubic * 3.0f * pow(2.0f - q, 2.0f);
 
 					//advection donor-acceptor
-					dC_BP[ij] = MASS * fp.sedim * fp.Density;
+					dC_BP[ij] = MASS * fp.sedim / fp.Density;
 					dC_BP[ij] *= -v * fGradCubic;
 					fp.sedim_delta += dC_BP[ij];
 					assert(dC_BP[ij] <= 0.0f);
@@ -630,6 +633,9 @@ private:
 				//don't count sedimentation with yourself
 				if (i == j)
 				{
+#ifdef UI_DEBUG
+					Debugger::Get()->PushBackPostSedimentation(ij, -777.0f, m_Particles[i], m_Particles[i]);// -777 = skipped
+#endif
 					ij++;
 					continue;
 				}
@@ -652,7 +658,7 @@ private:
 					if (neigh.sedim > 0.0f && currPart.sedim < SEDIMENT_MAX)
 					{
 						v_r *= richardson_zaki(currPart.sedim);
-						q = MASS * neigh.sedim * neigh.Density;
+						q = MASS * neigh.sedim / neigh.Density;
 						q *= -v_r* fGradCubic;
 						dC[ij] = q;
 					}
@@ -663,7 +669,7 @@ private:
 					if (currPart.sedim > 0.0f && neigh.sedim < SEDIMENT_MAX)
 					{
 						v_r *= richardson_zaki(neigh.sedim);
-						q = MASS * currPart.sedim * currPart.Density;
+						q = MASS * currPart.sedim / currPart.Density;
 						q *= -v_r * fGradCubic;
 						dC[ij] = q;
 					}
@@ -676,6 +682,9 @@ private:
 					currPart.sedim_delta += dC[ij];
 				else
 					neigh.sedim_delta -= dC[ij];
+#ifdef UI_DEBUG
+				Debugger::Get()->PushBackPostSedimentation(ij, dC[ij], currPart, neigh);
+#endif
 				ij++;
 				assert(!isnan(currPart.sedim_delta));
 				assert(!isnan(neigh.sedim_delta));
@@ -1032,6 +1041,9 @@ private:
 			if(!p_neighbors.empty())
 				all_neighb_cnt += p_neighbors.size();
 		dC.resize(all_neighb_cnt);
+#ifdef UI_DEBUG
+		Debugger::Get()->PostSedimentationBufferInit(all_neighb_cnt);
+#endif
 	}
 
 	float richardson_zaki(float C)

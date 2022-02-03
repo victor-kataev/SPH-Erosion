@@ -19,6 +19,8 @@
 #include "mesh.h"
 #include "shapes.h"
 
+
+
 #define SCREEN_WIDTH 1440
 #define SCREEN_HEIGHT 900
 #define GL_PI 3.1415f
@@ -35,6 +37,8 @@ float lastX = SCREEN_WIDTH / 2.0f;
 float lastY = SCREEN_HEIGHT / 2.0f;
 bool firstMouse = true;
 bool disabled = true;
+bool debugWndwOpened = false;
+bool debugWndwPressed = false;
 bool pressed_before = false;
 
 
@@ -95,8 +99,8 @@ int main()
     camera.PlaceTo(glm::vec3(11.867, 32.842, 12.818)); //video 9 erosion
     
     //fluidsph.Initialize(103823);
-    fluidsph.Initialize(200000);
-    //fluidsph.Initialize(1000);
+    //fluidsph.Initialize(200000);
+    fluidsph.Initialize(100);
     //fluidsph.Initialize(1000000);
 
 
@@ -207,13 +211,20 @@ int main()
         grid.Draw(shader);
         fluidsph.Draw(shader, g_part_id);
         fluidsph.AdvanceTime();
-        
+
+
+#ifdef UI_DEBUG
+        if(debugWndwOpened)
+            Debugger::Get()->DisplayDebugWindow(DEBUG_SEDIMENTATION_FLAG);
+        Debugger::Get()->ClearBuffers();
+#endif
+
         UIend();
 
         glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
         ss_filename << "render/frame_" << std::to_string(framenum) << ".bmp";
         framenum++;
-        pixelsToBmp(ss_filename.str().c_str(), buff);
+        //pixelsToBmp(ss_filename.str().c_str(), buff);
         ss_filename.str("");
 
         glfwSwapBuffers(window);
@@ -328,6 +339,29 @@ void processInput(GLFWwindow* window)
         }
     }
 
+
+    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
+        debugWndwPressed = true;
+    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE && debugWndwPressed)
+    {
+        debugWndwPressed = false;
+        if (!debugWndwOpened)
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetCursorPosCallback(window, NULL);
+            debugWndwOpened = true;
+            firstMouse = true;
+        }
+        else
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetCursorPosCallback(window, mouse_callback);
+            debugWndwOpened = false;
+        }
+    }
+
+
+
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
@@ -362,7 +396,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         std::cout << "Particles reseted\n";
     }
 
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && disabled)
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && (disabled && !debugWndwOpened))
     {
         fluidsph.AddParticles(125);
         std::cout << "Added 125 particles\n";
