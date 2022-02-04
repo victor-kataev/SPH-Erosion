@@ -464,9 +464,10 @@ private:
 	void computeErosion()
 	{
 		float dMi;
-		float v, t, E, m, vRel;
+		float v, t, E, m = 0, vRel;
 		const float minVrel = pow(EROSION_TC / EROSION_SHEAR_STIFF, 2.0f);
 		float L2 = h * h;
+		int ij = 0;
 
 		for (auto& bp : m_NearestBParticles)
 		{
@@ -478,7 +479,13 @@ private:
 				float dist = glm::length(fp.Position - bp.Position);
 				vRel = std::max(0.0f, v - abs(glm::dot(fp.Velocity, bp.SurfaceNormal))) / dist;
 				if (minVrel > vRel)
+				{
+#ifdef UI_DEBUG
+					Debugger::Get()->PushBackPostErosion(ij, -666.0f, fp, bp, m);
+#endif
+					ij++;
 					continue;
+				}
 				t = EROSION_SHEAR_STIFF * pow(vRel, 0.5f);
 				E = EROSION_RATE * (t - EROSION_TC);
 				m = L2 * E;
@@ -487,6 +494,10 @@ private:
 				//fp.sedim_delta += MASS_2_C(dMi); //add sediment to a sph particle
 				fp.sedim_delta += 1.0f / (SOLID_DENSITY * FLUID_MASS / fp.Density) * dMi; //add sediment to  sph particle
 				assert(!isnan(fp.sedim_delta));
+#ifdef UI_DEBUG
+				Debugger::Get()->PushBackPostErosion(ij, -777.0f, fp, bp, m);
+#endif
+				ij++;
 			}
 		}
 	}
@@ -585,6 +596,9 @@ private:
 				//don't count sedimentation with yourself
 				if (i == j)
 				{
+#ifdef UI_DEBUG
+					Debugger::Get()->PushBackPostSedimentFlowSphSph(ij, -777.0f, m_Particles[i], m_Particles[i]);
+#endif
 					ij++;
 					continue;
 				}
@@ -599,6 +613,9 @@ private:
 				
 				fp.sedim_delta += dC[ij];
 				neigh.sedim_delta -= dC[ij];
+#ifdef UI_DEBUG
+				Debugger::Get()->PushBackPostSedimentFlowSphSph(ij, dC[ij], fp, neigh);
+#endif
 				ij++;
 			}
 		}
@@ -617,7 +634,16 @@ private:
 					fp.sedim_delta += dC_BP[ij];
 					//bp.dM -= C_2_MASS(dC_BP[ij]);
 					bp.dM -= SOLID_DENSITY * FLUID_MASS / fp.Density * dC_BP[ij];
+#ifdef UI_DEBUG
+					Debugger::Get()->PushBackPostSedimentFlowSphBoundary(ij, dC_BP[ij], fp, bp);
+#endif
 				}
+#ifdef UI_DEBUG
+				else
+				{
+					Debugger::Get()->PushBackPostSedimentFlowSphBoundary(ij, -777.0f, fp, bp);
+				}
+#endif
 				ij++;
 			}
 		}
@@ -792,6 +818,8 @@ private:
 		dC_BP.resize(size);
 #ifdef UI_DEBUG
 		Debugger::Get()->PostDepositionBufferInit(size);
+		Debugger::Get()->PostSedimentFlowSphBoundaryInit(size);
+		Debugger::Get()->PostErosionInit(size);
 #endif
 	}
 
@@ -1059,6 +1087,7 @@ private:
 		memset(dC.data(), 0, dC.size()); //redundant?
 #ifdef UI_DEBUG
 		Debugger::Get()->PostSedimentationBufferInit(all_neighb_cnt);
+		Debugger::Get()->PostSedimentFlowSphSphInit(all_neighb_cnt);
 #endif
 	}
 

@@ -6,9 +6,10 @@
 #include <vector>
 
 
-#define DEBUG_SEDIMENTATION_DISPLAY_FLAG	0x01
-#define DEBUG_DEPOSITION_DISPLAY_FLAG		0x01 << 1
-#define DEBUG_EROSION_DISPLAY_FLAG			0x01 << 2
+#define SEDIMENTATION_DISPLAY_FLAG	0x01
+#define DEPOSITION_DISPLAY_FLAG		0x01 << 1
+#define EROSION_DISPLAY_FLAG		0x01 << 2
+#define SEDIMENT_FLOW_DISPLAY_FLAG	0x01 << 3
 
 
 
@@ -84,13 +85,62 @@ public:
 		m_PostDeposition[ij] = { ij, dC, p1, p2 };
 	}
 
+	void PushBackPostSedimentFlowSphBoundary(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp)
+	{
+		FluidParticleLight p1, p2;
+		p1.id = fp.Id;
+		p1.sedim = fp.sedim;
+		p1.sedim_delta = fp.sedim_delta;
+		p1.sedim_ratio = fp.sedim_ratio;
+
+		p2.id = bp.Id;
+		p2.dM = bp.dM;
+
+		m_PostSedimentFlowSphBoundary[ij] = { ij, dC, p1, p2 };
+	}
+	
+	void PushBackPostSedimentFlowSphSph(int ij, float dC, const FluidParticle& fp1, const FluidParticle& fp2)
+	{
+		FluidParticleLight p1, p2;
+		p1.id = fp1.Id;
+		p1.sedim = fp1.sedim;
+		p1.sedim_delta = fp1.sedim_delta;
+		p1.sedim_ratio = fp1.sedim_ratio;
+
+		p2.id = fp2.Id;
+		p2.sedim = fp2.sedim;
+		p2.sedim_delta = fp2.sedim_delta;
+		p2.sedim_ratio = fp2.sedim_ratio;
+
+		m_PostSedimentFlowSphSph[ij] = { ij, dC, p1, p2 };
+	}
+
+	void PushBackPostErosion(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp, float m)
+	{
+		FluidParticleLight p1, p2;
+		p1.id = fp.Id;
+		p1.sedim = fp.sedim;
+		p1.sedim_delta = fp.sedim_delta;
+		p1.sedim_ratio = fp.sedim_ratio;
+		p1.dM = m;
+
+		p2.id = bp.Id;
+		p2.dM = bp.dM;
+
+		m_PostErosion[ij] = { ij, dC, p1, p2 };
+	}
+
 	void DisplayDebugWindow(uint8_t display_flags) const
 	{
 		ImGui::Begin("Erosion Debugger");
-		if (DEBUG_SEDIMENTATION_DISPLAY_FLAG & display_flags)
+		if (SEDIMENTATION_DISPLAY_FLAG & display_flags)
 			displaySedimentation();
-		if (DEBUG_DEPOSITION_DISPLAY_FLAG & display_flags)
+		if (DEPOSITION_DISPLAY_FLAG & display_flags)
 			displayDeposition();
+		if (SEDIMENT_FLOW_DISPLAY_FLAG & display_flags)
+			displaySedimentFlow();
+		if (EROSION_DISPLAY_FLAG & display_flags)
+			displayErosion();
 		ImGui::End();
 	}
 
@@ -105,10 +155,29 @@ public:
 		m_PostSedimentation.resize(size);
 	}
 
+
 	void PostDepositionBufferInit(int size)
 	{
 		m_PostDeposition.clear();
 		m_PostDeposition.resize(size);
+	}
+
+	void PostSedimentFlowSphSphInit(int size)
+	{
+		m_PostSedimentFlowSphSph.clear();
+		m_PostSedimentFlowSphSph.resize(size);
+	}
+	
+	void PostSedimentFlowSphBoundaryInit(int size)
+	{
+		m_PostSedimentFlowSphBoundary.clear();
+		m_PostSedimentFlowSphBoundary.resize(size);
+	}
+
+	void PostErosionInit(int size)
+	{
+		m_PostErosion.clear();
+		m_PostErosion.resize(size);
 	}
 
 	//std::vector<PPInteraction>& GetPostSedimentationBuffer()
@@ -123,16 +192,25 @@ private:
 
 	std::vector<PPInteraction> m_PostSedimentation;
 	std::vector<PPInteraction> m_PostDeposition;
+	std::vector<PPInteraction> m_PostErosion;
+	std::vector<PPInteraction> m_PostSedimentFlowSphBoundary;
+	std::vector<PPInteraction> m_PostSedimentFlowSphSph;
 
 	void displaySedimentation() const
 	{
 		if (!ImGui::CollapsingHeader("Post SEDIMENTATION"))
 			return;
 
+		ImGui::Text("--Total %d--", m_PostSedimentation.size());
 		for (int i = 0; i < m_PostSedimentation.size(); i++)
 		{
 			const auto& data = m_PostSedimentation[i];
-			if (ImGui::TreeNode((void*)(intptr_t)i, "dC[%d]", i))
+			const char* format;
+			if (data.dC == -777.0f)
+				format = "dC[%d] (skipped)";
+			else
+				format = "dC[%d]";
+			if (ImGui::TreeNode((void*)(intptr_t)i, format, i))
 			{
 				//ImGui::Text("ij: %d", data.ij);
 				ImGui::Text("dC: %.15f", data.dC);
@@ -156,6 +234,7 @@ private:
 		if (!ImGui::CollapsingHeader("Post DEPOSITION"))
 			return;
 
+		ImGui::Text("--Total %d--", m_PostDeposition.size());
 		for (int i = 0; i < m_PostDeposition.size(); i++)
 		{
 			const auto& data = m_PostDeposition[i];
@@ -170,14 +249,116 @@ private:
 			{
 				//ImGui::Text("ij: %d", data.ij);
 				ImGui::Text("dC_BP: %.15f (%e)", data.dC, data.dC);
+				ImGui::Text("boundary_part");
+				ImGui::Text("\tid: %d", data.particle2.id);
+				ImGui::Text("\tdM: %.15f", data.particle2.dM);
 				ImGui::Text("fluid_part");
 				ImGui::Text("\tid: %d", data.particle1.id);
 				ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
 				ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
 				ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+				ImGui::TreePop();
+			}
+		}
+	}
+
+	void displaySedimentFlow() const
+	{
+		if (!ImGui::CollapsingHeader("Post SEDIMENT FLOW"))
+			return;
+
+		if (ImGui::TreeNode("sph-sph"))
+		{
+			ImGui::Text("--Total %d--", m_PostSedimentFlowSphSph.size());
+			for (int i = 0; i < m_PostSedimentFlowSphSph.size(); i++)
+			{
+				const auto& data = m_PostSedimentFlowSphSph[i];
+				const char* format;
+				if (data.dC == -777.0f)
+					format = "dC[%d] (skipped)";
+				else
+					format = "dC[%d]";
+
+				if (ImGui::TreeNode((void*)(intptr_t)i, format, i))
+				{
+					//ImGui::Text("ij: %d", data.ij);
+					ImGui::Text("dC: %.15f", data.dC);
+					ImGui::Text("particle_1");
+					ImGui::Text("\tid: %d", data.particle1.id);
+					ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+					ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+					ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+					ImGui::Text("particle_2");
+					ImGui::Text("\tid: %d", data.particle2.id);
+					ImGui::Text("\tsedim: %.10f", data.particle2.sedim);
+					ImGui::Text("\tsedim_delta: %.15f", data.particle2.sedim_delta);
+					ImGui::Text("\tsedim_ratio: %.10f", data.particle2.sedim_ratio);
+					ImGui::TreePop();
+				}
+			}
+
+			ImGui::TreePop();
+		}
+		
+		if (ImGui::TreeNode("sph-boundary"))
+		{
+			ImGui::Text("--Total %d--", m_PostSedimentFlowSphBoundary.size());
+			for (int i = 0; i < m_PostSedimentFlowSphBoundary.size(); i++)
+			{
+				const auto& data = m_PostSedimentFlowSphBoundary[i];
+				const char* format;
+				if (data.dC == -777.0f)
+					format = "dC[%d] (skipped)";
+				else
+					format = "dC[%d]";
+
+				if (ImGui::TreeNode((void*)(intptr_t)i, format, i))
+				{
+					//ImGui::Text("ij: %d", data.ij);
+					ImGui::Text("dC_BP: %.15f (%e)", data.dC, data.dC);
+					ImGui::Text("boundary_part");
+					ImGui::Text("\tid: %d", data.particle2.id);
+					ImGui::Text("\tdM: %.15f", data.particle2.dM);
+					ImGui::Text("fluid_part");
+					ImGui::Text("\tid: %d", data.particle1.id);
+					ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+					ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+					ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+					ImGui::TreePop();
+				}
+			}
+
+			ImGui::TreePop();
+		}
+	}
+
+	void displayErosion() const
+	{
+		if (!ImGui::CollapsingHeader("Post EROSION"))
+			return;
+
+		ImGui::Text("--Total %d--", m_PostErosion.size());
+		for (int i = 0; i < m_PostErosion.size(); i++)
+		{
+			const auto& data = m_PostErosion[i];
+			const char* format;
+			if (data.dC == -666.0f)
+				format = "[%d] (skipped)";
+			else
+				format = "[%d]";
+			if (ImGui::TreeNode((void*)(intptr_t)i, format, i))
+			{
+				//ImGui::Text("ij: %d", data.ij);
+				ImGui::Text("dC_BP: %.15f (%e)", data.dC, data.dC);
 				ImGui::Text("boundary_part");
 				ImGui::Text("\tid: %d", data.particle2.id);
 				ImGui::Text("\tdM: %.15f", data.particle2.dM);
+				ImGui::Text("\tm: %.15f", data.particle1.dM);
+				ImGui::Text("fluid_part");
+				ImGui::Text("\tid: %d", data.particle1.id);
+				ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+				ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+				ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
 				ImGui::TreePop();
 			}
 		}
