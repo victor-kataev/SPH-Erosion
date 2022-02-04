@@ -522,20 +522,31 @@ public:
 				m_TriangleMass[cellIdx].second += bp.dM;
 		}
 
+#ifdef UI_DEBUG
+		Debugger::Get()->CellsInit();
+#endif
 		//udpate geometry of correspondng cells
 		for(const auto& cell: cellsToUpdate)
 		{
 			cellIdx = cell[0] * 1000 + cell[1];
+			bool updated = false;
+
+#ifdef UI_DEBUG
+			Debugger::Get()->PushBackCell(cell, m_TriangleMass[cellIdx]);
+#endif
 
 			Triangle triABC = getCellTriangles(cell)[0];
-			updateVerticesInHF(triABC, m_TriangleMass[cellIdx].first);
+			updateVerticesInHF(triABC, m_TriangleMass[cellIdx].first, updated);
 
 			Triangle triAABC = getCellTriangles(cell)[1];
-			updateVerticesInHF(triAABC, m_TriangleMass[cellIdx].second);
+			updateVerticesInHF(triAABC, m_TriangleMass[cellIdx].second, updated);
 
 			//erase old boundary particles in the cell they will be seeded in next iteration of fluid run
-			delete m_SeededCells[cellIdx];
-			m_SeededCells.erase(cellIdx);
+			if (updated)
+			{
+				delete m_SeededCells[cellIdx];
+				m_SeededCells.erase(cellIdx);
+			}
 		}
 
 		if (!cellsToUpdate.empty())
@@ -546,7 +557,7 @@ public:
 	
 
 	//updates vertices in heightfield 
-	void updateVerticesInHF(Triangle& tri, float mass)
+	void updateVerticesInHF(Triangle& tri, float mass, bool& updated)
 	{
 		glm::vec3 v0, v1, v2;
 		float d0, d1, d2, H3, H;
@@ -604,6 +615,7 @@ public:
 			SetHeightfieldAt(floor(v0.x / m_CellSize[0]), floor(v0.z / m_CellSize[1]), d0);
 			SetHeightfieldAt(floor(v1.x / m_CellSize[0]), floor(v1.z / m_CellSize[1]), d1);
 			SetHeightfieldAt(floor(v2.x / m_CellSize[0]), floor(v2.z / m_CellSize[1]), d2);
+			updated = true;
 		}
 		//deposition
 		else if (H > 0.0f)
@@ -651,6 +663,7 @@ public:
 			SetHeightfieldAt(floor(v0.x / m_CellSize[0]), floor(v0.z / m_CellSize[1]), d0);
 			SetHeightfieldAt(floor(v1.x / m_CellSize[0]), floor(v1.z / m_CellSize[1]), d1);
 			SetHeightfieldAt(floor(v2.x / m_CellSize[0]), floor(v2.z / m_CellSize[1]), d2);
+			updated = true;
 		}
 	}
 

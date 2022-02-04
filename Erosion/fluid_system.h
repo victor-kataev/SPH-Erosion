@@ -14,7 +14,6 @@
 typedef unsigned int uint;
 
 
-#define UI_DEBUG
 
 
 

@@ -6,10 +6,15 @@
 #include <vector>
 
 
-#define SEDIMENTATION_DISPLAY_FLAG	0x01
-#define DEPOSITION_DISPLAY_FLAG		0x01 << 1
-#define EROSION_DISPLAY_FLAG		0x01 << 2
-#define SEDIMENT_FLOW_DISPLAY_FLAG	0x01 << 3
+#define UI_DEBUG
+
+
+
+#define SEDIMENTATION_DISPLAY_FLAG		0x01
+#define DEPOSITION_DISPLAY_FLAG			0x01 << 1
+#define EROSION_DISPLAY_FLAG			0x01 << 2
+#define SEDIMENT_FLOW_DISPLAY_FLAG		0x01 << 3
+#define CELLS_DISPLAY_FLAG				0x01 << 4
 
 
 
@@ -31,6 +36,12 @@ struct PPInteraction
 	float dC;
 	FluidParticleLight particle1;
 	FluidParticleLight particle2;
+};
+
+struct CellData
+{
+	glm::vec2 cell;
+	std::pair<float, float> triangleMass; //first - ABC, second - AABC
 };
 
 
@@ -130,6 +141,20 @@ public:
 		m_PostErosion[ij] = { ij, dC, p1, p2 };
 	}
 
+	void CellsInit()
+	{
+		m_Cells.clear();
+	}
+
+	void PushBackCell(const glm::vec2& cell, std::pair<float, float> triangleMass)
+	{
+		CellData cd;
+		cd.cell = cell;
+		cd.triangleMass = triangleMass;
+
+		m_Cells.push_back(cd);
+	}
+
 	void DisplayDebugWindow(uint8_t display_flags) const
 	{
 		ImGui::Begin("Erosion Debugger");
@@ -141,6 +166,8 @@ public:
 			displaySedimentFlow();
 		if (EROSION_DISPLAY_FLAG & display_flags)
 			displayErosion();
+		if (CELLS_DISPLAY_FLAG & display_flags)
+			displayCells();
 		ImGui::End();
 	}
 
@@ -195,6 +222,7 @@ private:
 	std::vector<PPInteraction> m_PostErosion;
 	std::vector<PPInteraction> m_PostSedimentFlowSphBoundary;
 	std::vector<PPInteraction> m_PostSedimentFlowSphSph;
+	std::vector<CellData> m_Cells;
 
 	void displaySedimentation() const
 	{
@@ -359,6 +387,23 @@ private:
 				ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
 				ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
 				ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+				ImGui::TreePop();
+			}
+		}
+	}
+
+	void displayCells() const
+	{
+		if (!ImGui::CollapsingHeader("CELLS"))
+			return;
+
+		for (int i = 0; i < m_Cells.size(); i++)
+		{
+			const auto& data = m_Cells[i];
+			if (ImGui::TreeNode((void*)(intptr_t)i, "(%d, %d)", (int)data.cell[0], (int)data.cell[1]))
+			{
+				ImGui::Text("ABC mass: %.15f", data.triangleMass.first);
+				ImGui::Text("AABC mass: %.15f", data.triangleMass.second);
 				ImGui::TreePop();
 			}
 		}
