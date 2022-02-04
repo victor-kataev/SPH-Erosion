@@ -70,18 +70,34 @@ public:
 		m_PostSedimentation[ij] = { ij, dC, p1, p2 };
 	}
 
+	void PushBackPostDeposition(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp)
+	{
+		FluidParticleLight p1, p2;
+		p1.id = fp.Id;
+		p1.sedim = fp.sedim;
+		p1.sedim_delta = fp.sedim_delta;
+		p1.sedim_ratio = fp.sedim_ratio;
+
+		p2.id = bp.Id;
+		p2.dM = bp.dM;
+
+		m_PostDeposition[ij] = { ij, dC, p1, p2 };
+	}
+
 	void DisplayDebugWindow(uint8_t display_flags) const
 	{
 		ImGui::Begin("Erosion Debugger");
 		if (DEBUG_SEDIMENTATION_DISPLAY_FLAG & display_flags)
 			displaySedimentation();
+		if (DEBUG_DEPOSITION_DISPLAY_FLAG & display_flags)
+			displayDeposition();
 		ImGui::End();
 	}
 
-	void ClearBuffers()
-	{
-		m_PostSedimentation.clear();
-	}
+	//void ClearBuffers()
+	//{
+	//	m_PostSedimentation.clear();
+	//}
 
 	void PostSedimentationBufferInit(int size)
 	{
@@ -89,10 +105,16 @@ public:
 		m_PostSedimentation.resize(size);
 	}
 
-	std::vector<PPInteraction>& GetPostSedimentationBuffer()
+	void PostDepositionBufferInit(int size)
 	{
-		return m_PostSedimentation;
+		m_PostDeposition.clear();
+		m_PostDeposition.resize(size);
 	}
+
+	//std::vector<PPInteraction>& GetPostSedimentationBuffer()
+	//{
+	//	return m_PostSedimentation;
+	//}
 
 
 private:
@@ -100,10 +122,11 @@ private:
 	
 
 	std::vector<PPInteraction> m_PostSedimentation;
+	std::vector<PPInteraction> m_PostDeposition;
 
 	void displaySedimentation() const
 	{
-		if (!ImGui::CollapsingHeader("Post sedimentation"))
+		if (!ImGui::CollapsingHeader("Post SEDIMENTATION"))
 			return;
 
 		for (int i = 0; i < m_PostSedimentation.size(); i++)
@@ -112,17 +135,49 @@ private:
 			if (ImGui::TreeNode((void*)(intptr_t)i, "dC[%d]", i))
 			{
 				//ImGui::Text("ij: %d", data.ij);
-				ImGui::Text("dC: %f", data.dC);
+				ImGui::Text("dC: %.15f", data.dC);
 				ImGui::Text("particle_1");
 				ImGui::Text("\tid: %d", data.particle1.id);
-				ImGui::Text("\tsedim: %d", data.particle1.sedim);
-				ImGui::Text("\tsedim_delta: %d", data.particle1.sedim_delta);
-				ImGui::Text("\tsedim_ratio: %d", data.particle1.sedim_ratio);
+				ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+				ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+				ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
 				ImGui::Text("particle_2");
 				ImGui::Text("\tid: %d", data.particle2.id);
-				ImGui::Text("\tsedim: %d", data.particle2.sedim);
-				ImGui::Text("\tsedim_delta: %d", data.particle2.sedim_delta);
-				ImGui::Text("\tsedim_ratio: %d", data.particle2.sedim_ratio);
+				ImGui::Text("\tsedim: %.10f", data.particle2.sedim);
+				ImGui::Text("\tsedim_delta: %.15f", data.particle2.sedim_delta);
+				ImGui::Text("\tsedim_ratio: %.10f", data.particle2.sedim_ratio);
+				ImGui::TreePop();
+			}
+		}
+	}
+
+	void displayDeposition() const
+	{
+		if (!ImGui::CollapsingHeader("Post DEPOSITION"))
+			return;
+
+		for (int i = 0; i < m_PostDeposition.size(); i++)
+		{
+			const auto& data = m_PostDeposition[i];
+			const char* format;
+			if (data.dC == -777.0f)
+				format = "dC_BP[%d] (skipped) (sedim)";
+			if (data.dC == -666.0f)
+				format = "dC_BP[%d] (skipped) (settling)";
+			else
+				format = "dC_BP[%d]";
+			if (ImGui::TreeNode((void*)(intptr_t)i, format, i))
+			{
+				//ImGui::Text("ij: %d", data.ij);
+				ImGui::Text("dC_BP: %.15f (%e)", data.dC, data.dC);
+				ImGui::Text("fluid_part");
+				ImGui::Text("\tid: %d", data.particle1.id);
+				ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+				ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+				ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+				ImGui::Text("boundary_part");
+				ImGui::Text("\tid: %d", data.particle2.id);
+				ImGui::Text("\tdM: %.15f", data.particle2.dM);
 				ImGui::TreePop();
 			}
 		}

@@ -219,7 +219,7 @@ int main()
 
 #ifdef UI_DEBUG
         if(debugWndwOpened)
-            Debugger::Get()->DisplayDebugWindow(DEBUG_SEDIMENTATION_DISPLAY_FLAG);
+            Debugger::Get()->DisplayDebugWindow(DEBUG_SEDIMENTATION_DISPLAY_FLAG | DEBUG_DEPOSITION_DISPLAY_FLAG);
         //if(!pause)
             //Debugger::Get()->ClearBuffers();
 #endif

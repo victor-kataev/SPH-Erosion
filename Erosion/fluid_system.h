@@ -456,7 +456,7 @@ private:
 	void clearBuffers()
 	{
 		m_FluidsOfBoundary.clear();
-		//m_BParticles.clear();
+		//m_BParticles.clear(); //in FluidSystemSPH::Draw()
 		dC.clear();
 		dC_BP.clear();
 	}
@@ -508,6 +508,9 @@ private:
 				FluidParticle& fp = m_Particles[fp_idx];
 				if (fp.sedim <= 0.0f)
 				{
+#ifdef UI_DEBUG
+					Debugger::Get()->PushBackPostDeposition(ij, -777.0f, fp, bp); //-777 = skipped
+#endif
 					ij++;
 					continue;
 				}
@@ -530,8 +533,17 @@ private:
 					dC_BP[ij] = MASS * fp.sedim / fp.Density;
 					dC_BP[ij] *= -v * fGradCubic;
 					fp.sedim_delta += dC_BP[ij];
+#ifdef UI_DEBUG
+					Debugger::Get()->PushBackPostDeposition(ij, dC_BP[ij], fp, bp);
+#endif
 					assert(dC_BP[ij] <= 0.0f);
 				}
+#ifdef UI_DEBUG
+				else
+				{
+					Debugger::Get()->PushBackPostDeposition(ij, -666.0f, fp, bp);
+				}
+#endif
 				ij++;
 			}
 		}
@@ -778,6 +790,9 @@ private:
 		for (const auto& fparts : m_FluidsOfBoundary)
 			size += fparts.second.size();
 		dC_BP.resize(size);
+#ifdef UI_DEBUG
+		Debugger::Get()->PostDepositionBufferInit(size);
+#endif
 	}
 
 	//leap-frog + collision handling
