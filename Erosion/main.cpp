@@ -40,6 +40,8 @@ bool disabled = true;
 bool debugWndwOpened = false;
 bool debugWndwPressed = false;
 bool pressed_before = false;
+bool pause = false;
+
 
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -196,8 +198,8 @@ int main()
         }
 
         
-        
-        fluidsph.Run(grid);// simulation
+        if(!pause)
+            fluidsph.Run(grid);// simulation
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 1000.0f);
         glm::mat4 view = camera.GetViewMatrix();
@@ -210,13 +212,16 @@ int main()
 
         grid.Draw(shader);
         fluidsph.Draw(shader, g_part_id);
-        fluidsph.AdvanceTime();
+
+        if(!pause)
+            fluidsph.AdvanceTime();
 
 
 #ifdef UI_DEBUG
         if(debugWndwOpened)
-            Debugger::Get()->DisplayDebugWindow(DEBUG_SEDIMENTATION_FLAG);
-        Debugger::Get()->ClearBuffers();
+            Debugger::Get()->DisplayDebugWindow(DEBUG_SEDIMENTATION_DISPLAY_FLAG);
+        //if(!pause)
+            //Debugger::Get()->ClearBuffers();
 #endif
 
         UIend();
@@ -265,7 +270,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 
 
-bool pause = false;
+bool pause_before = false;
+
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -368,14 +374,16 @@ void processInput(GLFWwindow* window)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
-        pause = true;
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE && pause)
+        pause_before = true;
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE && pause_before)
     {
-        if (fluidsph.GetDeltaTime() == 0)
-            fluidsph.SetDeltaTime(0.01f);
-        else
-            fluidsph.SetDeltaTime(0.0f);
-        pause = false;
+        //if (fluidsph.GetDeltaTime() == 0)
+        //    fluidsph.SetDeltaTime(0.01f);
+        //else
+        //    fluidsph.SetDeltaTime(0.0f);
+        //pause = false;
+        pause = !pause;
+        pause_before = false;
     }
 
     if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)

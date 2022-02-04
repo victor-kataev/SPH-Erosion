@@ -6,9 +6,9 @@
 #include <vector>
 
 
-#define DEBUG_SEDIMENTATION_FLAG	0x01
-#define DEBUG_DEPOSITION_FLAG		0x01 << 1
-#define DEBUG_EROSION_FLAG			0x01 << 2
+#define DEBUG_SEDIMENTATION_DISPLAY_FLAG	0x01
+#define DEBUG_DEPOSITION_DISPLAY_FLAG		0x01 << 1
+#define DEBUG_EROSION_DISPLAY_FLAG			0x01 << 2
 
 
 
@@ -70,10 +70,10 @@ public:
 		m_PostSedimentation[ij] = { ij, dC, p1, p2 };
 	}
 
-	void DisplayDebugWindow(uint8_t debug_flags) const
+	void DisplayDebugWindow(uint8_t display_flags) const
 	{
 		ImGui::Begin("Erosion Debugger");
-		if (debug_flags & DEBUG_SEDIMENTATION_FLAG)
+		if (DEBUG_SEDIMENTATION_DISPLAY_FLAG & display_flags)
 			displaySedimentation();
 		ImGui::End();
 	}
@@ -85,6 +85,7 @@ public:
 
 	void PostSedimentationBufferInit(int size)
 	{
+		m_PostSedimentation.clear();
 		m_PostSedimentation.resize(size);
 	}
 
@@ -110,9 +111,18 @@ private:
 			const auto& data = m_PostSedimentation[i];
 			if (ImGui::TreeNode((void*)(intptr_t)i, "dC[%d]", i))
 			{
-				ImGui::Text("ij: %d", data.ij);
-				ImGui::Text("dC: %d", data.dC);
-				ImGui::Text("part1_id: %d", data.particle1.id);
+				//ImGui::Text("ij: %d", data.ij);
+				ImGui::Text("dC: %f", data.dC);
+				ImGui::Text("particle_1");
+				ImGui::Text("\tid: %d", data.particle1.id);
+				ImGui::Text("\tsedim: %d", data.particle1.sedim);
+				ImGui::Text("\tsedim_delta: %d", data.particle1.sedim_delta);
+				ImGui::Text("\tsedim_ratio: %d", data.particle1.sedim_ratio);
+				ImGui::Text("particle_2");
+				ImGui::Text("\tid: %d", data.particle2.id);
+				ImGui::Text("\tsedim: %d", data.particle2.sedim);
+				ImGui::Text("\tsedim_delta: %d", data.particle2.sedim_delta);
+				ImGui::Text("\tsedim_ratio: %d", data.particle2.sedim_ratio);
 				ImGui::TreePop();
 			}
 		}

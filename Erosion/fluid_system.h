@@ -1041,6 +1041,7 @@ private:
 			if(!p_neighbors.empty())
 				all_neighb_cnt += p_neighbors.size();
 		dC.resize(all_neighb_cnt);
+		memset(dC.data(), 0, dC.size()); //redundant?
 #ifdef UI_DEBUG
 		Debugger::Get()->PostSedimentationBufferInit(all_neighb_cnt);
 #endif
