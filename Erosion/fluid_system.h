@@ -519,7 +519,7 @@ private:
 				if (fp.sedim <= 0.0f)
 				{
 #ifdef UI_DEBUG
-					Debugger::Get()->PushBackPostDeposition(ij, -777.0f, fp, bp); //-777 = skipped
+					Debugger::Get()->DepositionParticleInteraction(ij, -777.0f, fp, bp); //-777 = skipped
 #endif
 					ij++;
 					continue;
@@ -543,20 +543,28 @@ private:
 					dC_BP[ij] = MASS * fp.sedim / fp.Density;
 					dC_BP[ij] *= -v * fGradCubic;
 					fp.sedim_delta += dC_BP[ij];
-#ifdef UI_DEBUG
-					Debugger::Get()->PushBackPostDeposition(ij, dC_BP[ij], fp, bp);
-#endif
 					assert(dC_BP[ij] <= 0.0f);
+#ifdef UI_DEBUG
+					Debugger::Get()->DepositionParticleInteraction(ij, dC_BP[ij], fp, bp);
+#endif
 				}
 #ifdef UI_DEBUG
 				else
 				{
-					Debugger::Get()->PushBackPostDeposition(ij, -666.0f, fp, bp);
+					Debugger::Get()->DepositionParticleInteraction(ij, -666.0f, fp, bp);
 				}
 #endif
 				ij++;
 			}
 		}
+
+#ifdef UI_DEBUG
+		for (int i = 0; i < visible_num; i++)
+		{
+			Debugger::Get()->InsertFluidParticleAfterDeposition(m_Particles[i]);
+		}
+#endif
+
 	}
 
 	void computeSedimOutputRatios()
@@ -596,7 +604,7 @@ private:
 				if (i == j)
 				{
 #ifdef UI_DEBUG
-					Debugger::Get()->PushBackPostSedimentFlowSphSph(ij, -777.0f, m_Particles[i], m_Particles[i]);
+					Debugger::Get()->SedimentFlowSphSphInteraction(ij, -777.0f, m_Particles[i], m_Particles[i]);
 #endif
 					ij++;
 					continue;
@@ -613,7 +621,7 @@ private:
 				fp.sedim_delta += dC[ij];
 				neigh.sedim_delta -= dC[ij];
 #ifdef UI_DEBUG
-				Debugger::Get()->PushBackPostSedimentFlowSphSph(ij, dC[ij], fp, neigh);
+				Debugger::Get()->SedimentFlowSphSphInteraction(ij, dC[ij], fp, neigh);
 #endif
 				ij++;
 			}
@@ -634,13 +642,13 @@ private:
 					//bp.dM -= C_2_MASS(dC_BP[ij]);
 					bp.dM -= SOLID_DENSITY * FLUID_MASS / fp.Density * dC_BP[ij];
 #ifdef UI_DEBUG
-					Debugger::Get()->PushBackPostSedimentFlowSphBoundary(ij, dC_BP[ij], fp, bp);
+					Debugger::Get()->SedimentFlowSphBoundaryInteraction(ij, dC_BP[ij], fp, bp);
 #endif
 				}
 #ifdef UI_DEBUG
 				else
 				{
-					Debugger::Get()->PushBackPostSedimentFlowSphBoundary(ij, -777.0f, fp, bp);
+					Debugger::Get()->SedimentFlowSphBoundaryInteraction(ij, -777.0f, fp, bp);
 				}
 #endif
 				ij++;

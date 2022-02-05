@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <map>
 
 #define UI_DEBUG
 
@@ -16,6 +17,7 @@
 #define SEDIMENT_FLOW_DISPLAY_FLAG				0x01 << 3
 #define CELLS_DISPLAY_FLAG						0x01 << 4
 #define PARTICLES_SEDIMENTATION_DISPLAY_FLAG	0x01 << 5
+#define PARTICLES_DEPOSITION_DISPLAY_FLAG		0x01 << 6
 
 
 
@@ -45,7 +47,7 @@ struct CellData
 	std::pair<float, float> triangleMass; //first - ABC, second - AABC
 };
 
-struct AfterSedimentationData
+struct ParticleData
 {
 	FluidParticleLight fp;
 	std::vector<int> dCs;
@@ -90,7 +92,7 @@ public:
 		m_FluidParticlesAfterSedimentation[fp1.Id].dCs.push_back(ij);
 	}
 
-	void PushBackPostDeposition(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp)
+	void DepositionParticleInteraction(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp)
 	{
 		FluidParticleLight p1, p2;
 		p1.id = fp.Id;
@@ -102,9 +104,10 @@ public:
 		p2.dM = bp.dM;
 
 		m_PostDeposition[ij] = { ij, dC, p1, p2 };
+		m_FluidParticlesAfterDeposition[fp.Id].dCs.push_back(ij);
 	}
 
-	void PushBackPostSedimentFlowSphBoundary(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp)
+	void SedimentFlowSphBoundaryInteraction(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp)
 	{
 		FluidParticleLight p1, p2;
 		p1.id = fp.Id;
@@ -118,7 +121,7 @@ public:
 		m_PostSedimentFlowSphBoundary[ij] = { ij, dC, p1, p2 };
 	}
 	
-	void PushBackPostSedimentFlowSphSph(int ij, float dC, const FluidParticle& fp1, const FluidParticle& fp2)
+	void SedimentFlowSphSphInteraction(int ij, float dC, const FluidParticle& fp1, const FluidParticle& fp2)
 	{
 		FluidParticleLight p1, p2;
 		p1.id = fp1.Id;
@@ -174,6 +177,17 @@ public:
 		m_FluidParticlesAfterSedimentation[fp.Id].fp = p;
 	}
 
+	void InsertFluidParticleAfterDeposition(const FluidParticle& fp)
+	{
+		FluidParticleLight p;
+		p.id = fp.Id;
+		p.sedim = fp.sedim;
+		p.sedim_delta = fp.sedim_delta;
+		p.sedim_ratio = fp.sedim_ratio;
+
+		m_FluidParticlesAfterDeposition[fp.Id].fp = p;
+	}
+
 	void DisplayDebugWindow(uint8_t display_flags) const
 	{
 		ImGui::Begin("Erosion Debugger");
@@ -194,6 +208,8 @@ public:
 		ImGui::Text("--Particles--");
 		if (PARTICLES_SEDIMENTATION_DISPLAY_FLAG & display_flags)
 			displayParticlesSedimentation();
+		if (PARTICLES_DEPOSITION_DISPLAY_FLAG & display_flags)
+			displayParticlesDeposition();
 
 		ImGui::End();
 	}
@@ -217,6 +233,9 @@ public:
 	{
 		m_PostDeposition.clear();
 		m_PostDeposition.resize(size);
+
+		//todo
+		m_FluidParticlesAfterDeposition.clear();
 	}
 
 	void PostSedimentFlowSphSphInit(int size)
@@ -254,7 +273,12 @@ private:
 	std::vector<PPInteraction> m_PostSedimentFlowSphSph;
 	std::vector<CellData> m_Cells;
 
-	std::unordered_map<unsigned long, AfterSedimentationData> m_FluidParticlesAfterSedimentation;
+	std::unordered_map<unsigned long, ParticleData> m_FluidParticlesAfterSedimentation;
+	std::map<unsigned long, ParticleData> m_FluidParticlesAfterDeposition;
+	std::unordered_map<unsigned long, ParticleData> m_FluidParticlesAfterSedimentFlow;
+	std::unordered_map<unsigned long, ParticleData> m_BoundaryParticlesAfterSedimentFlow;
+	std::unordered_map<unsigned long, ParticleData> m_FluidParticlesAfterErosion;
+	std::unordered_map<unsigned long, ParticleData> m_BoundaryParticlesAfterErosion;
 
 	void displayParticlesSedimentation() const
 	{
@@ -269,19 +293,21 @@ private:
 				ImGui::Text("sedim: %.15f", part.second.fp.sedim);
 				ImGui::Text("sedim_delta: %.15f", part.second.fp.sedim_delta);
 				ImGui::Text("sedim_ratio: %f", part.second.fp.sedim_ratio);
+				
 				for (int i = 0; i < part.second.dCs.size(); i++)
 				{
 					const auto& dC_idx = part.second.dCs[i];
-					if (ImGui::TreeNode((void*)(intptr_t)i, "dC[%d]", dC_idx))
+					const auto& data = m_PostSedimentation[dC_idx];
+					const char* format;
+					if (data.dC == -777.0f)
+						format = "dC[%d] (skipped)";
+					else
+						format = "dC[%d]";
+					if (ImGui::TreeNode((void*)(intptr_t)i, format, dC_idx))
 					{
-						const auto& data = m_PostSedimentation[dC_idx];
-						const char* format;
-						if (data.dC == -777.0f)
-							format = "dC[%d] (skipped)";
-						else
-							format = "dC[%d]";
+						
 						ImGui::Text("ij: %d", data.ij);
-						ImGui::Text("dC: %.15f", data.dC);
+						ImGui::Text("[dC]: %.15f", data.dC);
 						ImGui::Text("particle_1");
 						ImGui::Text("\tid: %d", data.particle1.id);
 						ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
@@ -299,6 +325,52 @@ private:
 				ImGui::TreePop();
 			}
 		}
+	}
+
+	void displayParticlesDeposition() const
+	{
+		if (!ImGui::CollapsingHeader("After DEPOSITION"))
+			return;
+
+		for (const auto& part : m_FluidParticlesAfterDeposition)
+		{
+			if (ImGui::TreeNode((void*)(intptr_t)part.first, "(%d)", part.first))
+			{
+				ImGui::Text("id: %d", part.second.fp.id);
+				ImGui::Text("sedim: %.15f", part.second.fp.sedim);
+				ImGui::Text("sedim_delta: %.15f", part.second.fp.sedim_delta);
+				ImGui::Text("sedim_ratio: %f", part.second.fp.sedim_ratio);
+				
+				for (int i = 0; i < part.second.dCs.size(); i++)
+				{
+					const auto& dC_idx = part.second.dCs[i];
+					const auto& data = m_PostDeposition[dC_idx];
+					const char* format;
+					if (data.dC == -777.0f)
+						format = "dC_BP[%d] (skipped) (sedim)";
+					if (data.dC == -666.0f)
+						format = "dC_BP[%d] (skipped) (settling)";
+					else
+						format = "dC_BP[%d]";
+					if (ImGui::TreeNode((void*)(intptr_t)i, format, dC_idx))
+					{
+						ImGui::Text("ij: %d", data.ij);
+						ImGui::Text("[dC_BP]: %.15f (%e)", data.dC, data.dC);
+						ImGui::Text("boundary_part");
+						ImGui::Text("\tid: %d", data.particle2.id);
+						ImGui::Text("\tdM: %.15f", data.particle2.dM);
+						ImGui::Text("fluid_part");
+						ImGui::Text("\tid: %d", data.particle1.id);
+						ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+						ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+						ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+		}
+
 	}
 
 	void displaySedimentation() const
