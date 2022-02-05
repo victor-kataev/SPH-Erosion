@@ -223,7 +223,7 @@ int main()
                                                 DEPOSITION_DISPLAY_FLAG     | 
                                                 SEDIMENT_FLOW_DISPLAY_FLAG  |
                                                 EROSION_DISPLAY_FLAG        | 
-                                                CELLS_DISPLAY_FLAG);
+                                                CELLS_DISPLAY_FLAG | PARTICLES_SEDIMENTATION_DISPLAY_FLAG);
         //if(!pause)
             //Debugger::Get()->ClearBuffers();
 #endif

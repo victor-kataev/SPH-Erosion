@@ -671,7 +671,7 @@ private:
 				if (i == j)
 				{
 #ifdef UI_DEBUG
-					Debugger::Get()->PushBackPostSedimentation(ij, -777.0f, m_Particles[i], m_Particles[i]);// -777 = skipped
+					Debugger::Get()->SedimentationParticleInteraction(ij, -777.0f, m_Particles[i], m_Particles[i]);// -777 = skipped
 #endif
 					ij++;
 					continue;
@@ -720,13 +720,20 @@ private:
 				else
 					neigh.sedim_delta -= dC[ij];
 #ifdef UI_DEBUG
-				Debugger::Get()->PushBackPostSedimentation(ij, dC[ij], currPart, neigh);
+				Debugger::Get()->SedimentationParticleInteraction(ij, dC[ij], currPart, neigh); //one interaciton
 #endif
 				ij++;
 				assert(!isnan(currPart.sedim_delta));
 				assert(!isnan(neigh.sedim_delta));
 			}
 		}
+
+#ifdef UI_DEBUG
+		for (int i = 0; i < visible_num; i++)
+		{
+			Debugger::Get()->InsertFluidParticleAfterSedimentation(m_Particles[i]);
+		}
+#endif
 	}
 
 	//seed the cell if needed, extract nearest boundaries and compute no-slip, no-penetration

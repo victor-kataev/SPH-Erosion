@@ -4,17 +4,18 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 #include <vector>
-
+#include <unordered_map>
 
 #define UI_DEBUG
 
 
 
-#define SEDIMENTATION_DISPLAY_FLAG		0x01
-#define DEPOSITION_DISPLAY_FLAG			0x01 << 1
-#define EROSION_DISPLAY_FLAG			0x01 << 2
-#define SEDIMENT_FLOW_DISPLAY_FLAG		0x01 << 3
-#define CELLS_DISPLAY_FLAG				0x01 << 4
+#define SEDIMENTATION_DISPLAY_FLAG				0x01
+#define DEPOSITION_DISPLAY_FLAG					0x01 << 1
+#define EROSION_DISPLAY_FLAG					0x01 << 2
+#define SEDIMENT_FLOW_DISPLAY_FLAG				0x01 << 3
+#define CELLS_DISPLAY_FLAG						0x01 << 4
+#define PARTICLES_SEDIMENTATION_DISPLAY_FLAG	0x01 << 5
 
 
 
@@ -44,6 +45,12 @@ struct CellData
 	std::pair<float, float> triangleMass; //first - ABC, second - AABC
 };
 
+struct AfterSedimentationData
+{
+	FluidParticleLight fp;
+	std::vector<int> dCs;
+};
+
 
 //an attempt to produce a UI debugger
 //singleton
@@ -66,7 +73,7 @@ public:
 	}
 
 	//in sedimentation only dC and sedim_delta are changed
-	void PushBackPostSedimentation(int ij, float dC, const FluidParticle& fp1, const FluidParticle& fp2)
+	void SedimentationParticleInteraction(int ij, float dC, const FluidParticle& fp1, const FluidParticle& fp2)
 	{
 		FluidParticleLight p1, p2;
 		p1.id = fp1.Id;
@@ -80,6 +87,7 @@ public:
 		p2.sedim_ratio = fp2.sedim_ratio;
 
 		m_PostSedimentation[ij] = { ij, dC, p1, p2 };
+		m_FluidParticlesAfterSedimentation[fp1.Id].dCs.push_back(ij);
 	}
 
 	void PushBackPostDeposition(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp)
@@ -155,9 +163,23 @@ public:
 		m_Cells.push_back(cd);
 	}
 
+	void InsertFluidParticleAfterSedimentation(const FluidParticle& fp)
+	{
+		FluidParticleLight p;
+		p.id = fp.Id;
+		p.sedim = fp.sedim;
+		p.sedim_delta = fp.sedim_delta;
+		p.sedim_ratio = fp.sedim_ratio;
+
+		m_FluidParticlesAfterSedimentation[fp.Id].fp = p;
+	}
+
 	void DisplayDebugWindow(uint8_t display_flags) const
 	{
 		ImGui::Begin("Erosion Debugger");
+
+		ImGui::Text("--Pairs Interaction--");
+
 		if (SEDIMENTATION_DISPLAY_FLAG & display_flags)
 			displaySedimentation();
 		if (DEPOSITION_DISPLAY_FLAG & display_flags)
@@ -168,6 +190,11 @@ public:
 			displayErosion();
 		if (CELLS_DISPLAY_FLAG & display_flags)
 			displayCells();
+
+		ImGui::Text("--Particles--");
+		if (PARTICLES_SEDIMENTATION_DISPLAY_FLAG & display_flags)
+			displayParticlesSedimentation();
+
 		ImGui::End();
 	}
 
@@ -180,6 +207,9 @@ public:
 	{
 		m_PostSedimentation.clear();
 		m_PostSedimentation.resize(size);
+
+		//todo
+		m_FluidParticlesAfterSedimentation.clear();
 	}
 
 
@@ -223,6 +253,53 @@ private:
 	std::vector<PPInteraction> m_PostSedimentFlowSphBoundary;
 	std::vector<PPInteraction> m_PostSedimentFlowSphSph;
 	std::vector<CellData> m_Cells;
+
+	std::unordered_map<unsigned long, AfterSedimentationData> m_FluidParticlesAfterSedimentation;
+
+	void displayParticlesSedimentation() const
+	{
+		if (!ImGui::CollapsingHeader("After SEDIMENTATION"))
+			return;
+
+		for (const auto& part : m_FluidParticlesAfterSedimentation)
+		{
+			if (ImGui::TreeNode((void*)(intptr_t)part.first, "(%d)", part.first))
+			{
+				ImGui::Text("id: %d", part.second.fp.id);
+				ImGui::Text("sedim: %.15f", part.second.fp.sedim);
+				ImGui::Text("sedim_delta: %.15f", part.second.fp.sedim_delta);
+				ImGui::Text("sedim_ratio: %f", part.second.fp.sedim_ratio);
+				for (int i = 0; i < part.second.dCs.size(); i++)
+				{
+					const auto& dC_idx = part.second.dCs[i];
+					if (ImGui::TreeNode((void*)(intptr_t)i, "dC[%d]", dC_idx))
+					{
+						const auto& data = m_PostSedimentation[dC_idx];
+						const char* format;
+						if (data.dC == -777.0f)
+							format = "dC[%d] (skipped)";
+						else
+							format = "dC[%d]";
+						ImGui::Text("ij: %d", data.ij);
+						ImGui::Text("dC: %.15f", data.dC);
+						ImGui::Text("particle_1");
+						ImGui::Text("\tid: %d", data.particle1.id);
+						ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+						ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+						ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+						ImGui::Text("particle_2");
+						ImGui::Text("\tid: %d", data.particle2.id);
+						ImGui::Text("\tsedim: %.10f", data.particle2.sedim);
+						ImGui::Text("\tsedim_delta: %.15f", data.particle2.sedim_delta);
+						ImGui::Text("\tsedim_ratio: %.10f", data.particle2.sedim_ratio);
+
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+		}
+	}
 
 	void displaySedimentation() const
 	{
