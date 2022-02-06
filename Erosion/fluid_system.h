@@ -480,7 +480,7 @@ private:
 				if (minVrel > vRel)
 				{
 #ifdef UI_DEBUG
-					Debugger::Get()->PushBackPostErosion(ij, -666.0f, fp, bp, m);
+					Debugger::Get()->InsertPostErosionInteraction(ij, -666.0f, fp, bp, m);
 #endif
 					ij++;
 					continue;
@@ -494,11 +494,19 @@ private:
 				fp.sedim_delta += 1.0f / (SOLID_DENSITY * FLUID_MASS / fp.Density) * dMi; //add sediment to  sph particle
 				assert(!isnan(fp.sedim_delta));
 #ifdef UI_DEBUG
-				Debugger::Get()->PushBackPostErosion(ij, -777.0f, fp, bp, m);
+				Debugger::Get()->InsertPostErosionInteraction(ij, -777.0f, fp, bp, m);
 #endif
 				ij++;
 			}
+#ifdef UI_DEBUG
+			Debugger::Get()->InsertBoundaryParticleAfterErosion(bp);
+#endif
 		}
+
+#ifdef UI_DEBUG
+		for(int i = 0; i < m_Particles.size(); i++)
+			Debugger::Get()->InsertFluidParticleAfterErosion(m_Particles[i]);
+#endif
 	}
 
 	void computeDeposition()
