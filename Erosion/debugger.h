@@ -18,6 +18,7 @@
 #define CELLS_DISPLAY_FLAG						0x01 << 4
 #define PARTICLES_SEDIMENTATION_DISPLAY_FLAG	0x01 << 5
 #define PARTICLES_DEPOSITION_DISPLAY_FLAG		0x01 << 6
+#define PARTICLES_SEDIMENT_FLOW_DISPLAY_FLAG	0x01 << 7
 
 
 
@@ -49,7 +50,7 @@ struct CellData
 
 struct ParticleData
 {
-	FluidParticleLight fp;
+	FluidParticleLight particle;
 	std::vector<int> dCs;
 };
 
@@ -119,6 +120,8 @@ public:
 		p2.dM = bp.dM;
 
 		m_PostSedimentFlowSphBoundary[ij] = { ij, dC, p1, p2 };
+		m_FluidParticlesAfterSedimentFlowSphBoundary[fp.Id].dCs.push_back(ij);
+		m_BoundaryParticlesAfterSedimentFlow[bp.Id].dCs.push_back(ij);
 	}
 	
 	void SedimentFlowSphSphInteraction(int ij, float dC, const FluidParticle& fp1, const FluidParticle& fp2)
@@ -135,6 +138,7 @@ public:
 		p2.sedim_ratio = fp2.sedim_ratio;
 
 		m_PostSedimentFlowSphSph[ij] = { ij, dC, p1, p2 };
+		m_FluidParticlesAfterSedimentFlowSphSph[fp1.Id].dCs.push_back(ij);
 	}
 
 	void PushBackPostErosion(int ij, float dC, const FluidParticle& fp, const FluidParticle& bp, float m)
@@ -174,7 +178,7 @@ public:
 		p.sedim_delta = fp.sedim_delta;
 		p.sedim_ratio = fp.sedim_ratio;
 
-		m_FluidParticlesAfterSedimentation[fp.Id].fp = p;
+		m_FluidParticlesAfterSedimentation[fp.Id].particle = p;
 	}
 
 	void InsertFluidParticleAfterDeposition(const FluidParticle& fp)
@@ -185,7 +189,38 @@ public:
 		p.sedim_delta = fp.sedim_delta;
 		p.sedim_ratio = fp.sedim_ratio;
 
-		m_FluidParticlesAfterDeposition[fp.Id].fp = p;
+		m_FluidParticlesAfterDeposition[fp.Id].particle = p;
+	}
+	
+	void InsertFluidParticleAfterSedimentFlowSphSph(const FluidParticle& fp)
+	{
+		FluidParticleLight p;
+		p.id = fp.Id;
+		p.sedim = fp.sedim;
+		p.sedim_delta = fp.sedim_delta;
+		p.sedim_ratio = fp.sedim_ratio;
+
+		m_FluidParticlesAfterSedimentFlowSphSph[fp.Id].particle = p;
+	}
+
+	void InsertFluidParticleAfterSedimentFlowSphBoundary(const FluidParticle& fp)
+	{
+		FluidParticleLight p;
+		p.id = fp.Id;
+		p.sedim = fp.sedim;
+		p.sedim_delta = fp.sedim_delta;
+		p.sedim_ratio = fp.sedim_ratio;
+
+		m_FluidParticlesAfterSedimentFlowSphBoundary[fp.Id].particle = p;
+	}
+	
+	void InsertBoundaryParticleAfterSedimentFlow(const FluidParticle& bp)
+	{
+		FluidParticleLight p;
+		p.id = bp.Id;
+		p.dM = bp.dM;
+
+		m_BoundaryParticlesAfterSedimentFlow[bp.Id].particle = p;
 	}
 
 	void DisplayDebugWindow(uint8_t display_flags) const
@@ -210,6 +245,8 @@ public:
 			displayParticlesSedimentation();
 		if (PARTICLES_DEPOSITION_DISPLAY_FLAG & display_flags)
 			displayParticlesDeposition();
+		if (PARTICLES_SEDIMENT_FLOW_DISPLAY_FLAG & display_flags)
+			displayParticlesSedimentFlow();
 
 		ImGui::End();
 	}
@@ -242,12 +279,19 @@ public:
 	{
 		m_PostSedimentFlowSphSph.clear();
 		m_PostSedimentFlowSphSph.resize(size);
+
+		//todo
+		m_FluidParticlesAfterSedimentFlowSphSph.clear();
 	}
 	
 	void PostSedimentFlowSphBoundaryInit(int size)
 	{
 		m_PostSedimentFlowSphBoundary.clear();
 		m_PostSedimentFlowSphBoundary.resize(size);
+
+		//todo
+		m_FluidParticlesAfterSedimentFlowSphBoundary.clear();
+		m_BoundaryParticlesAfterSedimentFlow.clear();
 	}
 
 	void PostErosionInit(int size)
@@ -273,12 +317,15 @@ private:
 	std::vector<PPInteraction> m_PostSedimentFlowSphSph;
 	std::vector<CellData> m_Cells;
 
-	std::unordered_map<unsigned long, ParticleData> m_FluidParticlesAfterSedimentation;
+	std::map<unsigned long, ParticleData> m_FluidParticlesAfterSedimentation;
 	std::map<unsigned long, ParticleData> m_FluidParticlesAfterDeposition;
-	std::unordered_map<unsigned long, ParticleData> m_FluidParticlesAfterSedimentFlow;
-	std::unordered_map<unsigned long, ParticleData> m_BoundaryParticlesAfterSedimentFlow;
-	std::unordered_map<unsigned long, ParticleData> m_FluidParticlesAfterErosion;
-	std::unordered_map<unsigned long, ParticleData> m_BoundaryParticlesAfterErosion;
+
+	std::map<unsigned long, ParticleData> m_FluidParticlesAfterSedimentFlowSphSph;
+	std::map<unsigned long, ParticleData> m_FluidParticlesAfterSedimentFlowSphBoundary;
+	std::map<unsigned long, ParticleData> m_BoundaryParticlesAfterSedimentFlow;
+	
+	std::map<unsigned long, ParticleData> m_FluidParticlesAfterErosion;
+	std::map<unsigned long, ParticleData> m_BoundaryParticlesAfterErosion;
 
 	void displayParticlesSedimentation() const
 	{
@@ -289,10 +336,10 @@ private:
 		{
 			if (ImGui::TreeNode((void*)(intptr_t)part.first, "(%d)", part.first))
 			{
-				ImGui::Text("id: %d", part.second.fp.id);
-				ImGui::Text("sedim: %.15f", part.second.fp.sedim);
-				ImGui::Text("sedim_delta: %.15f", part.second.fp.sedim_delta);
-				ImGui::Text("sedim_ratio: %f", part.second.fp.sedim_ratio);
+				ImGui::Text("id: %d", part.second.particle.id);
+				ImGui::Text("sedim: %.15f", part.second.particle.sedim);
+				ImGui::Text("sedim_delta: %.15f", part.second.particle.sedim_delta);
+				ImGui::Text("sedim_ratio: %f", part.second.particle.sedim_ratio);
 				
 				for (int i = 0; i < part.second.dCs.size(); i++)
 				{
@@ -336,10 +383,10 @@ private:
 		{
 			if (ImGui::TreeNode((void*)(intptr_t)part.first, "(%d)", part.first))
 			{
-				ImGui::Text("id: %d", part.second.fp.id);
-				ImGui::Text("sedim: %.15f", part.second.fp.sedim);
-				ImGui::Text("sedim_delta: %.15f", part.second.fp.sedim_delta);
-				ImGui::Text("sedim_ratio: %f", part.second.fp.sedim_ratio);
+				ImGui::Text("id: %d", part.second.particle.id);
+				ImGui::Text("sedim: %.15f", part.second.particle.sedim);
+				ImGui::Text("sedim_delta: %.15f", part.second.particle.sedim_delta);
+				ImGui::Text("sedim_ratio: %f", part.second.particle.sedim_ratio);
 				
 				for (int i = 0; i < part.second.dCs.size(); i++)
 				{
@@ -370,7 +417,143 @@ private:
 				ImGui::TreePop();
 			}
 		}
+	}
 
+	void displayParticlesSedimentFlow() const
+	{
+		if (!ImGui::CollapsingHeader("After SEDIMENT FLOW"))
+			return;
+
+		if (ImGui::TreeNode("sph-sph"))
+		{
+			for (const auto& pair: m_FluidParticlesAfterSedimentFlowSphSph)
+			{
+				if (ImGui::TreeNode((void*)(intptr_t)pair.first, "(%d)", pair.first))
+				{
+					ImGui::Text("id: %d", pair.second.particle.id);
+					ImGui::Text("sedim: %.15f", pair.second.particle.sedim);
+					ImGui::Text("sedim_delta: %.15f", pair.second.particle.sedim_delta);
+					ImGui::Text("sedim_ratio: %f", pair.second.particle.sedim_ratio);
+
+					for (int i = 0; i < pair.second.dCs.size(); i++)
+					{
+						int dC_idx = pair.second.dCs[i];
+						const auto& data = m_PostSedimentFlowSphSph[dC_idx];
+						const char* format;
+						if (data.dC == -777.0f)
+							format = "dC[%d] (skipped)";
+						else
+							format = "dC[%d]";
+
+						if (ImGui::TreeNode((void*)(intptr_t)i, format, i))
+						{
+							ImGui::Text("ij: %d", data.ij);
+							ImGui::Text("[[dC]]: %.15f", data.dC);
+							ImGui::Text("particle_1");
+							ImGui::Text("\tid: %d", data.particle1.id);
+							ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+							ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+							ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+							ImGui::Text("particle_2");
+							ImGui::Text("\tid: %d", data.particle2.id);
+							ImGui::Text("\tsedim: %.10f", data.particle2.sedim);
+							ImGui::Text("\tsedim_delta: %.15f", data.particle2.sedim_delta);
+							ImGui::Text("\tsedim_ratio: %.10f", data.particle2.sedim_ratio);
+							ImGui::TreePop();
+						}
+					}
+					ImGui::TreePop();
+				}
+			}
+			ImGui::TreePop();
+		}
+		
+		if (ImGui::TreeNode("sph-boundary"))
+		{
+			if (ImGui::TreeNode("sph"))
+			{
+				for (const auto& pair : m_FluidParticlesAfterSedimentFlowSphBoundary)
+				{
+					if (ImGui::TreeNode((void*)(intptr_t)pair.first, "(%d)", pair.first))
+					{
+						ImGui::Text("id: %d", pair.second.particle.id);
+						ImGui::Text("sedim: %.15f", pair.second.particle.sedim);
+						ImGui::Text("sedim_delta: %.15f", pair.second.particle.sedim_delta);
+						ImGui::Text("sedim_ratio: %f", pair.second.particle.sedim_ratio);
+
+						for (int i = 0; i < pair.second.dCs.size(); i++)
+						{
+							int dC_idx = pair.second.dCs[i];
+							const auto& data = m_PostSedimentFlowSphBoundary[dC_idx];
+							const char* format;
+							if (data.dC == -777.0f)
+								format = "dC_BP[%d] (skipped)";
+							else
+								format = "dC_BP[%d]";
+							if (ImGui::TreeNode((void*)(intptr_t)i, format, dC_idx))
+							{
+								ImGui::Text("ij: %d", data.ij);
+								ImGui::Text("[[dC_BP]]: %.15f (%e)", data.dC, data.dC);
+								ImGui::Text("boundary_part");
+								ImGui::Text("\tid: %d", data.particle2.id);
+								ImGui::Text("\tdM: %.15f", data.particle2.dM);
+								ImGui::Text("fluid_part");
+								ImGui::Text("\tid: %d", data.particle1.id);
+								ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+								ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+								ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+
+								ImGui::TreePop();
+							}
+						}
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNode("boundary"))
+			{
+				ImGui::Text("--Total-- %d", m_BoundaryParticlesAfterSedimentFlow.size());
+				for (const auto& pair : m_BoundaryParticlesAfterSedimentFlow)
+				{
+					if (ImGui::TreeNode((void*)(intptr_t)pair.first, "(%d)", pair.first))
+					{
+						ImGui::Text("id: %d", pair.second.particle.id);
+						ImGui::Text("dM: %.15f", pair.second.particle.dM);
+
+						for (int i = 0; i < pair.second.dCs.size(); i++)
+						{
+							int dC_idx = pair.second.dCs[i];
+							const auto& data = m_PostSedimentFlowSphBoundary[dC_idx];
+							const char* format;
+							if (data.dC == -777.0f)
+								format = "dC_BP[%d] (skipped)";
+							else
+								format = "dC_BP[%d]";
+							if (ImGui::TreeNode((void*)(intptr_t)i, format, dC_idx))
+							{
+								ImGui::Text("ij: %d", data.ij);
+								ImGui::Text("[[dC_BP]]: %.15f (%e)", data.dC, data.dC);
+								ImGui::Text("boundary_part");
+								ImGui::Text("\tid: %d", data.particle2.id);
+								ImGui::Text("\tdM: %.15f", data.particle2.dM);
+								ImGui::Text("fluid_part");
+								ImGui::Text("\tid: %d", data.particle1.id);
+								ImGui::Text("\tsedim: %.10f", data.particle1.sedim);
+								ImGui::Text("\tsedim_delta: %.15f", data.particle1.sedim_delta);
+								ImGui::Text("\tsedim_ratio: %.10f", data.particle1.sedim_ratio);
+
+								ImGui::TreePop();
+							}
+						}
+						ImGui::TreePop();
+					}
+				}
+				ImGui::TreePop();
+			}
+			ImGui::TreePop();
+		}
 	}
 
 	void displaySedimentation() const
@@ -485,9 +668,9 @@ private:
 				const auto& data = m_PostSedimentFlowSphBoundary[i];
 				const char* format;
 				if (data.dC == -777.0f)
-					format = "dC[%d] (skipped)";
+					format = "dC_BP[%d] (skipped)";
 				else
-					format = "dC[%d]";
+					format = "dC_BP[%d]";
 
 				if (ImGui::TreeNode((void*)(intptr_t)i, format, i))
 				{

@@ -625,6 +625,9 @@ private:
 #endif
 				ij++;
 			}
+#ifdef UI_DEBUG
+			Debugger::Get()->InsertFluidParticleAfterSedimentFlowSphSph(m_Particles[i]);
+#endif
 		}
 
 		//sph - boundary
@@ -653,7 +656,17 @@ private:
 #endif
 				ij++;
 			}
+#ifdef UI_DEBUG
+			Debugger::Get()->InsertBoundaryParticleAfterSedimentFlow(bp);
+#endif
 		}
+
+#ifdef UI_DEBUG
+		for (int i = 0; i < visible_num; i++)
+		{
+			Debugger::Get()->InsertFluidParticleAfterSedimentFlowSphBoundary(m_Particles[i]);
+		}
+#endif
 	}
 
 	//advecton + diffustion
