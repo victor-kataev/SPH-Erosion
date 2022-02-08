@@ -105,7 +105,7 @@ int main()
 
     //fluidsph.Initialize(103823);
     //fluidsph.Initialize(200000);
-    fluidsph.Initialize(1);
+    fluidsph.Initialize(1000);
     //fluidsph.Initialize(1000000);
 
 
@@ -221,7 +221,7 @@ int main()
 
 
 #ifdef UI_DEBUG
-        pause = true;
+        //pause = true;
         if(debugWndwOpened)
             Debugger::Get()->DisplayDebugWindow(SEDIMENTATION_DISPLAY_FLAG  | DEPOSITION_DISPLAY_FLAG     | 
                                                 SEDIMENT_FLOW_DISPLAY_FLAG  | EROSION_DISPLAY_FLAG        | 

@@ -79,7 +79,7 @@ public:
 
 		//		}
 
-		sqrside = 1;
+		sqrside = 10;
 		int j = -1;
 		for (int i = 0; i < num; i++)
 		{
