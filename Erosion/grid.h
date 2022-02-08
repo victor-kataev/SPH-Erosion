@@ -569,6 +569,8 @@ public:
 		else
 			H = std::max(H, epsilon);
 
+		H *= 100;
+
 		//erosion
 		if (H < 0.0f)
 		{

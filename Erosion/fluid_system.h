@@ -79,7 +79,7 @@ public:
 
 		//		}
 
-		sqrside = 10;
+		sqrside = 1;
 		int j = -1;
 		for (int i = 0; i < num; i++)
 		{
@@ -917,7 +917,14 @@ private:
 			if (currPart.sedim < 0.0f)
 				currPart.sedim = 0.0f;
 			
-			currPart.sedim += deltaT * currPart.sedim_delta;
+			float epsilon = 1e-9f;
+			float delta = deltaT * currPart.sedim_delta;
+			if (delta < 0.0f)
+				delta = std::min(-epsilon, delta);
+			else if (delta > 0.0f)
+				delta = std::max(epsilon, delta);
+
+			currPart.sedim += delta;
 			//std::cout << deltaT << " * " << currPart.sedim_delta << " = " << deltaT * currPart.sedim_delta << std::endl;
 			
 			if (currPart.sedim < 0.0f)

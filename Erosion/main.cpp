@@ -86,7 +86,8 @@ int main()
     //fluidsph.SetOrigin(glm::vec3(46.834, 30.4, 57.064));
     
     //fluidsph.SetOrigin(glm::vec3(55.99, 27.584, 24.140));
-    fluidsph.SetOrigin(glm::vec3(13.894, 30.55, 14.228));
+    //fluidsph.SetOrigin(glm::vec3(13.894, 30.55, 14.228)); //video 9 erosion
+    fluidsph.SetOrigin(glm::vec3(5.894, 30.95, 5.228));//debug
     
     //fluidsph.SetOrigin(glm::vec3(20.034, 255.0, 20.064));
     
@@ -98,11 +99,13 @@ int main()
     //camera.PlaceTo(glm::vec3(43.005, 129.945, 64.629)); //video 6
     //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
     //camera.PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
-    camera.PlaceTo(glm::vec3(11.867, 32.842, 12.818)); //video 9 erosion
-    
+    //camera.PlaceTo(glm::vec3(11.867, 32.842, 12.818)); //video 9 erosion
+    camera.PlaceTo(glm::vec3(4.867, 32.842, 4.818)); //debug
+
+
     //fluidsph.Initialize(103823);
     //fluidsph.Initialize(200000);
-    fluidsph.Initialize(100);
+    fluidsph.Initialize(1);
     //fluidsph.Initialize(1000000);
 
 
@@ -218,12 +221,13 @@ int main()
 
 
 #ifdef UI_DEBUG
+        pause = true;
         if(debugWndwOpened)
             Debugger::Get()->DisplayDebugWindow(SEDIMENTATION_DISPLAY_FLAG  | DEPOSITION_DISPLAY_FLAG     | 
                                                 SEDIMENT_FLOW_DISPLAY_FLAG  | EROSION_DISPLAY_FLAG        | 
                                                 CELLS_DISPLAY_FLAG          | PARTICLES_SEDIMENTATION_DISPLAY_FLAG | 
                                                 PARTICLES_DEPOSITION_DISPLAY_FLAG | PARTICLES_SEDIMENT_FLOW_DISPLAY_FLAG |
-                                                PARTICLES_EROSION_DISPLAY_FLAG);
+                                                PARTICLES_EROSION_DISPLAY_FLAG, pause);
         //if(!pause)
             //Debugger::Get()->ClearBuffers();
 #endif

@@ -246,9 +246,11 @@ public:
 		m_BoundaryParticlesAfterErosion[bp.Id].particle = p;
 	}
 
-	void DisplayDebugWindow(uint16_t display_flags) const
+	void DisplayDebugWindow(uint16_t display_flags, bool& pause) const
 	{
 		ImGui::Begin("Erosion Debugger");
+		if (ImGui::Button("Next frame"))
+			pause = false;
 
 		ImGui::Text("--Pairs Interaction--");
 
@@ -424,7 +426,7 @@ private:
 					const char* format;
 					if (data.dC == -777.0f)
 						format = "dC_BP[%d] (skipped) (sedim)";
-					if (data.dC == -666.0f)
+					else if (data.dC == -666.0f)
 						format = "dC_BP[%d] (skipped) (settling)";
 					else
 						format = "dC_BP[%d]";
@@ -720,7 +722,7 @@ private:
 			const char* format;
 			if (data.dC == -777.0f)
 				format = "dC_BP[%d] (skipped) (sedim)";
-			if (data.dC == -666.0f)
+			else if (data.dC == -666.0f)
 				format = "dC_BP[%d] (skipped) (settling)";
 			else
 				format = "dC_BP[%d]";
