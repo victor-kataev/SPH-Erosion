@@ -535,6 +535,7 @@ private:
 
 				rbj = fp.Position - bp.Position; //normalize???
 				float dist = glm::length(rbj);
+				//rbj = glm::normalize(fp.Position - bp.Position); //normalize???
 
 				//sph is donor boundary is acceptor
 				if ((v = glm::dot(vSettling, rbj)) < 0.0f)
@@ -548,7 +549,7 @@ private:
 						fGradCubic = -fNormalCubic * 3.0f * pow(2.0f - q, 2.0f);
 
 					//advection donor-acceptor
-					dC_BP[ij] = MASS * fp.sedim / fp.Density;
+					dC_BP[ij] = MASS * fp.sedim * fp.Density;
 					dC_BP[ij] *= -v * fGradCubic;
 					fp.sedim_delta += dC_BP[ij];
 					assert(dC_BP[ij] <= 0.0f);
@@ -590,6 +591,7 @@ private:
 				fp.sedim_ratio = 1.0f;
 			else {
 				fp.sedim_ratio = -fp.sedim / (epsilon * fp.sedim_delta * deltaT);
+				//fp.sedim_ratio = -fp.sedim / (epsilon * fp.sedim_delta);
 				if (fp.sedim_ratio >= 1.0f)
 					fp.sedim_ratio = 1.0f;
 			}
@@ -724,7 +726,7 @@ private:
 					if (neigh.sedim > 0.0f && currPart.sedim < SEDIMENT_MAX)
 					{
 						v_r *= richardson_zaki(currPart.sedim);
-						q = MASS * neigh.sedim / neigh.Density;
+						q = MASS * neigh.sedim * neigh.Density;
 						q *= -v_r* fGradCubic;
 						dC[ij] = q;
 					}
@@ -735,7 +737,7 @@ private:
 					if (currPart.sedim > 0.0f && neigh.sedim < SEDIMENT_MAX)
 					{
 						v_r *= richardson_zaki(neigh.sedim);
-						q = MASS * currPart.sedim / currPart.Density;
+						q = MASS * currPart.sedim * currPart.Density;
 						q *= -v_r * fGradCubic;
 						dC[ij] = q;
 					}
