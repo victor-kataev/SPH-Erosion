@@ -31,8 +31,8 @@ typedef unsigned int uint;
 float MASS_C_COEFFICIENT = SOLID_DENSITY * FLUID_MASS / FLUID_BASE_DENSITY;
 float INV_MASS_C_COEFFICIENT = 1.0f / (SOLID_DENSITY * FLUID_MASS / FLUID_BASE_DENSITY);
 
-//#define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
-//#define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
+#define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
+#define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
 //float SEDIMENT_MAX_MASS = C_2_MASS(SEDIMENT_MAX);
 
 
@@ -100,7 +100,7 @@ public:
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
-			particle.lifetime = 110000;
+			particle.lifetime = 500000;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 
@@ -464,7 +464,8 @@ private:
 	{
 		float dMi;
 		float v, t, E, m = 0, vRel;
-		const float minVrel = pow(EROSION_TC / EROSION_SHEAR_STIFF, 2.0f);
+		const float minVrel = pow(EROSION_TC / EROSION_SHEAR_STIFF, 2.0f); // = 9
+		//const float minVrel = 1.0f;
 		float L2 = h * h;
 		int ij = 0;
 
@@ -477,6 +478,7 @@ private:
 				v = glm::length(fp.Velocity);
 				float dist = glm::length(fp.Position - bp.Position);
 				vRel = std::max(0.0f, v - abs(glm::dot(fp.Velocity, bp.SurfaceNormal))) / dist;
+				//std::cout << "vRel: " << vRel << std::endl;
 				if (minVrel > vRel)
 				{
 #ifdef UI_DEBUG
@@ -536,11 +538,13 @@ private:
 				rbj = fp.Position - bp.Position; //normalize???
 				float dist = glm::length(rbj);
 				//rbj = glm::normalize(fp.Position - bp.Position); //normalize???
+				v = glm::dot(vSettling, rbj);
 
 				//sph is donor boundary is acceptor
-				if ((v = glm::dot(vSettling, rbj)) < 0.0f)
+				if (v < 0.0f)
 				{
 					q = dist * inv2Smooth;
+					v = glm::dot(vSettling, glm::normalize(rbj));
 
 					//Cubic spline - Monaghan 2005
 					if (q < 1.0f)
@@ -709,7 +713,8 @@ private:
 				}
 
 				FluidParticle& neigh = m_Particles[j];
-				glm::vec3 rij = glm::normalize(currPart.Position - neigh.Position);
+				//glm::vec3 rij = glm::normalize(currPart.Position - neigh.Position);
+				glm::vec3 rij = currPart.Position - neigh.Position;
 				float rij_len = glm::length(currPart.Position - neigh.Position);
 				float v_r = glm::dot(vSettling, rij);
 				q = rij_len * inv2Smooth;
@@ -725,6 +730,7 @@ private:
 					//neighbor is donor
 					if (neigh.sedim > 0.0f && currPart.sedim < SEDIMENT_MAX)
 					{
+						v_r = glm::dot(vSettling, glm::normalize(rij));
 						v_r *= richardson_zaki(currPart.sedim);
 						q = MASS * neigh.sedim * neigh.Density;
 						q *= -v_r* fGradCubic;
@@ -736,6 +742,7 @@ private:
 					//current is donor
 					if (currPart.sedim > 0.0f && neigh.sedim < SEDIMENT_MAX)
 					{
+						v_r = glm::dot(vSettling, glm::normalize(rij));
 						v_r *= richardson_zaki(neigh.sedim);
 						q = MASS * currPart.sedim * currPart.Density;
 						q *= -v_r * fGradCubic;

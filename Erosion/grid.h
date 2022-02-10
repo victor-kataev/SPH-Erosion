@@ -560,16 +560,19 @@ public:
 	void updateVerticesInHF(Triangle& tri, float mass, bool& updated)
 	{
 		glm::vec3 v0, v1, v2;
-		float d0, d1, d2, H3, H;
-		const float epsilon = 1e-4;
+		float d0, d1, d2, H3 = 0, H;
+		float epsilon = 1e-5f;
 
 		H = mass_2_height(mass * FLUID_TIME_STEP);
+		//H *= 1000;
+
 		if(H < 0)
 			H = std::min(H, -epsilon);
 		else
 			H = std::max(H, epsilon);
 
 		//H *= 100;
+		//std::cout << "H: " << H << std::endl;
 
 		//erosion
 		if (H < 0.0f)
@@ -579,6 +582,14 @@ public:
 			{
 				//subtract uniformly
 				H3 = std::max(H / 3.0f, epsilon);
+				//if (H3 == epsilon)
+				//	printf("erosion: H3 = epsilon\n");
+				//else
+				//	printf("erosion: H3 = H3 / 3\n");
+				//
+				//printf("erosion: v0.y = %.15f\n", v0.y);
+				//printf("erosion: d0 =   %.15f\n", (float)(v0.y + H3));
+				//printf("erosion: H3 = %.15f\n", H3);
 				d0 = v0.y + H3;
 				d1 = v1.y + H3;
 				d2 = v2.y + H3;
@@ -627,6 +638,14 @@ public:
 			{
 				//add uniformly
 				H3 = std::max(H / 3.0f, epsilon);
+				//if (H3 == epsilon)
+				//	printf("deposition: H3 = epsilon\n");
+				//else
+				//	printf("deposition: H3 = H3 / 3\n");
+				//printf("deposition: v0.y = %.15f\n", v0.y);
+				//printf("deposition: d0 =   %.15f\n", (float)(v0.y + H3));
+				//printf("deposition: H3 = %.15f\n", H3);
+
 				d0 = v0.y + H3;
 				d1 = v1.y + H3;
 				d2 = v2.y + H3;

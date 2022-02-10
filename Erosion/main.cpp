@@ -100,12 +100,12 @@ int main()
     //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
     //camera.PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
     //camera.PlaceTo(glm::vec3(11.867, 32.842, 12.818)); //video 9 erosion
-    camera.PlaceTo(glm::vec3(4.867, 32.842, 4.818)); //debug
+    camera.PlaceTo(glm::vec3(3.867, 32.842, 3.818)); //debug
 
 
     //fluidsph.Initialize(103823);
     //fluidsph.Initialize(200000);
-    fluidsph.Initialize(1000);
+    fluidsph.Initialize(100);
     //fluidsph.Initialize(1000000);
 
 
