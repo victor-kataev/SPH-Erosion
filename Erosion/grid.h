@@ -26,6 +26,7 @@
 #define FLUID_TIME_STEP 0.01f
 
 
+#define FLT_EQ(A, B) (abs(A - B) < FLT_EPSILON)
 
 
 struct FluidParticleHasher
@@ -47,19 +48,6 @@ struct FluidParticleComparator
 typedef std::unordered_set<FluidParticle, FluidParticleHasher, FluidParticleComparator> usetfp;
 
 
-struct Triangle
-{
-	Triangle(glm::vec3 a, glm::vec3 b, glm::vec3 c)
-		: A(a), B(b), C(c)
-	{
-		norm = glm::normalize(glm::cross(B - A, C - A));
-	}
-
-	glm::vec3 A;
-	glm::vec3 B;
-	glm::vec3 C;
-	glm::vec3 norm;
-};
 
 bool cmpX(const FluidParticle& a, const FluidParticle& b)
 {
@@ -523,30 +511,48 @@ public:
 		}
 
 #ifdef UI_DEBUG
-		Debugger::Get()->CellsInit();
+		Debugger::Get()->CellsClear();
 #endif
-		//udpate geometry of correspondng cells
+		//udpate geometry of correspondnig cells
 		for(const auto& cell: cellsToUpdate)
 		{
 			cellIdx = cell[0] * 1000 + cell[1];
 			bool updated = false;
 
 #ifdef UI_DEBUG
-			Debugger::Get()->PushBackCell(cell, m_TriangleMass[cellIdx]);
+			Debugger::Get()->PushBackMass(cell, m_TriangleMass[cellIdx]);
+#endif
+			
+			
+			Triangle triABC = getCellTriangles(cell)[0];
+#ifdef UI_DEBUG
+			Debugger::Get()->ABCGeometryBeforeUpdate(cell, triABC);
+#endif
+			updateVerticesInHF(triABC, m_TriangleMass[cellIdx].first, updated);
+			triABC = getCellTriangles(cell)[0];
+#ifdef UI_DEBUG
+			Debugger::Get()->ABCGeometryAfterUpdate(cell, triABC);
 #endif
 
-			Triangle triABC = getCellTriangles(cell)[0];
-			updateVerticesInHF(triABC, m_TriangleMass[cellIdx].first, updated);
+
 
 			Triangle triAABC = getCellTriangles(cell)[1];
+#ifdef UI_DEBUG
+			Debugger::Get()->AABCGeometryBeforeUpdate(cell, triAABC);
+#endif
 			updateVerticesInHF(triAABC, m_TriangleMass[cellIdx].second, updated);
+			triAABC = getCellTriangles(cell)[1];
+#ifdef UI_DEBUG
+			Debugger::Get()->AABCGeometryAfterUpdate(cell, triAABC);
+#endif
+
 
 			//erase old boundary particles in the cell they will be seeded in next iteration of fluid run
-			if (updated)
-			{
+			//if (updated)
+			//{
 				delete m_SeededCells[cellIdx];
 				m_SeededCells.erase(cellIdx);
-			}
+			//}
 		}
 
 		if (!cellsToUpdate.empty())
@@ -564,11 +570,11 @@ public:
 		float epsilon = 1e-5f;
 
 		H = mass_2_height(mass * FLUID_TIME_STEP);
-		//H *= 1000;
+		H *= 2;
 
 		if(H < 0)
 			H = std::min(H, -epsilon);
-		else
+		else if(H > 0)
 			H = std::max(H, epsilon);
 
 		//H *= 100;
@@ -578,7 +584,7 @@ public:
 		if (H < 0.0f)
 		{
 			sortedVertsOfTriangle(tri, v0, v1, v2); //v0.y > v1.y > v2.y
-			if (v0.y == v1.y && v1.y == v2.y)
+			if (FLT_EQ(v0.y, v1.y) && FLT_EQ(v1.y, v2.y))
 			{
 				//subtract uniformly
 				H3 = std::max(H / 3.0f, epsilon);
@@ -593,6 +599,11 @@ public:
 				d0 = v0.y + H3;
 				d1 = v1.y + H3;
 				d2 = v2.y + H3;
+
+				//tmp
+				assert(d0 != v0.y);
+				assert(d1 != v1.y);
+				assert(d2 != v2.y);
 			}
 			else
 			{
@@ -613,16 +624,22 @@ public:
 						d0 += H3;
 						d1 += H3;
 						d2 += H3;
+
+						assert(d0 != v0.y);
+						assert(d1 != v1.y);
+						assert(d2 != v2.y);
 					}
 					else
 					{
 						d2 = v2.y;
+						assert(d1 != v1.y);
 					}
 				}
 				else
 				{
 					d1 = v1.y;
 					d2 = v2.y;
+					assert(d0 != v0.y);
 				}
 			}
 			SetHeightfieldAt(floor(v0.x / m_CellSize[0]), floor(v0.z / m_CellSize[1]), d0);
@@ -634,7 +651,7 @@ public:
 		else if (H > 0.0f)
 		{
 			sortedVertsOfTriangle(tri, v0, v1, v2);
-			if (v0.y == v1.y && v1.y == v2.y)
+			if (FLT_EQ(v0.y, v1.y) && FLT_EQ(v1.y, v2.y))
 			{
 				//add uniformly
 				H3 = std::max(H / 3.0f, epsilon);
@@ -649,6 +666,9 @@ public:
 				d0 = v0.y + H3;
 				d1 = v1.y + H3;
 				d2 = v2.y + H3;
+				assert(d0 != v0.y);
+				assert(d1 != v1.y);
+				assert(d2 != v2.y);
 			}
 			else
 			{
@@ -669,16 +689,24 @@ public:
 						d0 += H3;
 						d1 += H3;
 						d2 += H3;
+						assert(d0 != v0.y);
+						assert(d1 != v1.y);
+						assert(d2 != v2.y);
+
 					}
 					else
 					{
 						d0 = v0.y;
+						assert(d1 != v1.y);
+
 					}
 				}
 				else
 				{
 					d1 = v1.y;
 					d0 = v0.y;
+					assert(d2 != v2.y);
+
 				}
 			}
 			SetHeightfieldAt(floor(v0.x / m_CellSize[0]), floor(v0.z / m_CellSize[1]), d0);
