@@ -1,4 +1,4 @@
-#include "imgui/imgui.h"
+﻿#include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
@@ -73,7 +73,7 @@ int main()
     char picture_path[100];
     //strcpy_s(picture_path, "lena_gray.png");
     //strcpy_s(picture_path, "pumba_gray.png");
-    strcpy_s(picture_path, "meander.png");
+    strcpy_s(picture_path, "meander2.png");
     glm::vec3 dimensions = { 512.0f, 200.0f, 512.0f};
     glm::vec2 cellSize = { 0.2f, 0.2f };
     Grid grid(picture_path, dimensions, cellSize);
@@ -87,7 +87,9 @@ int main()
     
     //fluidsph.SetOrigin(glm::vec3(55.99, 27.584, 24.140));
     //fluidsph.SetOrigin(glm::vec3(13.894, 30.55, 14.228)); //video 9 erosion
-    fluidsph.SetOrigin(glm::vec3(5.894, 30.95, 5.228));//debug
+    fluidsph.SetOrigin(glm::vec3(48.765, 30.83, 46.494)); //video 10 erosion
+    //fluidsph.SetOrigin(glm::vec3(40.765, 30.83, 46.494)); //video 10 erosion
+    //fluidsph.SetOrigin(glm::vec3(5.894, 30.95, 5.228));//debug
     
     //fluidsph.SetOrigin(glm::vec3(20.034, 255.0, 20.064));
     
@@ -100,12 +102,14 @@ int main()
     //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
     //camera.PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
     //camera.PlaceTo(glm::vec3(11.867, 32.842, 12.818)); //video 9 erosion
-    camera.PlaceTo(glm::vec3(3.867, 32.842, 3.818)); //debug
+    camera.PlaceTo(glm::vec3(15.815, 34.529, 10.587)); //video 9 erosion
+    camera.PlaceTo(glm::vec3(47.182, 32.645, 45.216)); //video 10 erosion
+    //camera.PlaceTo(glm::vec3(3.867, 32.842, 3.818)); //debug
 
 
     //fluidsph.Initialize(103823);
-    //fluidsph.Initialize(200000);
-    fluidsph.Initialize(100);
+    fluidsph.Initialize(300000);
+    //fluidsph.Initialize(1000);
     //fluidsph.Initialize(1000000);
 
 
@@ -118,6 +122,8 @@ int main()
     unsigned int framenum = 0;
     std::stringstream ss_filename;
     glm::vec3 dirlight(-0.4, -0.7, -0.2);
+
+    int frames = 0;
 
     //render loop
     while (!glfwWindowShouldClose(window))
@@ -235,13 +241,18 @@ int main()
         UIend();
 
         glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
-        ss_filename << "render/frame_" << std::to_string(framenum) << ".bmp";
+        ss_filename << "render_bugfixed/frame_" << std::to_string(framenum) << ".bmp";
         framenum++;
-        //pixelsToBmp(ss_filename.str().c_str(), buff);
+        pixelsToBmp(ss_filename.str().c_str(), buff);
         ss_filename.str("");
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        frames++;
+        if (frames > 4000)
+            break;
+
     }
 
     

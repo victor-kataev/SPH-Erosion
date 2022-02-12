@@ -41,6 +41,8 @@ float INV_MASS_C_COEFFICIENT = 1.0f / (SOLID_DENSITY * FLUID_MASS / FLUID_BASE_D
 float kd = 6.0f * PI * 1.78e-5;
 float ks = 1.119e6;
 
+int lt = 0;
+
 class FluidSystemSPH
 {
 public:
@@ -79,7 +81,8 @@ public:
 
 		//		}
 
-		sqrside = 10;
+		sqrside = 30; //35
+		//sqrside = 1; //35
 		int j = -1;
 		for (int i = 0; i < num; i++)
 		{
@@ -87,20 +90,36 @@ public:
 				j++;
 			j = j % sqrside;
 			
-			float x = -0.2f + (i % sqrside) * 0.025f;
-			float y = -0.05f + j * 0.025f;
-			float z = -0.15f;
+			float x = 0, y = 0, z = 0;
+
+			//if (i % 2)
+			//{
+				//x = -0.4f + (i % sqrside) * 0.025f;
+				x = -0.2f + (i % sqrside) * 0.025f;
+				y = -0.01f + j * 0.025f;
+				z = -0.15f;
+			//}
+			//else
+			//{
+			//	x = 7.0f + (i % sqrside) * 0.020f;
+			//	y = -0.05f + j * 0.020f;
+			//	z = 11.05f;
+			//}
+
 
 
 			FluidParticle particle;
 			particle.Id = FluidParticle::IdCount++;
 			particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
-			particle.Velocity = glm::vec3(0.0, 0.0, 3.0);
+			//if(i%2)
+				particle.Velocity = glm::vec3(0.0, 0.0, 3.0);
+			//else
+			//	particle.Velocity = glm::vec3(0.0, 0.0, -3.0);
 			particle.Acceleration = glm::vec3(0.0);
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
-			particle.lifetime = 500000;
+			particle.lifetime = 1400;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 
@@ -297,7 +316,7 @@ public:
 	void AdvanceTime()
 	{
 		for (int i = 0; i < visible_num; i++)
-			if(m_Particles[i].lifetime != 0)
+			if (m_Particles[i].lifetime != 0)
 				m_Particles[i].lifetime--;
 	}
 
@@ -466,7 +485,7 @@ private:
 		float v, t, E, m = 0, vRel;
 		const float minVrel = pow(EROSION_TC / EROSION_SHEAR_STIFF, 2.0f); // = 9
 		//const float minVrel = 1.0f;
-		float L2 = h * h;
+		float L2 = h * h; //mistake here <----------------------------------------------------------------------------------------- deltaS 
 		int ij = 0;
 
 		for (auto& bp : m_NearestBParticles)
@@ -553,7 +572,7 @@ private:
 						fGradCubic = -fNormalCubic * 3.0f * pow(2.0f - q, 2.0f);
 
 					//advection donor-acceptor
-					dC_BP[ij] = MASS * fp.sedim * fp.Density;
+					dC_BP[ij] = MASS * fp.sedim / fp.Density;
 					dC_BP[ij] *= -v * fGradCubic;
 					fp.sedim_delta += dC_BP[ij];
 					assert(dC_BP[ij] <= 0.0f);
@@ -732,7 +751,7 @@ private:
 					{
 						v_r = glm::dot(vSettling, glm::normalize(rij));
 						v_r *= richardson_zaki(currPart.sedim);
-						q = MASS * neigh.sedim * neigh.Density;
+						q = MASS * neigh.sedim / neigh.Density;
 						q *= -v_r* fGradCubic;
 						dC[ij] = q;
 					}
@@ -744,7 +763,7 @@ private:
 					{
 						v_r = glm::dot(vSettling, glm::normalize(rij));
 						v_r *= richardson_zaki(neigh.sedim);
-						q = MASS * currPart.sedim * currPart.Density;
+						q = MASS * currPart.sedim / currPart.Density;
 						q *= -v_r * fGradCubic;
 						dC[ij] = q;
 					}

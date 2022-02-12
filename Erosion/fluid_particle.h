@@ -33,3 +33,21 @@ struct FluidParticle
 };
 
 unsigned long FluidParticle::IdCount = 0;
+
+
+struct Triangle
+{
+	Triangle() {};
+
+	Triangle(glm::vec3 a, glm::vec3 b, glm::vec3 c)
+		: A(a), B(b), C(c)
+	{
+		norm = glm::normalize(glm::cross(B - A, C - A));
+	}
+
+	glm::vec3 A;
+	glm::vec3 B;
+	glm::vec3 C;
+	glm::vec3 norm;
+};
+

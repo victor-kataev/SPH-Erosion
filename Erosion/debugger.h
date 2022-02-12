@@ -7,7 +7,9 @@
 #include <unordered_map>
 #include <map>
 
-#define UI_DEBUG
+#include "fluid_particle.h"
+
+//#define UI_DEBUG
 
 
 
@@ -45,8 +47,16 @@ struct PPInteraction
 
 struct CellData
 {
+	CellData() {};
+
 	glm::vec2 cell;
 	std::pair<float, float> triangleMass; //first - ABC, second - AABC
+	
+	Triangle ABCbeforeUpdate;
+	Triangle AABCbeforeUpdate;
+
+	Triangle ABCafterUpdate;
+	Triangle AABCafterUpdate;
 };
 
 struct ParticleData
@@ -159,19 +169,42 @@ public:
 		m_BoundaryParticlesAfterErosion[bp.Id].dCs.push_back(ij);
 	}
 
-	void CellsInit()
+	void CellsClear()
 	{
 		m_Cells.clear();
 	}
 
-	void PushBackCell(const glm::vec2& cell, std::pair<float, float> triangleMass)
+	void PushBackMass(const glm::vec2& cell, std::pair<float, float> triangleMass)
 	{
-		CellData cd;
-		cd.cell = cell;
-		cd.triangleMass = triangleMass;
-
-		m_Cells.push_back(cd);
+		int cellIdx = cell[0] * 1000 + cell[1];
+		m_Cells[cellIdx].cell = cell;
+		m_Cells[cellIdx].triangleMass = triangleMass;
 	}
+
+	void ABCGeometryBeforeUpdate(const glm::vec2& cell, const Triangle& abc)
+	{
+		int cellIdx = cell[0] * 1000 + cell[1];
+		m_Cells[cellIdx].ABCbeforeUpdate = abc;
+	}
+
+	void AABCGeometryBeforeUpdate(const glm::vec2& cell, const Triangle& aabc)
+	{
+		int cellIdx = cell[0] * 1000 + cell[1];
+		m_Cells[cellIdx].AABCbeforeUpdate = aabc;
+	}
+
+	void ABCGeometryAfterUpdate(const glm::vec2& cell, const Triangle& abc)
+	{
+		int cellIdx = cell[0] * 1000 + cell[1];
+		m_Cells[cellIdx].ABCafterUpdate = abc;
+	}
+
+	void AABCGeometryAfterUpdate(const glm::vec2& cell, const Triangle& aabc)
+	{
+		int cellIdx = cell[0] * 1000 + cell[1];
+		m_Cells[cellIdx].AABCafterUpdate = aabc;
+	}
+
 
 	void InsertFluidParticleAfterSedimentation(const FluidParticle& fp)
 	{
@@ -346,7 +379,8 @@ private:
 	std::vector<PPInteraction> m_PostErosion_dCs;
 	std::vector<PPInteraction> m_PostSedimentFlowSphBoundary;
 	std::vector<PPInteraction> m_PostSedimentFlowSphSph;
-	std::vector<CellData> m_Cells;
+
+	std::map<int, CellData> m_Cells;
 
 	std::map<unsigned long, ParticleData> m_FluidParticlesAfterSedimentation;
 	std::map<unsigned long, ParticleData> m_FluidParticlesAfterDeposition;
@@ -850,13 +884,39 @@ private:
 		if (!ImGui::CollapsingHeader("CELLS"))
 			return;
 
-		for (int i = 0; i < m_Cells.size(); i++)
+
+		for (const auto& cell : m_Cells)
 		{
-			const auto& data = m_Cells[i];
-			if (ImGui::TreeNode((void*)(intptr_t)i, "(%d, %d)", (int)data.cell[0], (int)data.cell[1]))
+			int cellIdx = cell.first;
+			const CellData& cd = cell.second;
+			if (ImGui::TreeNode((void*)(intptr_t)cellIdx, "(%d, %d)", (int)cd.cell[0], (int)cd.cell[1]))
 			{
-				ImGui::Text("ABC mass: %.15f", data.triangleMass.first);
-				ImGui::Text("AABC mass: %.15f", data.triangleMass.second);
+				ImGui::Text("ABC mass: %.15f", cd.triangleMass.first);
+				ImGui::Text("AABC mass: %.15f", cd.triangleMass.second);
+				if (ImGui::TreeNode("ABC before-after"))
+				{
+					ImGui::Text("A(%.2f, %.2f): %.15f", cd.ABCbeforeUpdate.C[0], cd.ABCbeforeUpdate.C[2], cd.ABCbeforeUpdate.C[1]);
+					ImGui::Text("A(%.2f, %.2f): %.15f", cd.ABCafterUpdate.C[0],  cd.ABCafterUpdate.C[2],  cd.ABCafterUpdate.C[1]);
+					ImGui::Text("B(%.2f, %.2f): %.15f", cd.ABCbeforeUpdate.B[0], cd.ABCbeforeUpdate.B[2], cd.ABCbeforeUpdate.B[1]);
+					ImGui::Text("B(%.2f, %.2f): %.15f", cd.ABCafterUpdate.B[0],  cd.ABCafterUpdate.B[2],  cd.ABCafterUpdate.B[1]);
+					ImGui::Text("C(%.2f, %.2f): %.15f", cd.ABCbeforeUpdate.A[0], cd.ABCbeforeUpdate.A[2], cd.ABCbeforeUpdate.A[1]);
+					ImGui::Text("C(%.2f, %.2f): %.15f", cd.ABCafterUpdate.A[0],  cd.ABCafterUpdate.A[2],  cd.ABCafterUpdate.A[1]);
+
+					ImGui::TreePop();
+				}
+
+				if (ImGui::TreeNode("AABC before-after"))
+				{
+					ImGui::Text("AA(%.2f, %.2f): %.15f", cd.AABCbeforeUpdate.A[0], cd.AABCbeforeUpdate.A[2], cd.AABCbeforeUpdate.A[1]);
+					ImGui::Text("AA(%.2f, %.2f): %.15f", cd.AABCafterUpdate.A[0],  cd.AABCafterUpdate.A[2],  cd.AABCafterUpdate.A[1]);
+					ImGui::Text("B (%.2f, %.2f): %.15f", cd.AABCbeforeUpdate.B[0], cd.AABCbeforeUpdate.B[2], cd.AABCbeforeUpdate.B[1]);
+					ImGui::Text("B (%.2f, %.2f): %.15f", cd.AABCafterUpdate.B[0],  cd.AABCafterUpdate.B[2],  cd.AABCafterUpdate.B[1]);
+					ImGui::Text("C (%.2f, %.2f): %.15f", cd.AABCbeforeUpdate.C[0], cd.AABCbeforeUpdate.C[2], cd.AABCbeforeUpdate.C[1]);
+					ImGui::Text("C (%.2f, %.2f): %.15f", cd.AABCafterUpdate.C[0],  cd.AABCafterUpdate.C[2],  cd.AABCafterUpdate.C[1]);
+
+					ImGui::TreePop();
+				}
+
 				ImGui::TreePop();
 			}
 		}
