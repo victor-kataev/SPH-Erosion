@@ -587,7 +587,7 @@ public:
 			if (FLT_EQ(v0.y, v1.y) && FLT_EQ(v1.y, v2.y))
 			{
 				//subtract uniformly
-				H3 = std::max(H / 3.0f, epsilon);
+				H3 = std::min(H / 3.0f, -epsilon);
 				//if (H3 == epsilon)
 				//	printf("erosion: H3 = epsilon\n");
 				//else
@@ -600,7 +600,6 @@ public:
 				d1 = v1.y + H3;
 				d2 = v2.y + H3;
 
-				//tmp
 				assert(d0 != v0.y);
 				assert(d1 != v1.y);
 				assert(d2 != v2.y);
@@ -620,7 +619,7 @@ public:
 						d1 = v2.y;
 						d2 = v2.y;
 						H += abs(v1.y - v2.y);
-						H3 = std::max(H / 3.0f, epsilon);
+						H3 = std::min(H / 3.0f, -epsilon);
 						d0 += H3;
 						d1 += H3;
 						d2 += H3;
@@ -666,6 +665,7 @@ public:
 				d0 = v0.y + H3;
 				d1 = v1.y + H3;
 				d2 = v2.y + H3;
+
 				assert(d0 != v0.y);
 				assert(d1 != v1.y);
 				assert(d2 != v2.y);
