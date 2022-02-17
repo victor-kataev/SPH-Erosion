@@ -163,6 +163,7 @@ public:
 
 		p2.id = bp.Id;
 		p2.dM = bp.dM;
+		p2.triangle = bp.triangle;
 
 		m_PostErosion_dCs[ij] = { ij, dC, p1, p2 };
 		m_FluidParticlesAfterErosion[fp.Id].dCs.push_back(ij);
@@ -174,7 +175,7 @@ public:
 		m_Cells.clear();
 	}
 
-	void PushBackMass(const glm::vec2& cell, std::pair<float, float> triangleMass)
+	void PushBackMass(const glm::vec2& cell, const std::pair<float, float>& triangleMass)
 	{
 		int cellIdx = cell[0] * 1000 + cell[1];
 		m_Cells[cellIdx].cell = cell;
@@ -275,6 +276,7 @@ public:
 		FluidParticleLight p;
 		p.id = bp.Id;
 		p.dM = bp.dM;
+		p.triangle = bp.triangle;
 
 		m_BoundaryParticlesAfterErosion[bp.Id].particle = p;
 	}
@@ -677,6 +679,7 @@ private:
 				{
 					ImGui::Text("id: %d", pair.second.particle.id);
 					ImGui::Text("dM: %.15f", pair.second.particle.dM);
+					ImGui::Text("triangle: %c", pair.second.particle.triangle);
 
 					for (int i = 0; i < pair.second.dCs.size(); i++)
 					{
@@ -868,6 +871,7 @@ private:
 				ImGui::Text("boundary_part");
 				ImGui::Text("\tid: %d", data.particle2.id);
 				ImGui::Text("\tdM: %.15f", data.particle2.dM);
+				ImGui::Text("\ttriangle: %f", data.particle2.triangle);
 				ImGui::Text("\tm: %.15f", data.particle1.dM);
 				ImGui::Text("fluid_part");
 				ImGui::Text("\tid: %d", data.particle1.id);

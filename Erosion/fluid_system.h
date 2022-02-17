@@ -82,7 +82,7 @@ public:
 		//		}
 
 		sqrside = 30; //35
-		//sqrside = 1; //35
+		//sqrside = 10; //35
 		int j = -1;
 		for (int i = 0; i < num; i++)
 		{
@@ -95,9 +95,9 @@ public:
 			//if (i % 2)
 			//{
 				//x = -0.4f + (i % sqrside) * 0.025f;
-				x = -0.2f + (i % sqrside) * 0.025f;
+				z = -0.2f + (i % sqrside) * 0.025f;
 				y = -0.01f + j * 0.025f;
-				z = -0.15f;
+				x = -0.15f;
 			//}
 			//else
 			//{
@@ -112,14 +112,14 @@ public:
 			particle.Id = FluidParticle::IdCount++;
 			particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
 			//if(i%2)
-				particle.Velocity = glm::vec3(0.0, 0.0, 3.0);
+				particle.Velocity = glm::vec3(3.0, 0.0, 0.0);
 			//else
 			//	particle.Velocity = glm::vec3(0.0, 0.0, -3.0);
 			particle.Acceleration = glm::vec3(0.0);
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
-			particle.lifetime = 1400;
+			particle.lifetime = 1000;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 
@@ -485,7 +485,8 @@ private:
 		float v, t, E, m = 0, vRel;
 		const float minVrel = pow(EROSION_TC / EROSION_SHEAR_STIFF, 2.0f); // = 9
 		//const float minVrel = 1.0f;
-		float L2 = h * h; //mistake here <----------------------------------------------------------------------------------------- deltaS 
+		//float L2 = h * h; //mistake here <----------------------------------------------------------------------------------------- deltaS 
+		float L2 = deltaS * deltaS; //mistake here <----------------------------------------------------------------------------------------- deltaS 
 		int ij = 0;
 
 		for (auto& bp : m_NearestBParticles)

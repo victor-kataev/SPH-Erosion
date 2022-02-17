@@ -362,7 +362,7 @@ private:
 			if(img[i] > m_Dim.y)
 				m_Heightfield.map[i] = m_Dim.y;
 			else
-				m_Heightfield.map[i] = (float)img[i] * 0.3f;
+				m_Heightfield.map[i] = (float)img[i] * 0.2f;
 		}
 
 		stbi_image_free(img);
@@ -505,9 +505,11 @@ public:
 			}
 
 			if (bp.triangle == 'A')
-				m_TriangleMass[cellIdx].first += bp.dM;
+				if(!std::isinf(bp.dM))
+					m_TriangleMass[cellIdx].first += bp.dM;
 			else
-				m_TriangleMass[cellIdx].second += bp.dM;
+				if (!std::isinf(bp.dM))
+					m_TriangleMass[cellIdx].second += bp.dM;
 		}
 
 #ifdef UI_DEBUG
@@ -524,6 +526,37 @@ public:
 #endif
 			
 			
+			///////////
+			if (std::isinf(m_TriangleMass[cellIdx].first))
+			{
+				int tmpCellIdx = 0;
+				for (const auto& bp : bParticles)
+				{
+					glm::vec2 tmpCell = posToCell(bp.Position.x, bp.Position.z);
+					tmpCellIdx = tmpCell[0] * 1000 + tmpCell[1];
+					if (tmpCellIdx == cellIdx && bp.triangle == 'A')
+					{
+						std::cout << __LINE__ << " - " << "A: " << "bp.dM: " << bp.dM << std::endl;
+					}
+				}
+			}
+
+			if (std::isinf(m_TriangleMass[cellIdx].second))
+			{
+				int tmpCellIdx = 0;
+				for (const auto& bp : bParticles)
+				{
+					glm::vec2 tmpCell = posToCell(bp.Position.x, bp.Position.z);
+					tmpCellIdx = tmpCell[0] * 1000 + tmpCell[1];
+					if (tmpCellIdx == cellIdx && bp.triangle == 'B')
+					{
+						std::cout << __LINE__ << " - " << "B: " << "bp.dM: " << bp.dM << std::endl;
+					}
+				}
+			}
+			///////////
+
+
 			Triangle triABC = getCellTriangles(cell)[0];
 #ifdef UI_DEBUG
 			Debugger::Get()->ABCGeometryBeforeUpdate(cell, triABC);
@@ -548,11 +581,11 @@ public:
 
 
 			//erase old boundary particles in the cell they will be seeded in next iteration of fluid run
-			//if (updated)
-			//{
+			if (updated)
+			{
 				delete m_SeededCells[cellIdx];
 				m_SeededCells.erase(cellIdx);
-			//}
+			}
 		}
 
 		if (!cellsToUpdate.empty())
@@ -566,18 +599,18 @@ public:
 	void updateVerticesInHF(Triangle& tri, float mass, bool& updated)
 	{
 		glm::vec3 v0, v1, v2;
-		float d0, d1, d2, H3 = 0, H;
+		float d0, d1, d2, H3 = 0, H = 0;
 		float epsilon = 1e-5f;
 
 		H = mass_2_height(mass * FLUID_TIME_STEP);
-		H *= 2;
+		//H *= 50;
 
 		if(H < 0)
 			H = std::min(H, -epsilon);
 		else if(H > 0)
 			H = std::max(H, epsilon);
 
-		//H *= 100;
+		H *= 20;
 		//std::cout << "H: " << H << std::endl;
 
 		//erosion
@@ -603,6 +636,19 @@ public:
 				assert(d0 != v0.y);
 				assert(d1 != v1.y);
 				assert(d2 != v2.y);
+
+				//debug
+				if (std::isinf(d0) || std::isinf(d1) || std::isinf(d2))
+				{
+					std::cout << __LINE__ << " - " << "d0: " << d0 << "\nd1: " << d1 << "\nd2: " << d2 << std::endl;
+					std::cout << __LINE__ << " - " << "v0.y: " << v0.y << "\nv1.y: " << v1.y << "\nv2.y: " << v2.y << std::endl;
+					std::cout << __LINE__ << " - " << "H: " << H << "\nH3: " << H3 << std::endl;
+					std::cout << __LINE__ << " - " << "mass: " << mass << std::endl;
+					std::cout << "----\n";
+					assert(!std::isinf(d0));
+					assert(!std::isinf(d1));
+					assert(!std::isinf(d2));
+				}
 			}
 			else
 			{
@@ -627,11 +673,37 @@ public:
 						assert(d0 != v0.y);
 						assert(d1 != v1.y);
 						assert(d2 != v2.y);
+						//debug
+						if (std::isinf(d0) || std::isinf(d1) || std::isinf(d2))
+						{
+							std::cout << __LINE__ << " - " << "d0: " << d0 << "\nd1: " << d1 << "\nd2: " << d2 << std::endl;
+							std::cout << __LINE__ << " - " << "v0.y: " << v0.y << "\nv1.y: " << v1.y << "\nv2.y: " << v2.y << std::endl;
+							std::cout << __LINE__ << " - " << "H: " << H << std::endl;
+							std::cout << __LINE__ << " - " << "mass: " << mass << std::endl;
+							std::cout << "----\n";
+							assert(!std::isinf(d0));
+							assert(!std::isinf(d1));
+							assert(!std::isinf(d2));
+						}
+
 					}
 					else
 					{
 						d2 = v2.y;
 						assert(d1 != v1.y);
+						//debug
+						if (std::isinf(d0) || std::isinf(d1) || std::isinf(d2))
+						{
+							std::cout << __LINE__ << " - " << "d0: " << d0 << "\nd1: " << d1 << "\nd2: " << d2 << std::endl;
+							std::cout << __LINE__ << " - " << "v0.y: " << v0.y << "\nv1.y: " << v1.y << "\nv2.y: " << v2.y << std::endl;
+							std::cout << __LINE__ << " - " << "H: " << H << std::endl;
+							std::cout << __LINE__ << " - " << "mass: " << mass << std::endl;
+							std::cout << "----\n";
+							assert(!std::isinf(d0));
+							assert(!std::isinf(d1));
+							assert(!std::isinf(d2));
+						}
+
 					}
 				}
 				else
@@ -639,6 +711,19 @@ public:
 					d1 = v1.y;
 					d2 = v2.y;
 					assert(d0 != v0.y);
+					//debug
+					if (std::isinf(d0) || std::isinf(d1) || std::isinf(d2))
+					{
+						std::cout << __LINE__ << " - " << "d0: " << d0 << "\nd1: " << d1 << "\nd2: " << d2 << std::endl;
+						std::cout << __LINE__ << " - " << "v0.y: " << v0.y << "\nv1.y: " << v1.y << "\nv2.y: " << v2.y << std::endl;
+						std::cout << __LINE__ << " - " << "H: " << H << std::endl;
+						std::cout << __LINE__ << " - " << "mass: " << mass << std::endl;
+						std::cout << "----\n";
+						assert(!std::isinf(d0));
+						assert(!std::isinf(d1));
+						assert(!std::isinf(d2));
+					}
+
 				}
 			}
 			SetHeightfieldAt(floor(v0.x / m_CellSize[0]), floor(v0.z / m_CellSize[1]), d0);
@@ -669,6 +754,19 @@ public:
 				assert(d0 != v0.y);
 				assert(d1 != v1.y);
 				assert(d2 != v2.y);
+				//debug
+				if (std::isinf(d0) || std::isinf(d1) || std::isinf(d2))
+				{
+					std::cout << __LINE__ << " - " << "d0: " << d0 << "\nd1: " << d1 << "\nd2: " << d2 << std::endl;
+					std::cout << __LINE__ << " - " << "v0.y: " << v0.y << "\nv1.y: " << v1.y << "\nv2.y: " << v2.y << std::endl;
+					std::cout << __LINE__ << " - " << "H: " << H << "\nH3: " << H3 << std::endl;
+					std::cout << __LINE__ << " - " << "mass: " << mass << std::endl;
+					std::cout << "----\n";
+					assert(!std::isinf(d0));
+					assert(!std::isinf(d1));
+					assert(!std::isinf(d2));
+				}
+
 			}
 			else
 			{
@@ -692,12 +790,36 @@ public:
 						assert(d0 != v0.y);
 						assert(d1 != v1.y);
 						assert(d2 != v2.y);
+						//debug
+						if (std::isinf(d0) || std::isinf(d1) || std::isinf(d2))
+						{
+							std::cout << __LINE__ << " - " << "d0: " << d0 << "\nd1: " << d1 << "\nd2: " << d2 << std::endl;
+							std::cout << __LINE__ << " - " << "v0.y: " << v0.y << "\nv1.y: " << v1.y << "\nv2.y: " << v2.y << std::endl;
+							std::cout << __LINE__ << " - " << "H: " << H << std::endl;
+							std::cout << __LINE__ << " - " << "mass: " << mass << std::endl;
+							std::cout << "----\n";
+							assert(!std::isinf(d0));
+							assert(!std::isinf(d1));
+							assert(!std::isinf(d2));
+						}
 
 					}
 					else
 					{
 						d0 = v0.y;
 						assert(d1 != v1.y);
+						//debug
+						if (std::isinf(d0) || std::isinf(d1) || std::isinf(d2))
+						{
+							std::cout << __LINE__ << " - " << "d0: " << d0 << "\nd1: " << d1 << "\nd2: " << d2 << std::endl;
+							std::cout << __LINE__ << " - " << "v0.y: " << v0.y << "\nv1.y: " << v1.y << "\nv2.y: " << v2.y << std::endl;
+							std::cout << __LINE__ << " - " << "H: " << H << std::endl;
+							std::cout << __LINE__ << " - " << "mass: " << mass << std::endl;
+							std::cout << "----\n";
+							assert(!std::isinf(d0));
+							assert(!std::isinf(d1));
+							assert(!std::isinf(d2));
+						}
 
 					}
 				}
@@ -706,6 +828,18 @@ public:
 					d1 = v1.y;
 					d0 = v0.y;
 					assert(d2 != v2.y);
+					//debug
+					if (std::isinf(d0) || std::isinf(d1) || std::isinf(d2))
+					{
+						std::cout << __LINE__ << " - " << "d0: " << d0 << "\nd1: " << d1 << "\nd2: " << d2 << std::endl;
+						std::cout << __LINE__ << " - " << "v0.y: " << v0.y << "\nv1.y: " << v1.y << "\nv2.y: " << v2.y << std::endl;
+						std::cout << __LINE__ << " - " << "H: " << H <<  std::endl;
+						std::cout << __LINE__ << " - " << "mass: " << mass << std::endl;
+						std::cout << "----\n";
+						assert(!std::isinf(d0));
+						assert(!std::isinf(d1));
+						assert(!std::isinf(d2));
+					}
 
 				}
 			}
