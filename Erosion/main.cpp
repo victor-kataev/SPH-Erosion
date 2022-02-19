@@ -32,7 +32,10 @@ float lastFrame = 0;
 int g_part_id = 0;
 
 
+Camera *g_mainCamera = nullptr;
 Camera camera(glm::vec3(7.0, 256.0, 10.0));
+Camera camera1(glm::vec3(7.0, 256.0, 10.0));
+Camera camera2(glm::vec3(7.0, 256.0, 10.0));
 float lastX = SCREEN_WIDTH / 2.0f;
 float lastY = SCREEN_HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -71,7 +74,7 @@ int main()
     Shader shader("vertex.glsl", "fragment.glsl");
   
     char picture_path[100];
-    strcpy_s(picture_path, "pit.png");
+    strcpy_s(picture_path, "meander2.png");
     glm::vec3 dimensions = { 512.0f, 200.0f, 512.0f};
     glm::vec2 cellSize = { 0.2f, 0.2f };
     Grid grid(picture_path, dimensions, cellSize);
@@ -90,25 +93,39 @@ int main()
     //fluidsph.SetOrigin(glm::vec3(5.894, 30.95, 5.228));//debug
     
     
-    //camera.PlaceTo(glm::vec3(37.366, 128.401, 41.44)); //video 1
-    //camera.PlaceTo(glm::vec3(37.013, 129.409, 36.193)); //video 4
-    //camera.PlaceTo(glm::vec3(30.737, 125.863, 43.952)); //video 2
-    //camera.PlaceTo(glm::vec3(36.122, 124.579, 39.674)); //video 3
-    //camera.PlaceTo(glm::vec3(51.450, 140.601, 76.509)); //video 5
-    //camera.PlaceTo(glm::vec3(43.005, 129.945, 64.629)); //video 6
-    //camera.PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
-    //camera.PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
-    //camera.PlaceTo(glm::vec3(11.867, 32.842, 12.818)); //video 9 erosion
-    camera.PlaceTo(glm::vec3(15.815, 34.529, 10.587)); //video 9 erosion
-    camera.PlaceTo(glm::vec3(35.156, 22.429, 43.926)); //video 10 erosion
+    //g_mainCamera->PlaceTo(glm::vec3(37.366, 128.401, 41.44)); //video 1
+    //g_mainCamera->PlaceTo(glm::vec3(37.013, 129.409, 36.193)); //video 4
+    //g_mainCamera->PlaceTo(glm::vec3(30.737, 125.863, 43.952)); //video 2
+    //g_mainCamera->PlaceTo(glm::vec3(36.122, 124.579, 39.674)); //video 3
+    //g_mainCamera->PlaceTo(glm::vec3(51.450, 140.601, 76.509)); //video 5
+    //g_mainCamera->PlaceTo(glm::vec3(43.005, 129.945, 64.629)); //video 6
+    //g_mainCamera->PlaceTo(glm::vec3(43.757, 127.480, 63.289)); //video 7
+    //g_mainCamera->PlaceTo(glm::vec3(49.462, 127.195, 60.645)); //video 8
+    //g_mainCamera->PlaceTo(glm::vec3(11.867, 32.842, 12.818)); //video 9 erosion
+    //g_mainCamera->PlaceTo(glm::vec3(15.815, 34.529, 10.587)); //video 9 erosion
+    //g_mainCamera->PlaceTo(glm::vec3(35.156, 22.429, 43.926)); //video 10 erosion
+    camera.PlaceTo(glm::vec3(42.947, 21.573, 46.510)); //video 11 erosion front
+    camera.PlaceTo(glm::vec3(34.663, 23.497, 48.475)); //video 11 erosion back-top-right
     camera.PlaceTo(glm::vec3(39.011, 19.932, 42.6)); //video 11 erosion side
-    //camera.PlaceTo(glm::vec3(42.947, 21.573, 46.510)); //video 11 erosion front
-    //camera.PlaceTo(glm::vec3(18.867, 22.842, 43.818)); //debug
+    //g_mainCamera->PlaceTo(glm::vec3(18.867, 22.842, 43.818)); //debug
+    
 
+    //pit
+    camera.PlaceTo(glm::vec3(39.826, 19.922, 40.311)); //video 11 erosion side
+    camera.SetYawPitch(90.0f, 0.0f);
+    
+    camera1.PlaceTo(glm::vec3(44.139, 20.430, 45.089)); //video 11 erosion front
+    camera1.SetYawPitch(150.0f, -20.0f);
+
+    camera2.PlaceTo(glm::vec3(41.490, 21.478, 48.985)); //video 11 erosion front
+    camera2.SetYawPitch(225.0f, -30.0f);
+
+    //meander
+    camera.PlaceTo(glm::vec3(46.713, 25.157, 45.563));
 
     //fluidsph.Initialize(103823);
     //fluidsph.Initialize(300000);
-    fluidsph.Initialize(200000);
+    fluidsph.Initialize(2000);
     //fluidsph.Initialize(1000000);
 
 
@@ -120,9 +137,10 @@ int main()
     unsigned char* buff = new unsigned char[SCREEN_HEIGHT * SCREEN_WIDTH * 3];
     unsigned int framenum = 0;
     std::stringstream ss_filename;
-    glm::vec3 dirlight(-0.4, -0.7, -0.2);
+    glm::vec3 dirlight(-0.4, -0.6, -0.2);
 
     int frames = 0;
+    g_mainCamera = &camera1;
 
     //render loop
     while (!glfwWindowShouldClose(window))
@@ -141,7 +159,7 @@ int main()
         {
             ImGui::Begin("New window");
 
-            ImGui::InputFloat3("Camera pos:", (float*)&camera.Position);
+            ImGui::InputFloat3("g_mainCamera pos:", (float*)&g_mainCamera->Position);
             ImGui::InputFloat3("dirlight:", (float*)&dirlight);
 
             ImGui::ColorEdit3("clear color", (float*)&clear_color);
@@ -210,11 +228,11 @@ int main()
             fluidsph.Run(grid);// simulation
 
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.01f, 1000.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 view = g_mainCamera->GetViewMatrix();
         shader.use();
         shader.SetProjection(projection);
         shader.SetView(view);
-        shader.setVec3("viewerPos", camera.Position);
+        shader.setVec3("viewerPos", g_mainCamera->Position);
         shader.setVec3("dirLight.dir", dirlight);
         shader.setVec3("dirLight.color", glm::vec3(1.0));
 
@@ -249,9 +267,15 @@ int main()
         glfwPollEvents();
 
         frames++;
-        if (frames > 3000)
+        if (frames > 5000)
             break;
 
+        if (frames == 3500)
+            pause = true;
+        if (frames == 3800)
+            g_mainCamera = &camera1;
+        if (frames == 4200)
+            g_mainCamera = &camera2;
     }
 
     
@@ -279,7 +303,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastX = xpos;
     lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+    g_mainCamera->ProcessMouseMovement(xoffset, yoffset);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -297,51 +321,51 @@ void processInput(GLFWwindow* window)
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime * 10);
+            g_mainCamera->ProcessKeyboard(FORWARD, deltaTime * 10);
         else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(FORWARD, deltaTime * 0.1);
+            g_mainCamera->ProcessKeyboard(FORWARD, deltaTime * 0.1);
         else
-            camera.ProcessKeyboard(FORWARD, deltaTime);
+            g_mainCamera->ProcessKeyboard(FORWARD, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(BACKWARD, deltaTime * 10);
+            g_mainCamera->ProcessKeyboard(BACKWARD, deltaTime * 10);
         else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(BACKWARD, deltaTime * 0.1);
+            g_mainCamera->ProcessKeyboard(BACKWARD, deltaTime * 0.1);
         else
-            camera.ProcessKeyboard(BACKWARD, deltaTime);
+            g_mainCamera->ProcessKeyboard(BACKWARD, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(LEFT, deltaTime * 10);
+            g_mainCamera->ProcessKeyboard(LEFT, deltaTime * 10);
         else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(LEFT, deltaTime * 0.1);
+            g_mainCamera->ProcessKeyboard(LEFT, deltaTime * 0.1);
         else
-            camera.ProcessKeyboard(LEFT, deltaTime);
+            g_mainCamera->ProcessKeyboard(LEFT, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(RIGHT, deltaTime * 10);
+            g_mainCamera->ProcessKeyboard(RIGHT, deltaTime * 10);
         else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(RIGHT, deltaTime * 0.1);
+            g_mainCamera->ProcessKeyboard(RIGHT, deltaTime * 0.1);
         else
-            camera.ProcessKeyboard(RIGHT, deltaTime);
+            g_mainCamera->ProcessKeyboard(RIGHT, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(UP, deltaTime * 10);
+            g_mainCamera->ProcessKeyboard(UP, deltaTime * 10);
         else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(UP, deltaTime * 0.1);
+            g_mainCamera->ProcessKeyboard(UP, deltaTime * 0.1);
         else
-            camera.ProcessKeyboard(UP, deltaTime);
+            g_mainCamera->ProcessKeyboard(UP, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
         if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-            camera.ProcessKeyboard(DOWN, deltaTime * 10);
+            g_mainCamera->ProcessKeyboard(DOWN, deltaTime * 10);
         else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-            camera.ProcessKeyboard(DOWN, deltaTime * 0.1);
+            g_mainCamera->ProcessKeyboard(DOWN, deltaTime * 0.1);
         else
-            camera.ProcessKeyboard(DOWN, deltaTime);
+            g_mainCamera->ProcessKeyboard(DOWN, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
         pressed_before = true;
@@ -385,6 +409,16 @@ void processInput(GLFWwindow* window)
     }
 
 
+    if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS)
+        g_mainCamera = &camera;
+    
+    if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS)
+        g_mainCamera = &camera1;
+
+    if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+        g_mainCamera = &camera2;
+
+
 
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -408,10 +442,10 @@ void processInput(GLFWwindow* window)
         fluidsph.PrintCoords();
     
     /*std::cout << "Position: "
-        << camera.GetPosition().x << ' ' << camera.GetPosition().y << ' ' << camera.GetPosition().z
+        << g_mainCamera->GetPosition().x << ' ' << g_mainCamera->GetPosition().y << ' ' << g_mainCamera->GetPosition().z
         << std::endl
         << "Front: "
-        << camera.GetFront().x << ' ' << camera.GetFront().y << ' ' << camera.GetFront().z << std::endl;*/
+        << g_mainCamera->GetFront().x << ' ' << g_mainCamera->GetFront().y << ' ' << g_mainCamera->GetFront().z << std::endl;*/
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)

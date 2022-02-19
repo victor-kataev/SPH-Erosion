@@ -15,8 +15,8 @@ enum Camera_Movement {
 };
 
 // Default camera values
-const float YAW = 92.0f;
-//const float PITCH = -31.0f;
+const float YAW = 90.0f;
+//const float PITCH = -41.0f;
 const float PITCH = 0.0f;
 const float SPEED = 3.5f;
 const float SENSITIVITY = 0.1f;
@@ -129,6 +129,13 @@ public:
     glm::vec3 GetFront() const
     {
         return Front;
+    }
+
+    void SetYawPitch(float yaw, float pitch)
+    {
+        Yaw = yaw;
+        Pitch = pitch;
+        updateCameraVectors();
     }
 
 private:
