@@ -84,11 +84,17 @@ int main()
     //fluidsph.SetOrigin(glm::vec3(32.5, 125.5, 43.7));
     //fluidsph.SetOrigin(glm::vec3(48.034, 126.0, 56.064));
     
-    //fluidsph.SetOrigin(glm::vec3(46.834, 30.4, 57.064));
+    fluidsph.SetOrigin(glm::vec3(46.834, 30.4, 57.064));
     
     //fluidsph.SetOrigin(glm::vec3(55.99, 27.584, 24.140));
     //fluidsph.SetOrigin(glm::vec3(13.894, 30.55, 14.228)); //video 9 erosion
-    fluidsph.SetOrigin(glm::vec3(35.9, 19.83, 46.494)); //video 10 erosion //35.9 early bug
+    
+    
+    
+    fluidsph.SetOrigin(glm::vec3(48.65, 19.9, 47.427)); //video 10 erosion
+
+
+    
     //fluidsph.SetOrigin(glm::vec3(20.765, 20.83, 46.494)); //video 10 erosion
     //fluidsph.SetOrigin(glm::vec3(5.894, 30.95, 5.228));//debug
     
@@ -114,6 +120,7 @@ int main()
     camera.PlaceTo(glm::vec3(39.826, 19.922, 40.311)); //video 11 erosion side
     camera.SetYawPitch(90.0f, 0.0f);
     
+    
     camera1.PlaceTo(glm::vec3(44.139, 20.430, 45.089)); //video 11 erosion front
     camera1.SetYawPitch(150.0f, -20.0f);
 
@@ -121,11 +128,22 @@ int main()
     camera2.SetYawPitch(225.0f, -30.0f);
 
     //meander
-    camera.PlaceTo(glm::vec3(46.713, 25.157, 45.563));
+    camera.PlaceTo(glm::vec3(46.713, 23.157, 45.063));
+    camera.SetYawPitch(45.0f, -30.0f);
+
+    //camera.PlaceTo(glm::vec3(50.835, 23.780, 42.145)); 
+    //camera.SetYawPitch(90.0f, -30.0f);
+
+
+    camera1.PlaceTo(glm::vec3(50.37, 21.534, 57.619));
+    camera1.SetYawPitch(-90.0f, -30.0f);
+
+    camera2.PlaceTo(glm::vec3(54.682, 23.875, 45.095));
+    camera2.SetYawPitch(110.0f, -35.0f);
 
     //fluidsph.Initialize(103823);
-    //fluidsph.Initialize(300000);
-    fluidsph.Initialize(2000);
+    fluidsph.Initialize(300000);
+    //fluidsph.Initialize(3000);
     //fluidsph.Initialize(1000000);
 
 
@@ -138,9 +156,11 @@ int main()
     unsigned int framenum = 0;
     std::stringstream ss_filename;
     glm::vec3 dirlight(-0.4, -0.6, -0.2);
+    //glm::vec3 dirlight(-0.6, -0.6, -0.2);
+    //dirlight = { -0.100, -0.600, -0.400 };
 
     int frames = 0;
-    g_mainCamera = &camera1;
+    g_mainCamera = &camera;
 
     //render loop
     while (!glfwWindowShouldClose(window))
@@ -267,15 +287,42 @@ int main()
         glfwPollEvents();
 
         frames++;
-        if (frames > 5000)
+        if (frames > 6000)
             break;
+        
 
-        if (frames == 3500)
-            pause = true;
-        if (frames == 3800)
-            g_mainCamera = &camera1;
-        if (frames == 4200)
-            g_mainCamera = &camera2;
+       
+        //if (frames == 500)
+        //{
+        //    g_mainCamera = &camera2;
+        //    //dirlight = { -0.100, -0.600, -0.400 };
+        //}
+        //
+        //if (frames == 1000)
+        //{
+        //    g_mainCamera = &camera1;
+        //    //dirlight = { -0.100, -0.600, 0.400 };
+        //}
+        //
+        //if (frames == 1500)
+        //{
+        //    g_mainCamera = &camera;
+        //}
+        //
+        ////if (frames == 3000)
+        ////{
+        ////    g_mainCamera = &camera2;
+        ////}
+        //
+        //if (frames == 4000)
+        //    pause = true;
+        //if (frames == 4000)
+        //{
+        //    g_mainCamera = &camera1;
+        //    dirlight = { -0.100, -0.600, 0.400 };
+        //}
+        //if (frames == 4300)
+        //    g_mainCamera = &camera2;
     }
 
     

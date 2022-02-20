@@ -33,7 +33,10 @@ float INV_MASS_C_COEFFICIENT = 1.0f / (SOLID_DENSITY * FLUID_MASS / FLUID_BASE_D
 
 #define C_2_MASS(C) (C*MASS_C_COEFFICIENT)
 #define MASS_2_C(m) (m*INV_MASS_C_COEFFICIENT)
-//float SEDIMENT_MAX_MASS = C_2_MASS(SEDIMENT_MAX);
+float SEDIMENT_MAX_MASS = C_2_MASS(SEDIMENT_MAX);
+
+const float SEDIMENT_GRAIN_RADIUS = 0.00001f; 
+
 
 
 #define PI 3.141592f
@@ -81,7 +84,7 @@ public:
 
 		//		}
 
-		sqrside = 30; //35
+		sqrside = 25; //35
 		//sqrside = 10; //35
 		int j = -1;
 		for (int i = 0; i < num; i++)
@@ -94,16 +97,16 @@ public:
 
 			//if (i % 2)
 			//{
-				//x = -0.4f + (i % sqrside) * 0.025f;
-				z = -0.2f + (i % sqrside) * 0.025f;
+				//x = -0.4f + (i % sqrside) * 0.020f;
+				x = -0.2f + (i % sqrside) * 0.025f;
 				y = -0.01f + j * 0.025f;
-				x = -0.15f;
+				z = -0.15f;
 			//}
 			//else
 			//{
-			//	x = 7.0f + (i % sqrside) * 0.020f;
+			//	x = 4.4f + (i % sqrside) * 0.020f;
 			//	y = -0.05f + j * 0.020f;
-			//	z = 11.05f;
+			//	z = 10.05f;
 			//}
 
 
@@ -112,14 +115,14 @@ public:
 			particle.Id = FluidParticle::IdCount++;
 			particle.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
 			//if(i%2)
-				particle.Velocity = glm::vec3(3.0, 0.0, 0.0);
+				particle.Velocity = glm::vec3(0.0, 0.0, 3.0);
 			//else
 			//	particle.Velocity = glm::vec3(0.0, 0.0, -3.0);
 			particle.Acceleration = glm::vec3(0.0);
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
-			particle.lifetime = 1000;
+			particle.lifetime = 2000;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 
@@ -484,9 +487,8 @@ private:
 		float dMi;
 		float v, t, E, m = 0, vRel;
 		const float minVrel = pow(EROSION_TC / EROSION_SHEAR_STIFF, 2.0f); // = 9
-		//const float minVrel = 1.0f;
-		//float L2 = h * h; //mistake here <----------------------------------------------------------------------------------------- deltaS 
-		float L2 = deltaS * deltaS; //mistake here <----------------------------------------------------------------------------------------- deltaS 
+		//float L2 = h * h; 
+		float L2 = deltaS * deltaS; 
 		int ij = 0;
 
 		for (auto& bp : m_NearestBParticles)
@@ -512,8 +514,8 @@ private:
 				m = L2 * E;
 				dMi += m; 
 				bp.dM -= m; //subtract sediment from a boundary
-				//fp.sedim_delta += MASS_2_C(dMi); //add sediment to a sph particle
-				fp.sedim_delta += 1.0f / (SOLID_DENSITY * FLUID_MASS / fp.Density) * dMi; //add sediment to  sph particle
+				fp.sedim_delta += MASS_2_C(dMi); //add sediment to a sph particle
+				//fp.sedim_delta += 1.0f / (SOLID_DENSITY * FLUID_MASS / fp.Density) * dMi; //add sediment to  sph particle
 				assert(!isnan(fp.sedim_delta));
 #ifdef UI_DEBUG
 				Debugger::Get()->InsertPostErosionInteraction(ij, -777.0f, fp, bp, m);
@@ -533,7 +535,8 @@ private:
 
 	void computeDeposition()
 	{
-		glm::vec3 vSettling = 2.0f / 9.0f * 0.001f * 0.001f * g_SEDIM_COEFF * (SOLID_DENSITY - FLUID_BASE_DENSITY) * gravityVector / visc;
+		//TO CHANGE
+		glm::vec3 vSettling = 2.0f / 9.0f * (SEDIMENT_GRAIN_RADIUS / h) * (SOLID_DENSITY - FLUID_BASE_DENSITY) * gravityVector / visc;
 		glm::vec3 rbj;
 		const float inv2Smooth = 2.0f / h;
 		float v = 0.0f, q = 0.0f, fGradCubic = 0.0f;
@@ -710,6 +713,8 @@ private:
 		const float fNormalCubic = 1.0f / (4.0f * PI * pow(h, 3));
 		const float inv2Smooth = 2.0f / h;
 		float q = 0.0f, fGradCubic = 0.0f;
+		glm::vec3 vSettling = 2.0f / 9.0f * (SEDIMENT_GRAIN_RADIUS / h) * (SOLID_DENSITY - FLUID_BASE_DENSITY) * gravityVector / visc;
+
 
 		for (int i = 0; i < visible_num; i++)
 		{
@@ -718,7 +723,8 @@ private:
 				continue;
 
 
-			glm::vec3 vSettling = 2.0f / 9.0f * 0.001f * 0.001f * (float)((SOLID_DENSITY - currPart.Density) / visc) * gravityVector;
+			//TO CHANGE
+			//glm::vec3 vSettling = 2.0f / 9.0f * 0.001f * 0.001f * (float)((SOLID_DENSITY - currPart.Density) / visc) * gravityVector;
 
 			for (const auto& j : m_ParticleNeighbors[i])
 			{
@@ -771,7 +777,9 @@ private:
 				}
 			
 				//diffusion
-				dC[ij] += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * fGradCubic;
+				//TO CHANGE
+				//dC[ij] += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * fGradCubic;
+				dC[ij] += currPart.Density * neigh.Density * 0.1f * (currPart.sedim - neigh.sedim) * fGradCubic;
 
 				if (dC[ij] <= 0.0f) 
 					currPart.sedim_delta += dC[ij];
