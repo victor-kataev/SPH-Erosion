@@ -16,8 +16,6 @@
 #include "grid.h"
 #include "camera.h"
 #include "fluid_system.h"
-#include "mesh.h"
-#include "shapes.h"
 
 
 
@@ -40,10 +38,10 @@ float lastX = SCREEN_WIDTH / 2.0f;
 float lastY = SCREEN_HEIGHT / 2.0f;
 bool firstMouse = true;
 bool disabled = true;
-bool debugWndwOpened = false;
-bool debugWndwPressed = false;
+bool helpWndwOpened = true;
+bool helpWndwPressed = false;
 bool pressed_before = false;
-bool pause = false;
+bool pause = true;
 
 
 
@@ -65,16 +63,18 @@ void UIend();
 #define CHECK_GL_ERROR() do { checkGLError(__FUNCTION__, __LINE__); } while (0)
 
 FluidSystemSPH fluidsph;
+int partsNumb = 1000;
+bool saveFrames = false;
 
 
 int main()
 {
     GLFWwindow* window = init();
 
-    Shader shader("vertex.glsl", "fragment.glsl");
+    Shader shader("resources/shaders/vertex.glsl", "resources/shaders/fragment.glsl");
   
     char picture_path[100];
-    strcpy_s(picture_path, "meander2.png");
+    strcpy_s(picture_path, "resources/maps/meander2.png");
     glm::vec3 dimensions = { 512.0f, 200.0f, 512.0f};
     glm::vec2 cellSize = { 0.2f, 0.2f };
     Grid grid(picture_path, dimensions, cellSize);
@@ -142,7 +142,7 @@ int main()
     camera2.SetYawPitch(110.0f, -35.0f);
 
     //fluidsph.Initialize(103823);
-    fluidsph.Initialize(300000);
+    fluidsph.Initialize(partsNumb);
     //fluidsph.Initialize(3000);
     //fluidsph.Initialize(1000000);
 
@@ -169,77 +169,90 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+
         processInput(window);
         glClearColor(0.3, 0.3, 0.3, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         UIbegin();
+
+        if (helpWndwOpened)
+        {
+            ImGui::Begin("Help Window");
+
+            ImGui::TextWrapped("-move around -- W, A, S, D, E, Q, mouse\n-R -- open/close UI\n-F -- pause/unpause simulation\n-right click -- quick reset\n-ESC -- exit the program\n-H -- close/open this window\n\nYou can save each rendered frame in a .bmp image. For that enable Save Frames checkbox in the UI window. The output images will be saved in Render folder, where the program is installed. When this checkbox is enabled the frames are only saved when simulation is unpaused.");
+
+            ImGui::End();
+        }
         
         if (!disabled)
         {
-            ImGui::Begin("New window");
+            ImGui::Begin("Graphical Interface");
 
-            ImGui::InputFloat3("g_mainCamera pos:", (float*)&g_mainCamera->Position);
-            ImGui::InputFloat3("dirlight:", (float*)&dirlight);
+            ImGui::LabelText("Initializetion", "");
 
-            ImGui::ColorEdit3("clear color", (float*)&clear_color);
-            grid.SetColor(clear_color);
-            ImGui::InputFloat3("dimensions", (float*)&dimensions);
-            if (ImGui::Button("Update grid"))
-            {
-                grid.UpdateGrid(dimensions);
-            }
-            ImGui::InputText("picture path", picture_path, 100);
+            ImGui::InputInt("Particles number", &partsNumb);
+            ImGui::InputInt("particle lifetime", fluidsph.GetLifetime());
+            ImGui::InputFloat3("Fluid origin", (float*)fluidsph.GetOrigin());
+
+
             if (ImGui::Button("Load picture"))
             {
                 grid.UpdateHeightMap(picture_path);
                 grid.UpdateGrid(dimensions);
+                fluidsph.Reset(partsNumb);
             }
-            ImGui::Checkbox("render boundary", fluidsph.GetRenderBoundary());
+            ImGui::SameLine();
+            ImGui::InputText("picture path", picture_path, 100);
+            if (ImGui::Button("Initialize"))
+            {
+                fluidsph.Reset(partsNumb);
+            }
 
             ImGui::NewLine();
-
-            ImGui::InputFloat("Friction", fluidsph.GetMu(), 0.01f);
-            ImGui::InputFloat("Ks", fluidsph.GetKs(), 1000.0f);
-            ImGui::InputFloat("Kd", fluidsph.GetKd(), 1000.0f);
+            ImGui::LabelText("Run time", "");
+            ImGui::Checkbox("render boundary", fluidsph.GetRenderBoundary());
+            ImGui::Checkbox("save frames", &saveFrames);
+            ImGui::InputFloat3("light dir:", (float*)&dirlight);
+            ImGui::ColorEdit3("clear color", (float*)&clear_color);
+            grid.SetColor(clear_color);
             ImGui::InputFloat("Mass", fluidsph.GetMass(), 0.001f);
             ImGui::InputFloat("Visc", fluidsph.GetVisc(), 0.001f);
             ImGui::InputFloat("SurfTens", fluidsph.GetSurfTen(), 0.0001f, 0.0f, "%.4f");
             ImGui::InputFloat("p0", fluidsph.Getp0(), 1.0f);
-            ImGui::InputFloat("damping", fluidsph.GetDamping(), 0.1f);
-            float g[3];
-            glm::vec3* gr = fluidsph.GetGrav();
-            g[0] = gr->x;
-            g[1] = gr->y;
-            g[2] = gr->z;
-            ImGui::InputFloat3("Gravity", g);
-            gr->x = g[0];
-            gr->y = g[1];
-            gr->z = g[2];
+            ImGui::InputFloat3("Gravity", (float*)fluidsph.GetGrav());
+        
             ImGui::NewLine();
-            ImGui::InputInt("particle_id", &g_part_id);
-            FluidParticle fp = fluidsph.GetParticle(g_part_id);
-
-            ImGui::InputDouble("lifetime", &fp.lifetime);
-            ImGui::InputFloat("sedim", &fp.sedim);
-            ImGui::InputFloat("sedim_delta", &fp.sedim_delta);
-            ImGui::InputFloat3("fBoundary", (float*)&fp.fBoundary);
-            ImGui::InputFloat("d", &fp.shortest);
-            ImGui::InputFloat3("Pos", (float*)&fp.Position);
-            ImGui::InputFloat3("Vel", (float*)&fp.Velocity);
-            ImGui::InputFloat3("Acc", (float*)&fp.Acceleration);
-            ImGui::InputFloat("Dens", &fp.Density);
-            ImGui::InputFloat("Pres", &fp.Pressure);
-            ImGui::InputFloat3("PresF", (float*)&fp.PressureForce);
-            //ImGui::InputFloat3("fPressTmp", (float*)&fp.fPressTmp);
-            ImGui::InputInt("NeighbId", &fp.NeighbId, 0);
-            ImGui::InputFloat3("GravF", (float*)&fp.GravityForce);
-            ImGui::InputFloat3("SurfF", (float*)&fp.SurfaceForce);
-            ImGui::InputFloat3("SurfNorm", (float*)&fp.SurfaceNormal);
-            ImGui::InputFloat3("ViscF", (float*)&fp.ViscosityForce);
-
-
+            ImGui::LabelText("Info", "");
+            ImGui::InputFloat3("camera pos:", (float*)&g_mainCamera->Position);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+
+            //ImGui::InputFloat("Friction", fluidsph.GetMu(), 0.01f);
+            //ImGui::InputFloat("Ks", fluidsph.GetKs(), 1000.0f);
+            //ImGui::InputFloat("Kd", fluidsph.GetKd(), 1000.0f);
+            //ImGui::InputFloat("damping", fluidsph.GetDamping(), 0.1f);
+            //ImGui::NewLine();
+            //ImGui::InputInt("particle_id", &g_part_id);
+            //FluidParticle fp = fluidsph.GetParticle(g_part_id);
+            //
+            //ImGui::InputDouble("lifetime", &fp.lifetime);
+            //ImGui::InputFloat("sedim", &fp.sedim);
+            //ImGui::InputFloat("sedim_delta", &fp.sedim_delta);
+            //ImGui::InputFloat3("fBoundary", (float*)&fp.fBoundary);
+            //ImGui::InputFloat("d", &fp.shortest);
+            //ImGui::InputFloat3("Pos", (float*)&fp.Position);
+            //ImGui::InputFloat3("Vel", (float*)&fp.Velocity);
+            //ImGui::InputFloat3("Acc", (float*)&fp.Acceleration);
+            //ImGui::InputFloat("Dens", &fp.Density);
+            //ImGui::InputFloat("Pres", &fp.Pressure);
+            //ImGui::InputFloat3("PresF", (float*)&fp.PressureForce);
+            ////ImGui::InputFloat3("fPressTmp", (float*)&fp.fPressTmp);
+            //ImGui::InputInt("NeighbId", &fp.NeighbId, 0);
+            //ImGui::InputFloat3("GravF", (float*)&fp.GravityForce);
+            //ImGui::InputFloat3("SurfF", (float*)&fp.SurfaceForce);
+            //ImGui::InputFloat3("SurfNorm", (float*)&fp.SurfaceNormal);
+            //ImGui::InputFloat3("ViscF", (float*)&fp.ViscosityForce);
             ImGui::End();
         }
 
@@ -257,7 +270,7 @@ int main()
         shader.setVec3("dirLight.color", glm::vec3(1.0));
 
         grid.Draw(shader);
-        fluidsph.Draw(shader, g_part_id);
+        fluidsph.Draw(shader);
 
         if(!pause)
             fluidsph.AdvanceTime();
@@ -277,18 +290,21 @@ int main()
 
         UIend();
 
-        glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
-        ss_filename << "render_pit/frame_" << std::to_string(framenum) << ".bmp";
-        framenum++;
-        pixelsToBmp(ss_filename.str().c_str(), buff);
-        ss_filename.str("");
+        if (saveFrames && !pause)
+        {
+            glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, buff);
+            ss_filename << "render/frame_" << std::to_string(framenum) << ".bmp";
+            framenum++;
+            pixelsToBmp(ss_filename.str().c_str(), buff);
+            ss_filename.str("");
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        frames++;
-        if (frames > 6000)
-            break;
+        //frames++;
+        //if (frames > 6000)
+        //    break;
         
 
        
@@ -435,41 +451,41 @@ void processInput(GLFWwindow* window)
     }
 
 
-    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS)
-        debugWndwPressed = true;
-    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE && debugWndwPressed)
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
+        helpWndwPressed = true;
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_RELEASE && helpWndwPressed)
     {
-        debugWndwPressed = false;
-        if (!debugWndwOpened)
+        helpWndwPressed = false;
+        if (!helpWndwOpened)
         {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             glfwSetCursorPosCallback(window, NULL);
-            debugWndwOpened = true;
+            helpWndwOpened = true;
             firstMouse = true;
         }
         else
         {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             glfwSetCursorPosCallback(window, mouse_callback);
-            debugWndwOpened = false;
+            helpWndwOpened = false;
         }
     }
 
 
-    if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS)
-        g_mainCamera = &camera;
-    
-    if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS)
-        g_mainCamera = &camera1;
+    //if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS)
+    //    g_mainCamera = &camera;
+    //
+    //if (glfwGetKey(window, GLFW_KEY_9) == GLFW_PRESS)
+    //    g_mainCamera = &camera1;
+    //
+    //if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+    //    g_mainCamera = &camera2;
 
-    if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
-        g_mainCamera = &camera2;
 
 
-
-    if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_F1) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
@@ -503,17 +519,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         std::cout << "Particles reseted\n";
     }
 
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && (disabled && !debugWndwOpened))
-    {
-        fluidsph.AddParticles(125);
-        std::cout << "Added 125 particles\n";
-    }
-
-    if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
-    {
-        fluidsph.AddParticles(125);
-        std::cout << "Added 125 particles\n";
-    }
+    //if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && (disabled && !debugWndwOpened))
+    //{
+    //    fluidsph.AddParticles(125);
+    //    std::cout << "Added 125 particles\n";
+    //}
 }
 
 void checkGLError(const char* where, int line)

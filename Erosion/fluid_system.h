@@ -2,7 +2,7 @@
 #include <memory>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "mesh.h"
+//#include "mesh.h"
 #include "sphere.h"
 #include "grid.h"
 
@@ -122,7 +122,7 @@ public:
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
-			particle.lifetime = 2000;
+			particle.lifetime = lifetime;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 
@@ -256,7 +256,7 @@ public:
 		//m_Time += m_Dt;
 	}
 
-	void Draw(const Shader& shader, int selected_part)
+	void Draw(const Shader& shader)
 	{
 		shader.setVec3("material.ka", glm::vec3(0.2f));
 		shader.setVec3("material.kd", glm::vec3(0.7f));
@@ -276,9 +276,9 @@ public:
 			model = glm::translate(model, m_Particles[i].Position);
 			model = glm::scale(model, glm::vec3(r));
 			shader.setMat4("model", model);
-			if (i == selected_part)
-				shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
-			else
+			//if (i == selected_part)
+			//	shader.setVec3("myColor", glm::vec3(1.0, 1.0, 0.0));
+			//else
 				shader.setVec3("myColor", glm::vec3(0.0, 0.0, 0.8));
 			//shader.setVec3("myColor", glm::vec3(glm::length(m_Particles[i].PressureForce), 0.0, 1.0));
 			m_Sphere->Draw();
@@ -313,11 +313,12 @@ public:
 			}
 
 		m_NearestBParticles.clear();
-		visible_num = std::min(visible_num + sqrside * sqrside, num);
+		
 	}
 
 	void AdvanceTime()
 	{
+		visible_num = std::min(visible_num + sqrside * sqrside, num);
 		for (int i = 0; i < visible_num; i++)
 			if (m_Particles[i].lifetime != 0)
 				m_Particles[i].lifetime--;
@@ -328,9 +329,9 @@ public:
 		m_Origin = o;
 	}
 
-	glm::vec3 GetOrigin() const
+	glm::vec3* GetOrigin()
 	{
-		return m_Origin;
+		return &m_Origin;
 	}
 
 	void SetDeltaTime(float dt)
@@ -350,31 +351,34 @@ public:
 			std::cout << "[" << i << "] " << m_Particles[i].Position.x << ' ' << m_Particles[i].Position.y << ' ' << m_Particles[i].Position.z << std::endl;
 	}
 
-	void AddParticles(int n) {
-		float offset = -(cbrt(n) / 2 * 0.15f);
-		for (int i = 0; i < cbrt(n); i++) {
-			for (int j = 0; j < cbrt(n); j++) {
-				for (int k = 0; k < cbrt(n); k++) {
-					float x = -0.2 + i * 0.025;
-					float y = -0.05 + j * 0.025;
-					float z = -0.15 + k * 0.025;
-					FluidParticle tmp;
-					tmp.Id = FluidParticle::IdCount++;
-					tmp.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
-					tmp.Velocity = glm::vec3(0.0, 0.0, 0.0);
-					tmp.Acceleration = glm::vec3(0.0);
-					//tmp.Mass = MASS;
-					m_Particles.push_back(tmp);
-				}
-			}
-		}
-		num += n;
-	}
+	//void AddParticles(int n) {
+	//	float offset = -(cbrt(n) / 2 * 0.15f);
+	//	for (int i = 0; i < cbrt(n); i++) {
+	//		for (int j = 0; j < cbrt(n); j++) {
+	//			for (int k = 0; k < cbrt(n); k++) {
+	//				float x = -0.2 + i * 0.025;
+	//				float y = -0.05 + j * 0.025;
+	//				float z = -0.15 + k * 0.025;
+	//				FluidParticle tmp;
+	//				tmp.Id = FluidParticle::IdCount++;
+	//				tmp.Position = glm::vec3(x + m_Origin.x, y + m_Origin.y, z + m_Origin.z);
+	//				tmp.Velocity = glm::vec3(0.0, 0.0, 0.0);
+	//				tmp.Acceleration = glm::vec3(0.0);
+	//				//tmp.Mass = MASS;
+	//				m_Particles.push_back(tmp);
+	//			}
+	//		}
+	//	}
+	//	num += n;
+	//}
 
-	void Reset()
+	void Reset(int numbOfParts = -1)
 	{
 		m_Particles.clear();
 		m_BParticles.clear();
+
+		if (numbOfParts != -1)
+			num = numbOfParts;
 
 		int j = -1;
 		for (int i = 0; i < num; i++)
@@ -396,7 +400,7 @@ public:
 			particle.sedim = 0.0f;
 			particle.sedim_delta = 0.0f;
 			particle.sedim_ratio = 0.0f;
-			particle.lifetime = 1000000;
+			particle.lifetime = lifetime;
 			//particle.Mass = MASS;
 			m_Particles.push_back(particle);
 		}
@@ -458,6 +462,11 @@ public:
 	FluidParticle GetParticle(int id)
 	{
 		return m_Particles[id];
+	}
+
+	int* GetLifetime()
+	{
+		return &lifetime;
 	}
 
 private:
@@ -778,8 +787,8 @@ private:
 			
 				//diffusion
 				//TO CHANGE
-				//dC[ij] += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * fGradCubic;
-				dC[ij] += currPart.Density * neigh.Density * 0.1f * (currPart.sedim - neigh.sedim) * fGradCubic;
+				dC[ij] += MASS / (currPart.Density * neigh.Density) * 0.1f * (currPart.sedim - neigh.sedim) * fGradCubic;
+				//dC[ij] += currPart.Density * neigh.Density * 0.1f * (currPart.sedim - neigh.sedim) * fGradCubic;
 
 				if (dC[ij] <= 0.0f) 
 					currPart.sedim_delta += dC[ij];
@@ -1212,6 +1221,7 @@ private:
 		float Kd = 300.0f;
 		int table_size;
 		int sqrside;
+		int lifetime = 1000;
 
 		std::vector<float> dC;
 		std::vector<float> dC_BP;

@@ -15,7 +15,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include "voxel.h"
 #include "shader.h"
 #include "fluid_particle.h"
 #include "debugger.h"
